@@ -1,0 +1,120 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>닮음의 이해 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: graph-paper stage; sticker title + marker-style hint on top, big shapes in the middle, sticky-note definition appears on match. Casual, single light look for TV. */
+:root{
+  --paper:#F4FAFF; --grid:#D3E8F7; --ink:#1F2A44; --coral:#FF6B4A; --coral-s:rgba(255,107,74,.28);
+  --sky:#BFE3FF; --mint:#2DBE7E; --mint-s:rgba(45,190,126,.3); --sun:#FFD93D; --blue:#1D4ED8; --note:#FFF2A8;
+  --display:'Jua','Gowun Dodum',sans-serif; --body:'Gowun Dodum','Jua',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background-color:var(--paper);background-image:linear-gradient(var(--grid) 2px,transparent 2px),linear-gradient(90deg,var(--grid) 2px,transparent 2px);background-size:56px 56px;color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#app{height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:clamp(12px,2vw,28px);padding:clamp(10px,1.6vw,22px) max(18px,env(safe-area-inset-right)) 0 max(18px,env(safe-area-inset-left))}
+.by{font-family:'Jua',sans-serif;font-size:clamp(11px,1.25vw,20px);opacity:.5;white-space:nowrap;flex:none;letter-spacing:-.01em}
+.tag{font-family:var(--display);font-size:clamp(20px,2.6vw,40px);background:var(--sun);color:var(--ink);border:3px solid var(--ink);border-radius:14px;padding:2px clamp(12px,1.6vw,24px);white-space:nowrap;transform:rotate(-3deg);box-shadow:4px 4px 0 var(--ink)}
+#hint{flex:1;min-width:0;font-family:var(--display);font-size:clamp(24px,3.4vw,52px);line-height:1.2;color:var(--ink)}
+#hint.ok{color:var(--mint)}
+#reset{border:3px solid var(--ink);background:#fff;color:var(--ink);border-radius:999px;font:400 clamp(18px,2.2vw,32px) var(--display);padding:clamp(4px,.6vw,8px) clamp(16px,2vw,30px);cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
+#reset:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+#reset:focus-visible{outline:4px solid var(--blue);outline-offset:3px}
+main{flex:1;min-height:0;position:relative}
+svg{width:100%;height:100%;display:block;touch-action:none}
+footer{padding:0 max(18px,env(safe-area-inset-right)) max(clamp(10px,1.4vw,22px),env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));display:flex;justify-content:center;min-height:clamp(70px,10vw,140px);opacity:0;transform:translateY(14px) rotate(-1deg);transition:opacity .5s,transform .5s}
+footer.on{opacity:1;transform:translateY(0) rotate(-1deg)}
+.def{background:var(--note);border:3px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--ink);padding:clamp(10px,1.4vw,20px) clamp(16px,2.4vw,36px);font-family:var(--display);font-size:clamp(20px,2.8vw,42px);line-height:1.45;max-width:1400px;text-wrap:pretty}
+.def small{display:block;font-family:var(--body);font-size:.5em;opacity:.65;margin-top:2px}
+.term{color:var(--coral)}
+.key{color:var(--blue);text-decoration:underline;text-decoration-thickness:.12em;text-underline-offset:.15em}
+@keyframes pulse{50%{opacity:.3}}
+.pulse{animation:pulse 1s ease-in-out infinite}
+@keyframes fall{0%{transform:translateY(-30px) rotate(0);opacity:1}100%{transform:translateY(420px) rotate(540deg);opacity:0}}
+.conf{animation:fall 1.6s ease-in forwards;transform-box:fill-box}
+@media (prefers-reduced-motion:reduce){.pulse{animation:none}.conf{animation:none;opacity:0}footer{transition:none}}
+</style>
+
+<div id="app">
+  <header>
+    <div class="tag">닮음의 이해 1</div><span class="by">by 이송원</span>
+    <div id="hint"></div>
+    <button id="reset" type="button">↺ 다시</button>
+  </header>
+  <main><svg id="sv" viewBox="0 0 1600 720" preserveAspectRatio="xMidYMid meet"></svg></main>
+  <footer id="foot">
+    <div class="def"><span class="term">닮음</span> : 한 도형을 <span class="key">일정한 비율</span>로 확대하거나 축소한 것이 다른 도형과 합동이 될 때, 두 도형은 서로 닮음인 관계에 있다고 한다.</div>
+  </footer>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const U=64, B=[840,660];
+const P0=[[0,0],[5,0],[4,-3],[1,-4]].map(p=>[p[0]*U,p[1]*U]);
+const BIG=P0.map(p=>[B[0]+p[0]*2,B[1]+p[1]*2]);
+const START=[150,660], SNAP=80, TARGET=2;
+const st={bl:[...START],s:1,snapped:false,near:false,dragging:false,burst:0};
+const dist=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]);
+const pts=()=>P0.map(p=>[st.bl[0]+p[0]*st.s,st.bl[1]+p[1]*st.s]);
+const ps=a=>a.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+const matched=()=>st.snapped&&Math.abs(st.s-TARGET)<1e-6;
+let wasMatched=false;
+
+function hint(){
+  const m=matched(),h=$('#hint');h.classList.toggle('ok',m);$('#foot').classList.toggle('on',m);
+  h.textContent=m?'딱 맞아요! 합동!':st.snapped?'위로 쭈욱 끌어 보세요':'큰 도형 모서리로 옮겨 보세요';
+  if(m&&!wasMatched)st.burst++;wasMatched=m}
+
+function confetti(){
+  const cols=['#FF6B4A','#FFD93D','#2DBE7E','#4DA3FF','#B26BFF'];let s='';
+  for(let i=0;i<22;i++){const x=BIG[3][0]-120+Math.random()*560,y=BIG[3][1]-40+Math.random()*40,c=cols[i%5],d=(Math.random()*.5).toFixed(2);
+    s+=i%2?`<rect class="conf" x="${x}" y="${y}" width="16" height="16" rx="3" fill="${c}" style="animation-delay:${d}s"/>`:`<circle class="conf" cx="${x}" cy="${y}" r="9" fill="${c}" style="animation-delay:${d}s"/>`}
+  return s}
+
+function draw(){
+  const ok=matched(),P=pts(),on=st.dragging||st.snapped;
+  const sFill=ok?'rgba(45,190,126,.32)':on?'rgba(255,107,74,.3)':'#FFD6CC',sStroke=ok?'#18945D':'#E4472A';
+  let s='';
+  s+=`<polygon points="${ps(BIG)}" fill="${ok?'#CFF3E1':'#BFE3FF'}" stroke="#1F2A44" stroke-width="9" stroke-linejoin="round"/>`;
+  if(st.dragging&&st.near&&!st.snapped)s+=`<circle class="pulse" cx="${B[0]}" cy="${B[1]}" r="36" fill="none" stroke="#FF6B4A" stroke-width="8"/>`;
+  s+=`<polygon points="${ps(P)}" fill="${sFill}" stroke="${sStroke}" stroke-width="9" stroke-linejoin="round" pointer-events="none"/>`;
+  s+=`<polygon data-sm="1" points="${ps(P)}" fill="transparent" stroke="transparent" stroke-width="70" stroke-linejoin="round" style="cursor:${st.snapped?'ns-resize':'grab'}"/>`;
+  if(st.snapped)s+=`<circle cx="${B[0]}" cy="${B[1]}" r="12" fill="#1F2A44" pointer-events="none"/>`;
+  if(st.snapped&&!st.dragging&&!ok){const t=P[3];
+    s+=`<g class="pulse" pointer-events="none"><circle cx="${t[0]}" cy="${t[1]}" r="24" fill="#FFD93D" stroke="#1F2A44" stroke-width="6"/><path d="M${t[0]} ${t[1]-36}v-70m-24 24l24-24l24 24" fill="none" stroke="#1F2A44" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/></g>`}
+  if(ok&&st.burst){s+=confetti();st.burst=0}
+  $('#sv').innerHTML=s;hint()}
+
+const sv=$('#sv'),ptrs=new Map();let drag=null,pinch=null;
+function svgPt(e){const pt=sv.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const m=pt.matrixTransform(sv.getScreenCTM().inverse());return[m.x,m.y]}
+const clampS=v=>Math.max(.3,Math.min(3.2,v));
+function tween(ms,fn,done){const t0=performance.now();(function f(t){const u=Math.min(1,(t-t0)/ms),e=1-Math.pow(1-u,3);fn(e);if(u<1)requestAnimationFrame(f);else done&&done()})(t0)}
+sv.addEventListener('pointerdown',e=>{
+  const p=svgPt(e);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(!e.target.closest('[data-sm]')&&ptrs.size<2){ptrs.delete(e.pointerId);return}
+  sv.setPointerCapture(e.pointerId);
+  if(ptrs.size===2&&st.snapped){const[a,b]=[...ptrs.values()];pinch={d0:Math.hypot(a.x-b.x,a.y-b.y)||1,s0:st.s};drag=null;return}
+  st.dragging=true;
+  drag=st.snapped?{mode:'scale',g0:p,s0:st.s}:{mode:'move',off:[p[0]-st.bl[0],p[1]-st.bl[1]]};draw()});
+sv.addEventListener('pointermove',e=>{
+  if(!ptrs.has(e.pointerId))return;const r=ptrs.get(e.pointerId);r.x=e.clientX;r.y=e.clientY;
+  if(pinch&&ptrs.size>=2){const[a,b]=[...ptrs.values()];let v=pinch.s0*Math.hypot(a.x-b.x,a.y-b.y)/pinch.d0;if(Math.abs(v-TARGET)<.06)v=TARGET;st.s=clampS(v);draw();return}
+  if(!drag)return;const p=svgPt(e);
+  if(drag.mode==='move'){st.bl=[p[0]-drag.off[0],p[1]-drag.off[1]];st.near=dist(st.bl,B)<SNAP}
+  else{const v=[drag.g0[0]-B[0],drag.g0[1]-B[1]],raw=drag.s0*(((p[0]-B[0])*v[0]+(p[1]-B[1])*v[1])/(v[0]*v[0]+v[1]*v[1]));st.s=clampS(Math.abs(raw-TARGET)<.06?TARGET:raw)}
+  draw()});
+function release(e){
+  ptrs.delete(e.pointerId);if(ptrs.size<2)pinch=null;if(ptrs.size>0)return;
+  const d=drag;drag=null;st.dragging=false;
+  if(d&&d.mode==='move'&&dist(st.bl,B)<SNAP){const from=[...st.bl];st.near=false;tween(280,k=>{st.bl=[from[0]+(B[0]-from[0])*k,from[1]+(B[1]-from[1])*k];draw()},()=>{st.snapped=true;draw()});return}
+  st.near=false;draw()}
+sv.addEventListener('pointerup',release);sv.addEventListener('pointercancel',release);
+sv.addEventListener('wheel',e=>{if(!st.snapped)return;e.preventDefault();let v=st.s*(e.deltaY<0?1.04:.96);if(Math.abs(v-TARGET)<.04)v=TARGET;st.s=clampS(v);draw()},{passive:false});
+$('#reset').onclick=()=>{st.bl=[...START];st.s=1;st.snapped=false;st.near=false;st.dragging=false;wasMatched=false;draw()};
+draw();
+</script>

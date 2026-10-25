@@ -1,0 +1,191 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>닮음비와 넓이비</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+:root{
+  --paper:#F4FAFF; --grid:#D3E8F7; --ink:#1F2A44; --sun:#FFD93D; --blue:#1D4ED8;
+  --mint:#2DBE7E; --red:#E5383B; --note:#FFF2A8; --coral:#FF6B4A;
+  --display:'Jua','Gowun Dodum',sans-serif; --body:'Gowun Dodum','Jua',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background-color:var(--paper);background-image:linear-gradient(var(--grid) 2px,transparent 2px),linear-gradient(90deg,var(--grid) 2px,transparent 2px);background-size:56px 56px;color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#app{height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:clamp(10px,1.7vw,24px);padding:clamp(8px,1.2vw,16px) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
+.by{font-family:'Jua',sans-serif;font-size:clamp(11px,1.25vw,20px);opacity:.5;white-space:nowrap;flex:none;letter-spacing:-.01em}
+.tag{font-family:var(--display);font-size:clamp(17px,2.2vw,32px);background:var(--sun);border:3px solid var(--ink);border-radius:14px;padding:2px clamp(11px,1.5vw,20px);white-space:nowrap;transform:rotate(-3deg);box-shadow:4px 4px 0 var(--ink)}
+#tabs{display:flex;gap:clamp(4px,.6vw,9px);flex:none}
+#tabs button{font-family:var(--display);font-size:clamp(16px,2vw,30px);width:2em;height:2em;line-height:1;border:3px solid var(--ink);background:#fff;color:var(--ink);border-radius:999px;cursor:pointer;padding:0}
+#tabs button.on{background:var(--sun)}
+#tabs button.o{background:var(--mint);color:#fff}
+#hint{flex:1;min-width:0;font-family:var(--display);font-size:clamp(20px,2.7vw,44px);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hint.ok{color:var(--mint)} #hint b{color:var(--coral);font-weight:400}
+.pill{border:3px solid var(--ink);background:#fff;border-radius:999px;font:400 clamp(15px,1.9vw,26px) var(--display);color:var(--ink);padding:clamp(3px,.5vw,7px) clamp(13px,1.7vw,24px);cursor:pointer;box-shadow:3px 3px 0 var(--ink);flex:none}
+.pill:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+main{flex:1;min-height:0}
+svg{width:100%;height:100%;display:block}
+footer{display:flex;align-items:center;justify-content:center;gap:clamp(8px,1.4vw,24px);flex-wrap:wrap;padding:clamp(4px,.7vw,10px) max(14px,env(safe-area-inset-right)) max(clamp(8px,1.2vw,18px),env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+.btn{font-family:var(--display);font-size:clamp(20px,2.7vw,42px);background:#fff;border:3px solid var(--ink);border-radius:18px;padding:clamp(3px,.6vw,9px) clamp(14px,2vw,32px);cursor:pointer;box-shadow:5px 5px 0 var(--ink);color:var(--ink);line-height:1.15}
+.btn:active{transform:translate(3px,3px);box-shadow:2px 2px 0 var(--ink)}
+.btn.on{background:var(--sun)}
+.btn.ok{background:var(--mint);color:#fff}
+.btn.no{background:var(--red);color:#fff}
+.def{background:var(--note);border:3px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--ink);padding:clamp(5px,.9vw,13px) clamp(14px,2vw,28px);font-family:var(--display);font-size:clamp(19px,2.4vw,38px);transform:rotate(-1deg);line-height:1.3}
+.def b{color:var(--blue);font-weight:400}
+.def i{color:var(--coral);font-style:normal}
+@keyframes pop{0%{opacity:0;transform:scale(.6)}70%{transform:scale(1.06)}100%{opacity:1;transform:scale(1)}}
+.tile{opacity:0;animation:pop .45s ease forwards;transform-box:fill-box;transform-origin:center}
+@keyframes fall{0%{transform:translateY(-30px) rotate(0);opacity:1}100%{transform:translateY(360px) rotate(520deg);opacity:0}}
+.conf{animation:fall 1.5s ease-in forwards;transform-box:fill-box}
+@media (prefers-reduced-motion:reduce){.tile{animation:none;opacity:1}.conf{animation:none;opacity:0}}
+</style>
+
+<div id="app">
+  <header>
+    <div class="tag">넓이비</div><span class="by">by 이송원</span>
+    <div id="tabs"></div>
+    <div id="hint"></div>
+    <button class="pill" id="reset" type="button">↺ 다시</button>
+  </header>
+  <main><svg id="sv" viewBox="0 0 1600 520" preserveAspectRatio="xMidYMid meet"></svg></main>
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const INK='#1F2A44',BLUE='#1D4ED8',COR='#FF6B4A',MINT='#2DBE7E',RED='#E5383B';
+const S=62;
+const st={t:0,on:[],burst:0};
+for(let i=0;i<7;i++)st.on.push(new Set());
+const has=k=>st.on[st.t].has(k);
+function tx(x,y,t,col,fs,w){return `<text x="${x}" y="${y}" text-anchor="middle" font-family="Jua,sans-serif" font-size="${fs}" fill="${col}" stroke="#F4FAFF" stroke-width="${w===0?0:(w||7)}" paint-order="stroke">${t}</text>`}
+function dim(A,B,t,nx,ny,col){
+  const o=28,a=[A[0]+nx*o,A[1]+ny*o],b=[B[0]+nx*o,B[1]+ny*o],m=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+  let s=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${col}" stroke-width="4" stroke-dasharray="11 8"/>`;
+  for(const p of[a,b])s+=`<line x1="${p[0]-nx*9}" y1="${p[1]-ny*9}" x2="${p[0]+nx*9}" y2="${p[1]+ny*9}" stroke="${col}" stroke-width="5" stroke-linecap="round"/>`;
+  return s+tx(m[0]+nx*28,m[1]+ny*28+15,t,col,46)}
+/* 직사각형 : 왼쪽아래 기준 */
+function rect(x,y,w,h,o){o=o||{};
+  const W=w*S,H=h*S;let s='';
+  s+=`<rect x="${x}" y="${y-H}" width="${W}" height="${H}" fill="${o.fill||'rgba(77,163,255,.14)'}" stroke="${o.col||INK}" stroke-width="9"/>`;
+  if(o.grid){for(let i=1;i<w;i++)s+=`<line x1="${x+i*S}" y1="${y-H}" x2="${x+i*S}" y2="${y}" stroke="${BLUE}" stroke-width="2" opacity=".45"/>`;
+    for(let j=1;j<h;j++)s+=`<line x1="${x}" y1="${y-j*S}" x2="${x+W}" y2="${y-j*S}" stroke="${BLUE}" stroke-width="2" opacity=".45"/>`}
+  if(o.dim){s+=dim([x,y],[x+W,y],o.dw||String(w),0,1,BLUE)+(o.right?dim([x+W,y],[x+W,y-H],o.dh||String(h),1,0,BLUE):dim([x,y],[x,y-H],o.dh||String(h),-1,0,BLUE))}
+  if(o.mid)s+=tx(x+W/2,y-H/2+16,o.mid,o.midcol||COR,o.midfs||58);
+  if(o.nm)s+=tx(x+W/2,y+(o.dim?112:78),o.nm,INK,44);
+  return s}
+function confetti(y0){const cols=['#FF6B4A','#FFD93D','#2DBE7E','#4DA3FF','#B26BFF'];let s='';
+  for(let i=0;i<18;i++){const x=620+Math.random()*380,y=(y0||20)+Math.random()*24,c=cols[i%5],d=(Math.random()*.5).toFixed(2);
+    s+=i%2?`<rect class="conf" x="${x}" y="${y}" width="16" height="16" rx="3" fill="${c}" style="animation-delay:${d}s"/>`:`<circle class="conf" cx="${x}" cy="${y}" r="9" fill="${c}" style="animation-delay:${d}s"/>`}return s}
+
+/* ================= 1. 닮음비 ================= */
+function t1(){const ok=has('go');
+  let s=rect(300,330,3,2,{dim:1,nm:'직사각형 A'})+rect(960,330,6,4,{dim:1,nm:'직사각형 B'});
+  if(ok)s+=tx(800,500,'가로 3 : 6 = 1 : 2      세로 2 : 4 = 1 : 2',BLUE,52);
+  return s}
+/* ================= 2. 넓이 ================= */
+function t2(){const a=has('ar'),r=has('rt');
+  let s=rect(300,330,3,2,{dim:1,grid:a,nm:'직사각형 A',mid:a?'6':'',midcol:COR})
+       +rect(960,330,6,4,{dim:1,grid:a,nm:'직사각형 B',mid:a?'24':'',midcol:COR});
+  if(a)s+=tx(393,330-2*S-26,'3 × 2 = 6',COR,48)+tx(1146,330-4*S-26,'6 × 4 = 24',COR,48);
+  if(r)s+=tx(800,500,'넓이  6 : 24 = 1 : 4',COR,58);
+  return s}
+/* ================= 3. 원리 ================= */
+function t3(){const ar=has('ar'),rd=has('rd');
+  let s=tx(800,60,'닮은 두 직사각형 — 닮음비  a : b',INK,46);
+  s+=rect(300,300,3,2,{dim:1,dw:'am',dh:'an',mid:'A',midcol:INK,midfs:54})
+    +rect(940,300,4.5,3,{dim:1,dw:'bm',dh:'bn',mid:'B',midcol:INK,midfs:54,right:1});
+  if(ar){s+=tx(393,408,'넓이 = am × an = a²mn',COR,48)
+          +tx(1080,408,'넓이 = bm × bn = b²mn',COR,48)}
+  if(rd)s+=`<text id="fin" x="800" y="482" text-anchor="middle" font-family="Jua,sans-serif" font-size="68" fill="${INK}" stroke="#F4FAFF" stroke-width="7" paint-order="stroke">a²mn : b²mn = a² : b²</text>`;
+  return s}
+function strike(){const el=document.getElementById('fin');if(!el)return;
+  const t=el.textContent;let out='';
+  [2,9].forEach(i=>{try{const a=el.getStartPositionOfChar(i),b=el.getEndPositionOfChar(i+1);
+    out+=`<line x1="${a.x-3}" y1="${a.y-16}" x2="${b.x+3}" y2="${b.y-16}" stroke="${RED}" stroke-width="7" stroke-linecap="round"/>`}catch(e){}});
+  el.insertAdjacentHTML('afterend',out)}
+/* ================= 퀴즈 ================= */
+function blob(cx,cy,R,sd){const n=9,P=[];
+  for(let i=0;i<n;i++){const a=i/n*2*Math.PI,r=R*(.74+.38*Math.abs(Math.sin(i*1.9+sd)));P.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r])}
+  let d=`M${P[0][0].toFixed(1)} ${P[0][1].toFixed(1)}`;
+  for(let i=0;i<n;i++){const p0=P[(i-1+n)%n],p1=P[i],p2=P[(i+1)%n],p3=P[(i+2)%n];
+    d+=`C${(p1[0]+(p2[0]-p0[0])/6).toFixed(1)} ${(p1[1]+(p2[1]-p0[1])/6).toFixed(1)},${(p2[0]-(p3[0]-p1[0])/6).toFixed(1)} ${(p2[1]-(p3[1]-p1[1])/6).toFixed(1)},${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`}
+  return d+'Z'}
+const QZ=[
+ {tab:'4',q:'반지름 1, 3인 두 원 — 넓이비는?',opt:['1 : 3','1 : 6','1 : 9'],a:2,
+  note:'<b>1² : 3² = 1 : 9</b>',
+  draw:()=>{let s='';
+   [[400,250,1,'1'],[1120,250,3,'3']].forEach(([cx,cy,r,t])=>{const R=r*70;
+     s+=`<circle cx="${cx}" cy="${cy}" r="${R}" fill="rgba(77,163,255,.16)" stroke="${INK}" stroke-width="9"/>`
+      +`<line x1="${cx}" y1="${cy}" x2="${cx+R}" y2="${cy}" stroke="${BLUE}" stroke-width="4" stroke-dasharray="10 7"/>`
+      +`<circle cx="${cx}" cy="${cy}" r="7" fill="${INK}"/>`+tx(cx+R/2,cy-20,t,BLUE,46)});
+   return s+tx(760,478,'반지름의 비  1 : 3',BLUE,52)}},
+ {tab:'5',q:'닮음비 2 : 3 인 두 삼각형 — 넓이비는?',opt:['2 : 3','4 : 6','4 : 9'],a:2,
+  note:'밑변도 2:3, 높이도 2:3 → 넓이는 <b>2² : 3² = 4 : 9</b>',
+  draw:()=>{let s='';
+   [[400,330,1,'4'],[1100,330,1.5,'6']].forEach(([x,y,k,t])=>{
+     const P=[[0,0],[4,0],[1.2,2.6]].map(p=>[x+p[0]*k*62,y-p[1]*k*62]);
+     s+=`<polygon points="${P.map(p=>p[0]+','+p[1]).join(' ')}" fill="rgba(77,163,255,.16)" stroke="${INK}" stroke-width="9" stroke-linejoin="round"/>`
+      +dim(P[0],P[1],t,0,1,BLUE)});
+   return s+tx(760,478,'닮음비  2 : 3',BLUE,52)}},
+ {tab:'6',q:'닮음비 3 : 4 인 두 도형 — 넓이비는?',opt:['3 : 4','6 : 8','9 : 16'],a:2,
+  note:'넓이 공식을 몰라도 돼요 — 닮음비의 제곱 <b>3² : 4² = 9 : 16</b>',
+  draw:()=>{let s='';
+   [[400,250,1.5,'3'],[1120,250,2,'4']].forEach(([cx,cy,r,t])=>{const R=r*78;
+     s+=`<path d="${blob(cx,cy,R,1.1)}" fill="rgba(77,163,255,.16)" stroke="${INK}" stroke-width="9" stroke-linejoin="round"/>`
+      +`<line x1="${cx-R*.62}" y1="${cy+R*.2}" x2="${cx+R*.62}" y2="${cy+R*.2}" stroke="${COR}" stroke-width="6" stroke-dasharray="12 8"/>`
+      +tx(cx,cy+R*.2-22,t,COR,48)});
+   return s+tx(760,478,'대응하는 선분의 비  3 : 4',COR,52)}}
+];
+
+function draw(){
+  let s='',foot='',h='',cls='';
+  if(st.t<3){
+    if(st.t===0){s=t1();const ok=has('go');h=ok?'닮음비 <b>1 : 2</b>':'두 직사각형의 닮음비는?';cls=ok?'ok':'';
+      foot=`<button class="btn ${ok?'on':''}" data-b="go" type="button">확인</button>`;}
+    else if(st.t===1){s=t2();const a=has('ar'),r=has('rt');
+      h=r?'넓이비 <b>1 : 4</b>':a?'넓이의 비는?':'각각의 넓이는 얼마일까?';cls=r?'ok':'';
+      foot=`<button class="btn ${a?'on':''}" data-b="ar" type="button">넓이 구하기</button>`
+        +`<button class="btn ${r?'on':''}" data-b="rt" type="button">넓이의 비</button>`
+        +(r?`<div class="def">닮음비 <b>1 : 2</b> &nbsp;→&nbsp; 넓이비 <i>1² : 2²</i> = 1 : 4</div>`:'');}
+    else{s=t3();const ar=has('ar'),rd=has('rd');
+      h=rd?'넓이비 <b>a² : b²</b>':ar?'두 넓이의 비를 약분하면?':'닮음비가 a : b 이면 넓이비는?';cls=rd?'ok':'';
+      foot=`<button class="btn ${ar?'on':''}" data-b="ar" type="button">넓이 구하기</button>`
+        +`<button class="btn ${rd?'on':''}" data-b="rd" type="button">약분하기</button>`
+        +(rd?`<div class="def">mn 이 약분돼요 &nbsp;→&nbsp; 닮음비 <b>a : b</b> 이면 넓이비는 <i>a² : b²</i></div>`:'');}
+  }else if(st.t===6){
+    const ok=has('ans');
+    s=tx(800,190,'닮음비가  a : b  일 때',INK,86)+(ok?tx(800,380,'넓이비  a² : b²',MINT,120):tx(800,380,'넓이비는?',INK,86));
+    h=ok?'넓이비 <b>a² : b²</b>':'마지막 정리';cls=ok?'ok':'';
+    foot=`<button class="btn ${ok?'ok':''}" data-b="ans" type="button">정답</button>`;
+  }else{
+    const Q=QZ[st.t-3],p=st.on[st.t].has('p')?[...st.on[st.t]].find(x=>x!=='p'):null;
+    const pick=[...st.on[st.t]].filter(x=>x.startsWith('o')).map(x=>+x.slice(1));
+    const done=pick.includes(Q.a);
+    s=Q.draw();h=done?'맞아요!':Q.q;cls=done?'ok':'';
+    foot=Q.opt.map((o,i)=>`<button class="btn ${pick.includes(i)?(i===Q.a?'ok':'no'):''}" data-b="o${i}" type="button">${o}</button>`).join('')
+      +(done?`<div class="def">${Q.note}</div>`:'');}
+  if(st.burst){s+=confetti();st.burst=0}
+  $('#sv').innerHTML=s;
+  if(st.t===2&&has('rd'))strike();
+  const H=$('#hint');H.className=cls;H.innerHTML=h;
+  $('#tabs').innerHTML=[0,1,2,3,4,5,6].map(i=>{const lab=String(i+1);
+    const solved=i>=3&&i<6&&st.on[i].has('o'+QZ[i-3].a);
+    return `<button data-t="${i}" class="${i===st.t?'on':solved?'o':''}" type="button">${lab}</button>`}).join('');
+  $('#foot').innerHTML=foot}
+
+$('#foot').addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(!b)return;
+  const id=b.dataset.b,Z=st.on[st.t];
+  if(id==='k2'||id==='k3'){const other=id==='k2'?'k3':'k2';Z.delete(other);Z.has(id)?Z.delete(id):Z.add(id)}
+  else if(Z.has(id))Z.delete(id);else{Z.add(id);
+    if(id==='go'||id==='rt'||id==='ans'||(st.t===2&&id==='rd')||(st.t>=3&&st.t<6&&id==='o'+QZ[st.t-3].a))st.burst=1}
+  draw()});
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b){st.t=+b.dataset.t;draw()}});
+$('#reset').onclick=()=>{st.on[st.t]=new Set();draw()};
+draw();
+</script>

@@ -1,0 +1,154 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>닮음비</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+:root{
+  --paper:#F4FAFF; --grid:#D3E8F7; --ink:#1F2A44; --sun:#FFD93D; --blue:#1D4ED8;
+  --mint:#2DBE7E; --note:#FFF2A8;
+  --display:'Jua','Gowun Dodum',sans-serif; --body:'Gowun Dodum','Jua',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background-color:var(--paper);background-image:linear-gradient(var(--grid) 2px,transparent 2px),linear-gradient(90deg,var(--grid) 2px,transparent 2px);background-size:56px 56px;color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#app{height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:clamp(10px,1.7vw,24px);padding:clamp(8px,1.2vw,16px) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
+.by{font-family:'Jua',sans-serif;font-size:clamp(11px,1.25vw,20px);opacity:.5;white-space:nowrap;flex:none;letter-spacing:-.01em}
+.tag{font-family:var(--display);font-size:clamp(19px,2.4vw,36px);background:var(--sun);border:3px solid var(--ink);border-radius:14px;padding:2px clamp(12px,1.6vw,22px);white-space:nowrap;transform:rotate(-3deg);box-shadow:4px 4px 0 var(--ink)}
+#tabs{display:flex;gap:clamp(5px,.7vw,10px);flex:none}
+#tabs button{font-family:var(--display);font-size:clamp(17px,2.1vw,32px);width:2em;height:2em;line-height:1;border:3px solid var(--ink);background:#fff;color:var(--ink);border-radius:999px;cursor:pointer;padding:0}
+#tabs button.on{background:var(--sun)}
+#hint{flex:1;min-width:0;font-family:var(--display);font-size:clamp(21px,2.9vw,44px);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hint.ok{color:var(--mint)}
+.pill{border:3px solid var(--ink);background:#fff;border-radius:999px;font:400 clamp(15px,1.9vw,26px) var(--display);color:var(--ink);padding:clamp(3px,.5vw,7px) clamp(13px,1.7vw,24px);cursor:pointer;box-shadow:3px 3px 0 var(--ink);flex:none}
+.pill:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+main{flex:1;min-height:0}
+svg{width:100%;height:100%;display:block}
+footer{display:flex;align-items:center;justify-content:center;gap:clamp(7px,1.2vw,20px);flex-wrap:wrap;padding:clamp(4px,.7vw,10px) max(14px,env(safe-area-inset-right)) max(clamp(8px,1.2vw,18px),env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+.btn{font-family:var(--display);font-size:clamp(19px,2.5vw,38px);background:#fff;border:3px solid var(--ink);border-radius:18px;padding:clamp(3px,.6vw,9px) clamp(13px,1.9vw,30px);cursor:pointer;box-shadow:5px 5px 0 var(--ink);color:var(--ink);display:flex;align-items:center;gap:.35em;line-height:1.15}
+.btn:active{transform:translate(3px,3px);box-shadow:2px 2px 0 var(--ink)}
+.btn i{width:.5em;height:.5em;border-radius:4px;flex:none}
+.btn .r{font-size:1.05em}
+.btn.solid{color:#fff;min-width:3.4em;justify-content:center}
+.btn.ans.on{background:var(--mint);color:#fff}
+.def{background:var(--note);border:3px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--ink);padding:clamp(6px,1vw,14px) clamp(14px,2vw,30px);font-family:var(--display);font-size:clamp(19px,2.5vw,38px);transform:rotate(-1deg);line-height:1.35}
+.def b{color:var(--blue);font-weight:400;text-decoration:underline;text-decoration-thickness:.1em;text-underline-offset:.15em}
+@keyframes fall{0%{transform:translateY(-30px) rotate(0);opacity:1}100%{transform:translateY(380px) rotate(520deg);opacity:0}}
+.conf{animation:fall 1.5s ease-in forwards;transform-box:fill-box}
+@media (prefers-reduced-motion:reduce){.conf{animation:none;opacity:0}}
+</style>
+
+<div id="app">
+  <header>
+    <div class="tag">닮음비</div><span class="by">by 이송원</span>
+    <div id="tabs"></div>
+    <div id="hint"></div>
+    <button class="pill" id="reset" type="button">↺ 다시</button>
+  </header>
+  <main><svg id="sv" viewBox="0 0 1600 600" preserveAspectRatio="xMidYMid meet"></svg></main>
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const INK='#1F2A44', PC=['#E5383B','#1D4ED8','#F59E0B','#9333EA'], U=30;
+const TRAP={pts:[[0,0],[16,0],[8,6],[0,6]],nm:['A','B','C','D']};
+const T2={pts:[[0,0],[6,0],[0,8]],nm:['A','B','C']};
+const T3={pts:[[0,0],[12,0],[0,5]],nm:['A','B','C']};
+const mk=(sh,o)=>Object.assign({pts:sh.pts,nm:sh.nm,k:1,rot:0,flip:false,sides:{}},o);
+
+const PROB=[
+ {tab:'?',hint:'짝이 되는 변 — 대응변',
+  figs:[mk(TRAP,{at:[360,300]}),mk(TRAP,{k:1.5,at:[1050,300],pr:'′'})],
+  pairs:[{s:[0,0]},{s:[1,1]},{s:[2,2]},{s:[3,3]}],color:true,
+  btns:[{t:'닮음비',kind:'def'}],
+  def:'닮음비 : 닮은 두 도형에서 <b>대응변의 길이의 비</b>'},
+
+ {tab:'1',hint:'닮음비는 얼마일까?',ans:'2 : 3',
+  figs:[mk(TRAP,{at:[360,300],sides:{0:'16',1:'10',2:'8',3:'6'}}),
+        mk(TRAP,{k:1.5,at:[1050,300],pr:'′',sides:{0:'24',1:'15',2:'12',3:'9'}})],
+  pairs:[{s:[0,0]},{s:[1,1]},{s:[2,2]},{s:[3,3]}],
+  btns:[{t:'16 : 24',kind:'pair',p:0,r:'2 : 3',solid:1},{t:'10 : 15',kind:'pair',p:1,r:'2 : 3',solid:1},
+        {t:'8 : 12',kind:'pair',p:2,r:'2 : 3',solid:1},{t:'6 : 9',kind:'pair',p:3,r:'2 : 3',solid:1},
+        {t:'닮음비',kind:'ans'}]},
+
+ {tab:'2',hint:'어느 변과 어느 변이 짝일까?',ans:'2 : 3',angles:true,
+  figs:[mk(T2,{at:[400,300],sides:{0:'6'}}),
+        mk(T2,{k:1.5,rot:140,at:[1130,300],nm:['D','E','F'],sides:{0:'9',2:'12'}})],
+  pairs:[{s:[0,0]}],
+  btns:[{t:'대응각',kind:'angs'},{t:'대응변',kind:'pair',p:0,r:'2 : 3',face:'6 : 9'},{t:'닮음비',kind:'ans'}]},
+
+ {tab:'3',hint:'뒤집혀 있어요. 짝을 찾아볼까?',ans:'1 : 2',angles:true,
+  figs:[mk(T3,{at:[380,320],sides:{0:'12'}}),
+        mk(T3,{k:2,flip:true,rot:200,at:[1050,310],nm:['D','E','F'],sides:{0:'24',1:'26'}})],
+  pairs:[{s:[0,0]}],
+  btns:[{t:'대응각',kind:'angs'},{t:'대응변',kind:'pair',p:0,r:'1 : 2',face:'12 : 24'},{t:'닮음비',kind:'ans'}]}
+];
+PROB.forEach(p=>p.pairs.forEach((q,i)=>q.c=PC[i]));
+
+const st={t:0,on:PROB.map(()=>new Set()),burst:0};
+const has=id=>st.on[st.t].has(id);
+const ang=(a,b,c)=>{const u=[a[0]-b[0],a[1]-b[1]],v=[c[0]-b[0],c[1]-b[1]];
+  return Math.acos(Math.max(-1,Math.min(1,(u[0]*v[0]+u[1]*v[1])/(Math.hypot(...u)*Math.hypot(...v)))))*180/Math.PI};
+function place(f){const r=(f.rot||0)*Math.PI/180,co=Math.cos(r),si=Math.sin(r),fx=f.flip?-1:1;
+  const Z=f.pts.map(p=>{const x=p[0]*fx,y=p[1];return[(x*co-y*si)*f.k*U,-(x*si+y*co)*f.k*U]});
+  const cx=Z.reduce((a,p)=>a+p[0],0)/Z.length,cy=Z.reduce((a,p)=>a+p[1],0)/Z.length;
+  return Z.map(p=>[f.at[0]+p[0]-cx,f.at[1]+p[1]-cy])}
+function tx(x,y,t,col,fs){return `<text x="${x}" y="${y}" text-anchor="middle" font-family="Jua,sans-serif" font-size="${fs}" fill="${col}" stroke="#F4FAFF" stroke-width="7" paint-order="stroke">${t}</text>`}
+
+function drawFig(f,fi,P,sc,vc,showAng){
+  const n=P.length,c=[P.reduce((a,p)=>a+p[0],0)/n,P.reduce((a,p)=>a+p[1],0)/n];let s='';
+  s+=`<polygon points="${P.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ')}" fill="rgba(77,163,255,.12)" stroke="none"/>`;
+  for(let i=0;i<n;i++){const a=P[i],b=P[(i+1)%n],col=sc[i];
+    s+=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${col||INK}" stroke-width="${col?15:9}" stroke-linecap="round"/>`}
+  if(showAng)for(let i=0;i<n;i++){const a=P[i],u=P[(i+n-1)%n],v=P[(i+1)%n];
+    const a1=Math.atan2(u[1]-a[1],u[0]-a[0]),a2=Math.atan2(v[1]-a[1],v[0]-a[0]);
+    let d=a2-a1;while(d<=-Math.PI)d+=2*Math.PI;while(d>Math.PI)d-=2*Math.PI;
+    const r=34,col=vc[i]||INK,deg=Math.round(ang(u,a,v)),w=vc[i]?7:5;
+    if(deg===90){const q=26,p1=[a[0]+q*Math.cos(a1),a[1]+q*Math.sin(a1)],p2=[a[0]+q*Math.cos(a2),a[1]+q*Math.sin(a2)];
+      s+=`<path d="M${p1[0]} ${p1[1]}L${p1[0]+p2[0]-a[0]} ${p1[1]+p2[1]-a[1]}L${p2[0]} ${p2[1]}" fill="none" stroke="${col}" stroke-width="${w}" stroke-linejoin="round"/>`}
+    else{s+=`<path d="M${a[0]+r*Math.cos(a1)} ${a[1]+r*Math.sin(a1)}A${r} ${r} 0 0 ${d>0?1:0} ${a[0]+r*Math.cos(a2)} ${a[1]+r*Math.sin(a2)}" fill="none" stroke="${col}" stroke-width="${w}"/>`;
+      const m=a1+d/2;s+=tx(a[0]+62*Math.cos(m),a[1]+62*Math.sin(m)+11,deg+'°',col,30)}}
+  for(const k in f.sides){const i=+k,a=P[i],b=P[(i+1)%n],m=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+    const dx=m[0]-c[0],dy=m[1]-c[1],l=Math.hypot(dx,dy)||1;
+    s+=tx(m[0]+dx/l*36,m[1]+dy/l*36+13,f.sides[k],sc[i]||INK,40)}
+  for(let i=0;i<n;i++){const p=P[i],dx=p[0]-c[0],dy=p[1]-c[1],l=Math.hypot(dx,dy)||1,col=vc[i];
+    s+=`<circle cx="${p[0]}" cy="${p[1]}" r="${col?11:7}" fill="${col||INK}"/>`;
+    s+=tx(p[0]+dx/l*(showAng?44:40),p[1]+dy/l*(showAng?44:40)+14,f.nm[i]+(f.pr||''),col||INK,38)}
+  return s}
+
+function confetti(){const cols=['#FF6B4A','#FFD93D','#2DBE7E','#4DA3FF','#B26BFF'];let s='';
+  for(let i=0;i<20;i++){const x=600+Math.random()*420,y=30+Math.random()*30,c=cols[i%5],d=(Math.random()*.5).toFixed(2);
+    s+=i%2?`<rect class="conf" x="${x}" y="${y}" width="16" height="16" rx="3" fill="${c}" style="animation-delay:${d}s"/>`:`<circle class="conf" cx="${x}" cy="${y}" r="9" fill="${c}" style="animation-delay:${d}s"/>`}return s}
+
+function draw(){
+  const P=PROB[st.t],ansOn=has('ans');
+  const sc=P.figs.map(()=>({})),vc=P.figs.map(()=>({}));
+  P.pairs.forEach((q,i)=>{if(P.color||has('p'+i)||ansOn)q.s.forEach((si,fi)=>sc[fi][si]=q.c)});
+  if(has('angs'))P.figs[0].pts.forEach((_,i)=>{vc[0][i]=PC[i%3];vc[1][i]=PC[i%3]});
+  let s=P.figs.map((f,fi)=>drawFig(f,fi,place(f),sc[fi],vc[fi],!!P.angles)).join('');
+  if(st.burst){s+=confetti();st.burst=0}
+  $('#sv').innerHTML=s;
+  $('#tabs').innerHTML=PROB.map((p,i)=>`<button data-t="${i}" class="${i===st.t?'on':''}" type="button">${p.tab}</button>`).join('');
+  const h=$('#hint');h.className=ansOn?'ok':'';h.innerHTML=ansOn?`닮음비 <b>${P.ans}</b>`:P.hint;
+  $('#foot').innerHTML=P.btns.map((b,i)=>{
+    const id=b.kind==='pair'?'p'+b.p:b.kind,on=has(id);
+    if(b.kind==='def')return `<button class="btn" data-b="${id}" type="button">${b.t}</button>`+(on?`<div class="def">${P.def}</div>`:'');
+    if(b.kind==='pair'){const q=P.pairs[b.p];
+      if(b.solid)return `<button class="btn solid" data-b="${id}" style="background:${q.c}" type="button">${on?`${b.t} = ${b.r}`:'?'}</button>`;
+      return `<button class="btn" data-b="${id}" type="button"><i style="background:${q.c}"></i>${on&&b.face?b.face:b.t}${on?` <span class="r" style="color:${q.c}">= ${b.r}</span>`:''}</button>`}
+    if(b.kind==='angs')return `<button class="btn" data-b="${id}" style="${on?'background:var(--sun)':''}" type="button">${b.t}</button>`;
+    return `<button class="btn ans ${on?'on':''}" data-b="${id}" type="button">${b.t}${on?' '+P.ans:''}</button>`}).join('')}
+
+$('#foot').addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(!b)return;
+  const id=b.dataset.b,S=st.on[st.t];
+  if(S.has(id))S.delete(id);else{S.add(id);if(id==='ans')st.burst=1}
+  draw()});
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b){st.t=+b.dataset.t;draw()}});
+$('#reset').onclick=()=>{st.on[st.t]=new Set();draw()};
+draw();
+</script>

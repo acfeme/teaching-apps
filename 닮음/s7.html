@@ -1,0 +1,199 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>닮음비와 부피비</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+:root{
+  --paper:#F4FAFF; --grid:#D3E8F7; --ink:#1F2A44; --sun:#FFD93D; --blue:#1D4ED8;
+  --mint:#2DBE7E; --red:#E5383B; --note:#FFF2A8; --coral:#FF6B4A;
+  --display:'Jua','Gowun Dodum',sans-serif; --body:'Gowun Dodum','Jua',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background-color:var(--paper);background-image:linear-gradient(var(--grid) 2px,transparent 2px),linear-gradient(90deg,var(--grid) 2px,transparent 2px);background-size:56px 56px;color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#app{height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:clamp(10px,1.7vw,24px);padding:clamp(8px,1.2vw,16px) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
+.by{font-family:'Jua',sans-serif;font-size:clamp(11px,1.25vw,20px);opacity:.5;white-space:nowrap;flex:none;letter-spacing:-.01em}
+.tag{font-family:var(--display);font-size:clamp(17px,2.2vw,32px);background:var(--sun);border:3px solid var(--ink);border-radius:14px;padding:2px clamp(11px,1.5vw,20px);white-space:nowrap;transform:rotate(-3deg);box-shadow:4px 4px 0 var(--ink)}
+#tabs{display:flex;gap:clamp(4px,.6vw,9px);flex:none}
+#tabs button{font-family:var(--display);font-size:clamp(16px,2vw,30px);width:2em;height:2em;line-height:1;border:3px solid var(--ink);background:#fff;color:var(--ink);border-radius:999px;cursor:pointer;padding:0}
+#tabs button.on{background:var(--sun)}
+#tabs button.o{background:var(--mint);color:#fff}
+#hint{flex:1;min-width:0;font-family:var(--display);font-size:clamp(20px,2.7vw,44px);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hint.ok{color:var(--mint)} #hint b{color:var(--coral);font-weight:400}
+.pill{border:3px solid var(--ink);background:#fff;border-radius:999px;font:400 clamp(15px,1.9vw,26px) var(--display);color:var(--ink);padding:clamp(3px,.5vw,7px) clamp(13px,1.7vw,24px);cursor:pointer;box-shadow:3px 3px 0 var(--ink);flex:none}
+.pill:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+main{flex:1;min-height:0}
+svg{width:100%;height:100%;display:block}
+footer{display:flex;align-items:center;justify-content:center;gap:clamp(8px,1.4vw,24px);flex-wrap:wrap;padding:clamp(4px,.7vw,10px) max(14px,env(safe-area-inset-right)) max(clamp(8px,1.2vw,18px),env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+.btn{font-family:var(--display);font-size:clamp(20px,2.7vw,42px);background:#fff;border:3px solid var(--ink);border-radius:18px;padding:clamp(3px,.6vw,9px) clamp(14px,2vw,32px);cursor:pointer;box-shadow:5px 5px 0 var(--ink);color:var(--ink);line-height:1.15}
+.btn:active{transform:translate(3px,3px);box-shadow:2px 2px 0 var(--ink)}
+.btn.on{background:var(--sun)}
+.btn.ok{background:var(--mint);color:#fff}
+.btn.no{background:var(--red);color:#fff}
+.def{background:var(--note);border:3px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--ink);padding:clamp(5px,.9vw,13px) clamp(14px,2vw,28px);font-family:var(--display);font-size:clamp(19px,2.4vw,38px);transform:rotate(-1deg);line-height:1.3}
+.def b{color:var(--blue);font-weight:400}
+.def i{color:var(--coral);font-style:normal}
+@keyframes fall{0%{transform:translateY(-30px) rotate(0);opacity:1}100%{transform:translateY(360px) rotate(520deg);opacity:0}}
+.conf{animation:fall 1.5s ease-in forwards;transform-box:fill-box}
+@media (prefers-reduced-motion:reduce){.conf{animation:none;opacity:0}}
+</style>
+
+<div id="app">
+  <header>
+    <div class="tag">부피비</div><span class="by">by 이송원</span>
+    <div id="tabs"></div>
+    <div id="hint"></div>
+    <button class="pill" id="reset" type="button">↺ 다시</button>
+  </header>
+  <main><svg id="sv" viewBox="0 0 1600 520" preserveAspectRatio="xMidYMid meet"></svg></main>
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const INK='#1F2A44',BLUE='#1D4ED8',COR='#FF6B4A',MINT='#2DBE7E',RED='#E5383B';
+const S=46,DZ=.45,DY=.35;
+const st={t:0,on:[],burst:0};
+for(let i=0;i<7;i++)st.on.push(new Set());
+const has=k=>st.on[st.t].has(k);
+function tx(x,y,t,col,fs,w){return `<text x="${x}" y="${y}" text-anchor="middle" font-family="Jua,sans-serif" font-size="${fs}" fill="${col}" stroke="#F4FAFF" stroke-width="${w===0?0:(w||7)}" paint-order="stroke">${t}</text>`}
+function dim(A,B,t,nx,ny,col,oo){
+  const o=oo||26,a=[A[0]+nx*o,A[1]+ny*o],b=[B[0]+nx*o,B[1]+ny*o],m=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+  let s=`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${col||BLUE}" stroke-width="4" stroke-dasharray="11 8"/>`;
+  for(const p of[a,b])s+=`<line x1="${p[0]-nx*9}" y1="${p[1]-ny*9}" x2="${p[0]+nx*9}" y2="${p[1]+ny*9}" stroke="${col||BLUE}" stroke-width="5" stroke-linecap="round"/>`;
+  return s+tx(m[0]+nx*28,m[1]+ny*28+15,t,col||BLUE,46)}
+/* 직육면체 : (x,y)는 앞면 왼쪽 아래 */
+const BE=[[0,1],[1,2],[2,3],[3,0],[4,5,1],[5,6],[6,7],[7,4,1],[0,4,1],[1,5],[2,6],[3,7]];
+function box(x,y,w,h,d,o){o=o||{};
+  const V=[[0,0,0],[w,0,0],[w,h,0],[0,h,0],[0,0,d],[w,0,d],[w,h,d],[0,h,d]];
+  const P=V.map(p=>[x+(p[0]+DZ*p[2])*S,y-(p[1]+DY*p[2])*S]);
+  let s='';
+  s+=`<polygon points="${[0,1,2,3].map(i=>P[i]).join(' ')}" fill="rgba(77,163,255,.14)" stroke="none"/>`;
+  BE.forEach(([i,j,hid])=>{s+=`<line x1="${P[i][0]}" y1="${P[i][1]}" x2="${P[j][0]}" y2="${P[j][1]}" stroke="${INK}" stroke-width="${hid?5:8}" stroke-linecap="round" ${hid?'stroke-dasharray="12 11" opacity=".5"':''}/>`});
+  if(o.dim){s+=dim(P[0],P[1],o.dw||String(w),0,1,0,56)
+    +dim(P[0],P[3],o.dh||String(h),-1,0)
+    +dim(P[1],P[5],o.dd||String(d),.6,.8)}
+  if(o.mid)s+=tx((P[0][0]+P[2][0])/2,(P[0][1]+P[2][1])/2+18,o.mid,o.midcol||COR,o.midfs||58);
+  return s}
+function confetti(){const cols=['#FF6B4A','#FFD93D','#2DBE7E','#4DA3FF','#B26BFF'];let s='';
+  for(let i=0;i<18;i++){const x=620+Math.random()*380,y=18+Math.random()*24,c=cols[i%5],d=(Math.random()*.5).toFixed(2);
+    s+=i%2?`<rect class="conf" x="${x}" y="${y}" width="16" height="16" rx="3" fill="${c}" style="animation-delay:${d}s"/>`:`<circle class="conf" cx="${x}" cy="${y}" r="9" fill="${c}" style="animation-delay:${d}s"/>`}return s}
+
+/* ====== 1. 닮음비 ====== */
+function t1(){const ok=has('go');
+  let s=box(240,290,3,2,2,{dim:1})+box(900,290,6,4,4,{dim:1});
+  if(ok)s+=tx(800,498,'가로 3 : 6      세로 2 : 4      높이 2 : 4      모두  1 : 2',BLUE,50);
+  return s}
+/* ====== 2. 부피 ====== */
+function t2(){const v=has('vl'),r=has('rt');
+  let s=box(240,290,3,2,2,{dim:1,mid:v?'12':''})+box(900,290,6,4,4,{dim:1,mid:v?'96':''});
+  if(v)s+=tx(350,452,'3 × 2 × 2 = 12',COR,48)+tx(1140,452,'6 × 4 × 4 = 96',COR,48);
+  if(r)s+=tx(800,502,'부피  12 : 96 = 1 : 8',COR,58);
+  return s}
+/* ====== 3. 원리 ====== */
+function t3(){const vl=has('vl'),rd=has('rd');
+  let s=tx(800,44,'닮은 두 직육면체 — 닮음비  a : b ,   가로 : 세로 : 높이 = m : n : p',INK,42);
+  s+=box(250,250,3,2,2,{dim:1,dw:'am',dh:'an',dd:'ap',mid:'A',midcol:INK,midfs:54})
+    +box(930,250,4.5,3,3,{dim:1,dw:'bm',dh:'bn',dd:'bp',mid:'B',midcol:INK,midfs:54});
+  if(vl){s+=tx(350,424,'부피 = am × an × ap = a³mnp',COR,46)
+          +tx(1160,424,'부피 = bm × bn × bp = b³mnp',COR,46)}
+  if(rd)s+=`<text id="fin" x="800" y="502" text-anchor="middle" font-family="Jua,sans-serif" font-size="66" fill="${INK}" stroke="#F4FAFF" stroke-width="7" paint-order="stroke">a³mnp : b³mnp = a³ : b³</text>`;
+  return s}
+function strike(){const el=document.getElementById('fin');if(!el)return;let out='';
+  [[2,4],[10,12]].forEach(([i,j])=>{try{const a=el.getStartPositionOfChar(i),b=el.getEndPositionOfChar(j);
+    out+=`<line x1="${a.x-3}" y1="${a.y-18}" x2="${b.x+3}" y2="${b.y-18}" stroke="${RED}" stroke-width="7" stroke-linecap="round"/>`}catch(e){}});
+  el.insertAdjacentHTML('afterend',out)}
+/* ====== 입체 그림 ====== */
+function sphere(cx,cy,R,t){
+  return `<circle cx="${cx}" cy="${cy}" r="${R}" fill="rgba(77,163,255,.16)" stroke="${INK}" stroke-width="8"/>`
+   +`<path d="M${cx-R} ${cy}A${R} ${R*.3} 0 0 0 ${cx+R} ${cy}" fill="none" stroke="${INK}" stroke-width="6"/>`
+   +`<path d="M${cx-R} ${cy}A${R} ${R*.3} 0 0 1 ${cx+R} ${cy}" fill="none" stroke="${INK}" stroke-width="5" stroke-dasharray="12 10" opacity=".5"/>`
+   +`<line x1="${cx}" y1="${cy}" x2="${cx+R}" y2="${cy}" stroke="${COR}" stroke-width="5" stroke-dasharray="10 7"/>`
+   +`<circle cx="${cx}" cy="${cy}" r="7" fill="${INK}"/>`+tx(cx+R/2,cy-22,t,COR,46)}
+function cyl(cx,cyTop,r,h,t){
+  const rx=r,ry=r*.32,cyB=cyTop+h;
+  return `<path d="M${cx-rx} ${cyB}A${rx} ${ry} 0 0 1 ${cx+rx} ${cyB}" fill="none" stroke="${INK}" stroke-width="5" stroke-dasharray="12 10" opacity=".5"/>`
+   +`<path d="M${cx-rx} ${cyB}A${rx} ${ry} 0 0 0 ${cx+rx} ${cyB}" fill="none" stroke="${INK}" stroke-width="8"/>`
+   +`<line x1="${cx-rx}" y1="${cyTop}" x2="${cx-rx}" y2="${cyB}" stroke="${INK}" stroke-width="8"/>`
+   +`<line x1="${cx+rx}" y1="${cyTop}" x2="${cx+rx}" y2="${cyB}" stroke="${INK}" stroke-width="8"/>`
+   +`<ellipse cx="${cx}" cy="${cyTop}" rx="${rx}" ry="${ry}" fill="rgba(77,163,255,.16)" stroke="${INK}" stroke-width="8"/>`
+   +dim([cx+rx,cyTop],[cx+rx,cyB],t,1,0,COR)}
+function blob(cx,cy,R,sd){const n=9,P=[];
+  for(let i=0;i<n;i++){const a=i/n*2*Math.PI,r=R*(.76+.34*Math.abs(Math.sin(i*1.9+sd)));P.push([cx+Math.cos(a)*r,cy+Math.sin(a)*r*.86])}
+  let d=`M${P[0][0].toFixed(1)} ${P[0][1].toFixed(1)}`;
+  for(let i=0;i<n;i++){const p0=P[(i-1+n)%n],p1=P[i],p2=P[(i+1)%n],p3=P[(i+2)%n];
+    d+=`C${(p1[0]+(p2[0]-p0[0])/6).toFixed(1)} ${(p1[1]+(p2[1]-p0[1])/6).toFixed(1)},${(p2[0]-(p3[0]-p1[0])/6).toFixed(1)} ${(p2[1]-(p3[1]-p1[1])/6).toFixed(1)},${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`}
+  return d+'Z'}
+function potato(cx,cy,R,t,id){const d=blob(cx,cy,R,1.1);
+  let g=`<defs><radialGradient id="pg${id}" cx="34%" cy="24%" r="80%">`
+   +`<stop offset="0" stop-color="#F2F8FF"/><stop offset="45%" stop-color="#C4E0FA"/><stop offset="100%" stop-color="#6FA6D8"/></radialGradient>`
+   +`<clipPath id="pc${id}"><path d="${d}"/></clipPath></defs>`;
+  g+=`<ellipse cx="${cx}" cy="${cy+R*.98}" rx="${R*.78}" ry="${R*.15}" fill="${INK}" opacity=".13"/>`;
+  g+=`<path d="${d}" fill="url(#pg${id})"/>`;
+  g+=`<g clip-path="url(#pc${id})">`;
+  [-.42,-.1,.24,.56].forEach(f=>{const y=cy+R*f;
+    g+=`<path d="M${cx-R*1.2} ${y}Q${cx} ${y+R*.3} ${cx+R*1.2} ${y}" fill="none" stroke="${INK}" stroke-width="${R*.022}" opacity=".22"/>`});
+  g+=`<ellipse cx="${cx+R*.45}" cy="${cy+R*.5}" rx="${R*.9}" ry="${R*.7}" fill="${INK}" opacity=".1"/>`;
+  g+=`<ellipse cx="${cx-R*.26}" cy="${cy-R*.34}" rx="${R*.3}" ry="${R*.16}" fill="#fff" opacity=".6" transform="rotate(-22 ${cx-R*.26} ${cy-R*.34})"/>`;
+  g+='</g>';
+  g+=`<path d="${d}" fill="none" stroke="${INK}" stroke-width="8" stroke-linejoin="round"/>`;
+  g+=`<line x1="${cx-R*.6}" y1="${cy+R*.28}" x2="${cx+R*.6}" y2="${cy+R*.28}" stroke="${COR}" stroke-width="6" stroke-dasharray="12 8"/>`
+   +tx(cx,cy+R*.28-22,t,COR,48);
+  return g}
+const QZ=[
+ {tab:'4',q:'반지름 1, 3 인 두 구 — 부피비는?',opt:['1 : 3','1 : 9','1 : 27'],a:2,
+  note:'닮음비 <b>1 : 3</b> &nbsp;→&nbsp; 부피비 <i>1³ : 3³</i> = 1 : 27',
+  draw:()=>sphere(400,250,70,'1')+sphere(1120,250,190,'3')+tx(760,490,'반지름의 비  1 : 3',COR,52)},
+ {tab:'5',q:'닮음비 2 : 3 인 두 원기둥 — 부피비는?',opt:['2 : 3','8 : 27','4 : 9'],a:1,
+  note:'닮음비 <b>2 : 3</b> &nbsp;→&nbsp; 부피비 <i>2³ : 3³</i> = 8 : 27',
+  draw:()=>cyl(400,200,70,170,'2')+cyl(1120,140,105,255,'3')+tx(760,490,'닮음비  2 : 3',COR,52)},
+ {tab:'6',q:'닮음비 3 : 4 인 두 입체 — 부피비는?',opt:['27 : 64','9 : 16','3 : 4'],a:0,
+  note:'부피 공식을 몰라도 돼요 — 닮음비의 세제곱 <b>3³ : 4³ = 27 : 64</b>',
+  draw:()=>potato(400,250,120,'3','a')+potato(1120,250,160,'4','b')+tx(760,490,'대응하는 선분의 비  3 : 4',COR,52)}
+];
+
+function draw(){
+  let s='',foot='',h='',cls='';
+  if(st.t===0){s=t1();const ok=has('go');h=ok?'닮음비 <b>1 : 2</b>':'두 직육면체의 닮음비는?';cls=ok?'ok':'';
+    foot=`<button class="btn ${ok?'on':''}" data-b="go" type="button">확인</button>`;}
+  else if(st.t===1){s=t2();const v=has('vl'),r=has('rt');
+    h=r?'부피비 <b>1 : 8</b>':v?'부피의 비는?':'각각의 부피는 얼마일까?';cls=r?'ok':'';
+    foot=`<button class="btn ${v?'on':''}" data-b="vl" type="button">부피 구하기</button>`
+      +`<button class="btn ${r?'on':''}" data-b="rt" type="button">부피의 비</button>`
+      +(r?`<div class="def">닮음비 <b>1 : 2</b> &nbsp;→&nbsp; 부피비 <i>1³ : 2³</i> = 1 : 8</div>`:'');}
+  else if(st.t===2){s=t3();const v=has('vl'),rd=has('rd');
+    h=rd?'부피비 <b>a³ : b³</b>':v?'두 부피의 비를 약분하면?':'닮음비가 a : b 이면 부피비는?';cls=rd?'ok':'';
+    foot=`<button class="btn ${v?'on':''}" data-b="vl" type="button">부피 구하기</button>`
+      +`<button class="btn ${rd?'on':''}" data-b="rd" type="button">약분하기</button>`
+      +(rd?`<div class="def">mnp 가 약분돼요 &nbsp;→&nbsp; 닮음비 <b>a : b</b> 이면 부피비는 <i>a³ : b³</i></div>`:'');}
+  else if(st.t===6){const ok=has('ans');
+    s=tx(800,190,'닮음비가  a : b  일 때',INK,86)+(ok?tx(800,380,'부피비  a³ : b³',MINT,120):tx(800,380,'부피비는?',INK,86));
+    h=ok?'부피비 <b>a³ : b³</b>':'마지막 정리';cls=ok?'ok':'';
+    foot=`<button class="btn ${ok?'ok':''}" data-b="ans" type="button">정답</button>`;}
+  else{const Q=QZ[st.t-3],pick=[...st.on[st.t]].filter(x=>x.startsWith('o')).map(x=>+x.slice(1));
+    const done=pick.includes(Q.a);
+    s=Q.draw();h=done?'맞아요!':Q.q;cls=done?'ok':'';
+    foot=Q.opt.map((o,i)=>`<button class="btn ${pick.includes(i)?(i===Q.a?'ok':'no'):''}" data-b="o${i}" type="button">${o}</button>`).join('')
+      +(done?`<div class="def">${Q.note}</div>`:'');}
+  if(st.burst){s+=confetti();st.burst=0}
+  $('#sv').innerHTML=s;
+  if(st.t===2&&has('rd'))strike();
+  const H=$('#hint');H.className=cls;H.innerHTML=h;
+  $('#tabs').innerHTML=[0,1,2,3,4,5,6].map(i=>{const solved=i>=3&&i<6&&st.on[i].has('o'+QZ[i-3].a);
+    return `<button data-t="${i}" class="${i===st.t?'on':solved?'o':''}" type="button">${i+1}</button>`}).join('');
+  $('#foot').innerHTML=foot}
+
+$('#foot').addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(!b)return;
+  const id=b.dataset.b,Z=st.on[st.t];
+  if(Z.has(id))Z.delete(id);else{Z.add(id);
+    if(id==='go'||id==='rt'||id==='ans'||(st.t===2&&id==='rd')||(st.t>=3&&st.t<6&&id==='o'+QZ[st.t-3].a))st.burst=1}
+  draw()});
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b){st.t=+b.dataset.t;draw()}});
+$('#reset').onclick=()=>{st.on[st.t]=new Set();draw()};
+draw();
+</script>

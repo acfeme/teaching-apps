@@ -1,0 +1,194 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>닮음비 — 헷갈리지 않기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+:root{
+  --paper:#F4FAFF; --grid:#D3E8F7; --ink:#1F2A44; --sun:#FFD93D; --blue:#1D4ED8;
+  --mint:#2DBE7E; --red:#E5383B; --note:#FFF2A8; --coral:#FF6B4A;
+  --display:'Jua','Gowun Dodum',sans-serif; --body:'Gowun Dodum','Jua',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background-color:var(--paper);background-image:linear-gradient(var(--grid) 2px,transparent 2px),linear-gradient(90deg,var(--grid) 2px,transparent 2px);background-size:56px 56px;color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#app{height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:clamp(10px,1.7vw,24px);padding:clamp(8px,1.2vw,16px) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
+.by{font-family:'Jua',sans-serif;font-size:clamp(11px,1.25vw,20px);opacity:.5;white-space:nowrap;flex:none;letter-spacing:-.01em}
+.tag{font-family:var(--display);font-size:clamp(18px,2.3vw,34px);background:var(--sun);border:3px solid var(--ink);border-radius:14px;padding:2px clamp(12px,1.6vw,22px);white-space:nowrap;transform:rotate(-3deg);box-shadow:4px 4px 0 var(--ink)}
+#tabs{display:flex;gap:clamp(5px,.7vw,10px);flex:none}
+#tabs button{font-family:var(--display);font-size:clamp(17px,2.1vw,32px);width:2em;height:2em;line-height:1;border:3px solid var(--ink);background:#fff;color:var(--ink);border-radius:999px;cursor:pointer;padding:0}
+#tabs button.on{background:var(--sun)}
+#tabs button.o{background:var(--mint);color:#fff}
+#tabs button.x{background:var(--red);color:#fff}
+#hint{flex:1;min-width:0;font-family:var(--display);font-size:clamp(19px,2.5vw,40px);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hint.ok{color:var(--mint)} #hint.no{color:var(--red)}
+.pill{border:3px solid var(--ink);background:#fff;border-radius:999px;font:400 clamp(15px,1.9vw,26px) var(--display);color:var(--ink);padding:clamp(3px,.5vw,7px) clamp(13px,1.7vw,24px);cursor:pointer;box-shadow:3px 3px 0 var(--ink);flex:none}
+.pill:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+main{flex:1;min-height:0;position:relative}
+svg{width:100%;height:100%;display:block}
+#cond{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:0 clamp(16px,3vw,60px)}
+#cond:empty{display:none}
+#cond .card{background:#fff;border:4px solid var(--ink);border-radius:26px;box-shadow:10px 10px 0 var(--ink);padding:clamp(16px,2.6vw,42px) clamp(22px,4vw,64px);font-family:var(--display);font-size:clamp(22px,3vw,48px);line-height:1.5;text-align:center;max-width:1300px}
+#cond .m{color:var(--blue);font-size:1.16em;display:block;margin:.3em 0}
+#cond .k{color:var(--coral)}
+#cond .ask{display:block;margin-top:.35em}
+footer{display:flex;align-items:center;justify-content:center;gap:clamp(8px,1.5vw,26px);flex-wrap:wrap;padding:clamp(4px,.7vw,10px) max(14px,env(safe-area-inset-right)) max(clamp(8px,1.2vw,18px),env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+.btn{font-family:var(--display);font-size:clamp(20px,2.6vw,40px);background:#fff;border:3px solid var(--ink);border-radius:18px;padding:clamp(3px,.6vw,9px) clamp(16px,2.3vw,36px);cursor:pointer;box-shadow:5px 5px 0 var(--ink);color:var(--ink);line-height:1.15}
+.btn:active{transform:translate(3px,3px);box-shadow:2px 2px 0 var(--ink)}
+.btn.ok{background:var(--mint);color:#fff}
+.btn.no{background:var(--red);color:#fff}
+.btn.on{background:var(--sun)}
+.btn.dim{opacity:.35}
+.def{background:var(--note);border:3px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--ink);padding:clamp(5px,.9vw,13px) clamp(14px,2vw,28px);font-family:var(--display);font-size:clamp(18px,2.2vw,33px);transform:rotate(-1deg);line-height:1.3}
+.def b{color:var(--blue);font-weight:400}
+.def i{color:var(--coral);font-style:normal}
+@keyframes fall{0%{transform:translateY(-30px) rotate(0);opacity:1}100%{transform:translateY(380px) rotate(520deg);opacity:0}}
+.conf{animation:fall 1.5s ease-in forwards;transform-box:fill-box}
+@media (prefers-reduced-motion:reduce){.conf{animation:none;opacity:0}}
+</style>
+
+<div id="app">
+  <header>
+    <div class="tag">닮음비</div><span class="by">by 이송원</span>
+    <div id="tabs"></div>
+    <div id="hint"></div>
+    <button class="pill" id="reset" type="button">↺ 다시</button>
+  </header>
+  <main><svg id="sv" viewBox="0 0 1600 520" preserveAspectRatio="xMidYMid meet"></svg><div id="cond"></div></main>
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const INK='#1F2A44',BLUE='#1D4ED8',COR='#FF6B4A',MINT='#2DBE7E',RED='#E5383B';
+const rh=(a,t)=>{const c=Math.cos(t*Math.PI/180)*a,s=Math.sin(t*Math.PI/180)*a;return[[0,0],[a,0],[a+c,s],[c,s]]};
+const RECT=(w,h)=>[[0,0],[w,0],[w,h],[0,h]];
+
+const IT=[
+{tab:'?',kind:'def'},
+{tab:'1',yes:false,
+ cond:'두 직사각형 A, B 에서<span class="m">A의 가로 : 세로 = B의 가로 : 세로 = 5 : 3</span><span class="ask">이 <span class="k">5 : 3</span> 이 두 도형의 닮음비일까?</span>',
+ why:'닮음비가 아니에요',fig:'rect',show:'both',
+ note:'닮음비는 <b>대응변 : 대응변</b>. 한 도형 안의 가로:세로가 아니에요 — 닮음비는 <i>2 : 3</i>'},
+{tab:'2',yes:false,
+ cond:'두 삼각형에서<span class="m">각각의 밑변 : 높이 = 2 : 1</span><span class="ask">두 삼각형은 <span class="k">닮음</span>일까?</span>',
+ why:'닮음이 아니에요',fig:'tri',
+ note:'밑변 : 높이가 같아도 <b>대응각이 다르면</b> 닮음이 아니에요'},
+{tab:'2′',yes:false,
+ cond:'두 삼각형 A, B 의 두 변을 차례로 짝지었더니<span class="m">짝지은 두 변의 길이의 비가 모두 1 : 2</span><span class="ask">두 삼각형은 <span class="k">닮음</span>일까?</span>',
+ why:'닮음이 아니에요',fig:'tri2',
+ note:'두 변의 비가 같아도 <b>끼인각이 다르면</b> 닮음이 아니에요'},
+{tab:'3',yes:false,
+ cond:'두 마름모 A, B 의 네 변을 차례로 짝지었더니<span class="m">짝지은 변의 길이의 비가 모두 1 : 2</span><span class="ask">두 마름모는 <span class="k">닮음</span>일까?</span>',
+ why:'닮음이 아니에요',fig:'rhom',
+ note:'짝지은 변의 비가 모두 같아도 <b>각이 다르면</b> 닮음이 아니에요'},
+{tab:'4',yes:true,
+ cond:'두 직사각형에서<span class="m">각각의 가로 : 세로 가 서로 같다</span><span class="ask">두 직사각형은 <span class="k">닮음</span>일까?</span>',
+ why:'닮음이에요',fig:'rect',show:'ang',
+ note:'직사각형은 <b>각이 모두 90°</b>로 같으니, 가로:세로만 같으면 닮음이에요'}
+];
+const st={t:0,pick:IT.map(()=>null),def:new Set(),burst:0};
+const ps=a=>a.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+function tx(x,y,t,col,fs,w){return `<text x="${x}" y="${y}" text-anchor="middle" font-family="Jua,sans-serif" font-size="${fs}" fill="${col}" stroke="#F4FAFF" stroke-width="${w||7}" paint-order="stroke">${t}</text>`}
+
+function poly(pts,at,S,o){
+  const n=pts.length,Z=pts.map(p=>[p[0]*S,-p[1]*S]),xs=Z.map(p=>p[0]),ys=Z.map(p=>p[1]);
+  const ox=at[0]-(Math.min(...xs)+Math.max(...xs))/2,oy=at[1]-(Math.min(...ys)+Math.max(...ys))/2;
+  const P=Z.map(p=>[ox+p[0],oy+p[1]]),c=[P.reduce((a,p)=>a+p[0],0)/n,P.reduce((a,p)=>a+p[1],0)/n];
+  const bw=Math.max(...xs)-Math.min(...xs),bh=Math.max(...ys)-Math.min(...ys);
+  const rr=Math.max(20,Math.min(32,Math.min(bw,bh)*.2)),off=rr*1.9,col=o.col||INK;
+  let s=`<polygon points="${ps(P)}" fill="${o.tint||'rgba(77,163,255,.13)'}" stroke="${col}" stroke-width="10" stroke-linejoin="round"/>`;
+  if(o.ang)for(let i=0;i<n;i++){if(o.angAt&&o.angAt.indexOf(i)<0)continue;const a=P[i],u=P[(i+n-1)%n],v=P[(i+1)%n];
+    const a1=Math.atan2(u[1]-a[1],u[0]-a[0]),a2=Math.atan2(v[1]-a[1],v[0]-a[0]);
+    let d=a2-a1;while(d<=-Math.PI)d+=2*Math.PI;while(d>Math.PI)d-=2*Math.PI;
+    const deg=Math.round(Math.abs(d)*180/Math.PI);
+    if(deg===90){const q=rr*.78,p1=[a[0]+q*Math.cos(a1),a[1]+q*Math.sin(a1)],p2=[a[0]+q*Math.cos(a2),a[1]+q*Math.sin(a2)];
+      s+=`<path d="M${p1[0]} ${p1[1]}L${p1[0]+p2[0]-a[0]} ${p1[1]+p2[1]-a[1]}L${p2[0]} ${p2[1]}" fill="none" stroke="${col}" stroke-width="6" stroke-linejoin="round"/>`}
+    else{s+=`<path d="M${a[0]+rr*Math.cos(a1)} ${a[1]+rr*Math.sin(a1)}A${rr} ${rr} 0 0 ${d>0?1:0} ${a[0]+rr*Math.cos(a2)} ${a[1]+rr*Math.sin(a2)}" fill="none" stroke="${col}" stroke-width="6"/>`;
+      const m=a1+d/2;s+=tx(a[0]+off*Math.cos(m),a[1]+off*Math.sin(m)+11,deg+'°',col,30)}}
+  (o.L||[]).forEach(([i,t,cc])=>{const a=P[i],b=P[(i+1)%n],m=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+    let ex=b[0]-a[0],ey=b[1]-a[1],l=Math.hypot(ex,ey)||1,nx=-ey/l,ny=ex/l;
+    if(nx*(m[0]-c[0])+ny*(m[1]-c[1])<0){nx=-nx;ny=-ny}
+    s+=tx(m[0]+nx*34,m[1]+ny*34+13,t,cc||INK,36)});
+  const by=Math.max(...P.map(p=>p[1]));
+  if(o.n)s+=tx(at[0],by+92,o.n,o.ncol||INK,34);
+  return{s,P,by}}
+
+function arrow(a,b,t,col,lift){
+  const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2-lift;
+  return `<path d="M${a[0]} ${a[1]}Q${mx} ${my} ${b[0]} ${b[1]}" fill="none" stroke="${col}" stroke-width="6" stroke-dasharray="14 10"/>`
+   +[a,b].map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="10" fill="${col}"/>`).join('')
+   +tx(mx,(a[1]+2*my+b[1])/4+(lift>0?-20:46),t,col,38)}
+
+function pairArrows(A,B,lf){
+  return arrow([(A.P[0][0]+A.P[1][0])/2,A.P[1][1]+8],[(B.P[0][0]+B.P[1][0])/2,B.P[1][1]+8],'4 : 6 = 2 : 3',COR,lf||-238)
+   +arrow([A.P[1][0]+10,(A.P[1][1]+A.P[2][1])/2],[B.P[0][0]-10,(B.P[0][1]+B.P[3][1])/2],'2.4 : 3.6 = 2 : 3',COR,100)}
+
+function rects(show,col){
+  const inn=show==='both';
+  const y=inn?158:180;
+  const A=poly(RECT(4,2.4),[400,y],74,{L:[[0,'4'],[3,'2.4']],col,ang:show==='ang'||inn,n:inn?'가로 : 세로 = 5 : 3':'A',ncol:inn?BLUE:INK});
+  const B=poly(RECT(6,3.6),[1120,y],74,{L:[[0,'6'],[1,'3.6']],col,ang:show==='ang'||inn,n:inn?'가로 : 세로 = 5 : 3':'B',ncol:inn?BLUE:INK});
+  return A.s+B.s+(inn?pairArrows(A,B,-178)+tx(800,498,'닮음비는   대응변 : 대응변  !',COR,48):'')}
+
+function figure(it){
+  const col=it.yes?MINT:RED,tint=it.yes?'rgba(45,190,126,.15)':'rgba(229,56,59,.12)';
+  if(it.fig==='rect')return rects(it.show,col);
+  if(it.fig==='tri')return poly([[0,0],[4,0],[2,2]],[430,210],82,{L:[[0,'4']],ang:1,col,tint,n:'이등변삼각형   밑변 4, 높이 2'}).s
+    +poly([[0,0],[4,0],[0,2]],[1120,210],82,{L:[[0,'4']],ang:1,col,tint,n:'직각삼각형   밑변 4, 높이 2'}).s
+    +tx(800,480,'닮음비는   대응변 : 대응변  !',COR,48);
+  if(it.fig==='tri2')return poly([[0,0],[3,0],[2,3.464]],[370,250],46,{L:[[0,'3'],[2,'4']],ang:1,angAt:[0],col,tint,n:'삼각형 A'}).s
+    +poly([[0,0],[6,0],[-1.389,7.878]],[1090,228],46,{L:[[0,'6'],[2,'8']],ang:1,angAt:[0],col,tint,n:'삼각형 B'}).s;
+  return poly(rh(4,60),[400,230],46,{L:[[0,'4'],[1,'4'],[2,'4'],[3,'4']],ang:1,col,tint,n:'마름모   한 변 4'}).s
+    +poly(rh(8,100),[1130,230],46,{L:[[0,'8'],[1,'8'],[2,'8'],[3,'8']],ang:1,col,tint,n:'마름모   한 변 8'}).s}
+
+function defScene(){
+  const inn=st.def.has('in'),btw=st.def.has('bt');
+  const A=poly(RECT(4,2.4),[400,180],74,{L:[[0,'4'],[3,'2.4']],ang:1,n:inn?'가로 : 세로 = 5 : 3':'A',ncol:inn?BLUE:INK});
+  const B=poly(RECT(6,3.6),[1120,180],74,{L:[[0,'6'],[1,'3.6']],ang:1,n:inn?'가로 : 세로 = 5 : 3':'B',ncol:inn?BLUE:INK});
+  return A.s+B.s+(btw?pairArrows(A,B):'')}
+
+function confetti(){const cols=['#FF6B4A','#FFD93D','#2DBE7E','#4DA3FF','#B26BFF'];let s='';
+  for(let i=0;i<18;i++){const x=640+Math.random()*360,y=16+Math.random()*24,c=cols[i%5],d=(Math.random()*.5).toFixed(2);
+    s+=i%2?`<rect class="conf" x="${x}" y="${y}" width="16" height="16" rx="3" fill="${c}" style="animation-delay:${d}s"/>`:`<circle class="conf" cx="${x}" cy="${y}" r="9" fill="${c}" style="animation-delay:${d}s"/>`}return s}
+
+function draw(){
+  const it=IT[st.t],isDef=it.kind==='def',done=st.pick[st.t]!==null;
+  let s='',cond='',foot='',h='';
+  if(isDef){
+    s=defScene();
+    const btw=st.def.has('bt');
+    h=btw?'닮음비 = 대응변 : 대응변':'A와 B의 닮음비는 얼마일까?';
+    foot=st.def.has('go')
+      ?`<button class="btn ${st.def.has('in')?'on':''}" data-d="in" type="button">한 도형 안의 비</button>`
+       +`<button class="btn ${btw?'on':''}" data-d="bt" type="button">대응변 : 대응변</button>`
+       +(btw?`<div class="def">닮음비는 <b>대응변 : 대응변</b> — 두 도형 <i>사이</i>의 비예요 (2 : 3)</div>`:'')
+      :`<button class="btn" data-d="go" type="button">확인</button>`;
+  }else if(!done){
+    cond=`<div class="card">${it.cond}</div>`;
+    h='조건만 보고 생각해 볼까?';
+    foot=`<button class="btn" data-a="1" type="button">⭕ 맞다</button><button class="btn" data-a="0" type="button">❌ 아니다</button>`;
+  }else{
+    s=figure(it);h=it.why;
+    foot=`<button class="btn ${it.yes?'ok':'dim'}" data-a="1" type="button">⭕ 맞다</button>`
+      +`<button class="btn ${it.yes?'dim':'no'}" data-a="0" type="button">❌ 아니다</button>`
+      +`<div class="def">${it.note}</div>`}
+  if(st.burst){s+=confetti();st.burst=0}
+  $('#sv').innerHTML=s;$('#cond').innerHTML=cond;
+  const H=$('#hint');H.className=done?(it.yes?'ok':'no'):'';H.textContent=h;
+  $('#tabs').innerHTML=IT.map((p,i)=>`<button data-t="${i}" class="${i===st.t?'on':st.pick[i]===null?'':(p.yes?'o':'x')}" type="button">${p.tab}</button>`).join('');
+  $('#foot').innerHTML=foot}
+
+$('#foot').addEventListener('click',e=>{
+  const a=e.target.closest('[data-a]'),d=e.target.closest('[data-d]');
+  if(a){if(st.pick[st.t]===null&&(a.dataset.a==='1')===IT[st.t].yes)st.burst=1;st.pick[st.t]=+a.dataset.a}
+  else if(d){st.def.has(d.dataset.d)?st.def.delete(d.dataset.d):st.def.add(d.dataset.d)}else return;
+  draw()});
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b){st.t=+b.dataset.t;draw()}});
+$('#reset').onclick=()=>{st.pick[st.t]=null;st.def.clear();draw()};
+draw();
+</script>

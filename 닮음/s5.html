@@ -1,0 +1,164 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>입체도형의 닮음 — 가려진 면</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+:root{
+  --paper:#F4FAFF; --grid:#D3E8F7; --ink:#1F2A44; --sun:#FFD93D; --blue:#1D4ED8; --mint:#2DBE7E;
+  --display:'Jua','Gowun Dodum',sans-serif; --body:'Gowun Dodum','Jua',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background-color:var(--paper);background-image:linear-gradient(var(--grid) 2px,transparent 2px),linear-gradient(90deg,var(--grid) 2px,transparent 2px);background-size:56px 56px;color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#app{height:100%;display:flex;flex-direction:column}
+header{display:flex;align-items:center;gap:clamp(10px,1.7vw,24px);padding:clamp(8px,1.2vw,16px) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
+.by{font-family:'Jua',sans-serif;font-size:clamp(11px,1.25vw,20px);opacity:.5;white-space:nowrap;flex:none;letter-spacing:-.01em}
+.tag{font-family:var(--display);font-size:clamp(18px,2.3vw,34px);background:var(--sun);border:3px solid var(--ink);border-radius:14px;padding:2px clamp(12px,1.6vw,22px);white-space:nowrap;transform:rotate(-3deg);box-shadow:4px 4px 0 var(--ink)}
+#tabs{display:flex;gap:clamp(5px,.7vw,10px);flex:none}
+#tabs button{font-family:var(--display);font-size:clamp(17px,2.1vw,32px);width:2em;height:2em;line-height:1;border:3px solid var(--ink);background:#fff;color:var(--ink);border-radius:999px;cursor:pointer;padding:0}
+#tabs button.on{background:var(--sun)}
+#hint{flex:1;min-width:0;font-family:var(--display);font-size:clamp(21px,2.9vw,44px);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hint.ok{color:var(--mint)}
+.pill{border:3px solid var(--ink);background:#fff;border-radius:999px;font:400 clamp(15px,1.9vw,26px) var(--display);color:var(--ink);padding:clamp(3px,.5vw,7px) clamp(13px,1.7vw,24px);cursor:pointer;box-shadow:3px 3px 0 var(--ink);flex:none}
+.pill:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+main{flex:1;min-height:0}
+svg{width:100%;height:100%;display:block}
+footer{display:flex;align-items:center;justify-content:center;gap:clamp(8px,1.4vw,24px);flex-wrap:wrap;padding:clamp(4px,.7vw,10px) max(14px,env(safe-area-inset-right)) max(clamp(8px,1.2vw,18px),env(safe-area-inset-bottom)) max(14px,env(safe-area-inset-left))}
+.btn{font-family:var(--display);font-size:clamp(19px,2.5vw,38px);background:#fff;border:3px solid var(--ink);border-radius:18px;padding:clamp(3px,.6vw,9px) clamp(14px,2vw,32px);cursor:pointer;box-shadow:5px 5px 0 var(--ink);color:var(--ink);line-height:1.15}
+.btn:active{transform:translate(3px,3px);box-shadow:2px 2px 0 var(--ink)}
+.btn.on{background:var(--sun)}
+.btn.ans.on{background:var(--mint);color:#fff}
+@keyframes fall{0%{transform:translateY(-30px) rotate(0);opacity:1}100%{transform:translateY(380px) rotate(520deg);opacity:0}}
+.conf{animation:fall 1.5s ease-in forwards;transform-box:fill-box}
+@keyframes bob{50%{transform:translateY(-7px)}}
+.bob{animation:bob 2.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+@media (prefers-reduced-motion:reduce){.conf{animation:none;opacity:0}.bob{animation:none}}
+</style>
+
+<div id="app">
+  <header>
+    <div class="tag">입체 닮음</div><span class="by">by 이송원</span>
+    <div id="tabs"></div>
+    <div id="hint"></div>
+    <button class="pill" id="reset" type="button">↺ 다시</button>
+  </header>
+  <main><svg id="sv" viewBox="0 0 1600 600" preserveAspectRatio="xMidYMid meet"></svg></main>
+  <footer id="foot"></footer>
+</div>
+
+<script>
+const $=s=>document.querySelector(s);
+const INK='#1F2A44', HI='#FF6B4A', DIM='#2563EB', S=44, DZ=.45, DY=.35;
+/* 직육면체 꼭짓점 0~3 앞면(z=0), 4~7 뒷면 / 면 : 앞[0,1,2,3] 오른[1,5,6,2] 윗[3,2,6,7] */
+const boxV=(w,h,d)=>[[0,0,0],[w,0,0],[w,h,0],[0,h,0],[0,0,d],[w,0,d],[w,h,d],[0,h,d]];
+const boxE=[[0,1],[1,2],[2,3],[3,0],[4,5,1],[5,6],[6,7],[7,4,1],[0,4,1],[1,5],[2,6],[3,7]];
+
+const PROB=[
+ {tab:'1',fname:'옆면',ratio:'1 : 2',ans:'직사각형  6 × 4',
+  s:{m:'box',d:[4,2,3],at:[360,300],dim:[[0,1,'4'],[3,0,'2'],[1,5,'3']]},
+  b:{m:'box',d:[8,4,6],at:[1090,300],dim:[[0,1,'8']],rev:[[1,5,'6'],[5,6,'4']]},
+  face:[1,5,6,2]},
+ {tab:'2',fname:'밑면',ratio:'2 : 3',ans:'원  지름 6',
+  s:{m:'cyl',d:[2,6],at:[380,300],dim:[['dia','4'],['h','6']]},
+  b:{m:'cyl',d:[3,9],at:[1080,300],dim:[['h','9']],rev:[['dia','6']]},
+  face:'top'},
+ {tab:'3',fname:'윗면',ratio:'1 : 2',ans:'정사각형  6 × 6',
+  s:{m:'box',d:[3,5,3],at:[380,300],dim:[[0,1,'3'],[3,0,'5'],[1,5,'3']]},
+  b:{m:'box',d:[6,10,6],at:[1080,300],dim:[[3,0,'10']],rev:[[3,2,'6'],[2,6,'6']]},
+  face:[3,2,6,7]}
+];
+const st={t:0,on:PROB.map(()=>new Set()),burst:0};
+const has=id=>st.on[st.t].has(id);
+const ps=a=>a.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+function tx(x,y,t,col,fs){return `<text x="${x}" y="${y}" text-anchor="middle" font-family="Jua,sans-serif" font-size="${fs}" fill="${col}" stroke="#F4FAFF" stroke-width="7" paint-order="stroke">${t}</text>`}
+
+/* ---- 치수선 : 어디의 길이인지 점선과 눈금으로 ---- */
+function dim(A,B,t,away,col){
+  let ex=B[0]-A[0],ey=B[1]-A[1],L=Math.hypot(ex,ey)||1,nx=-ey/L,ny=ex/L;
+  if(nx*away[0]+ny*away[1]<0){nx=-nx;ny=-ny}
+  const o=30,a=[A[0]+nx*o,A[1]+ny*o],b=[B[0]+nx*o,B[1]+ny*o],m=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+  let s=`<line x1="${A[0]}" y1="${A[1]}" x2="${a[0]+nx*9}" y2="${a[1]+ny*9}" stroke="${col}" stroke-width="3" stroke-dasharray="6 6" opacity=".7"/>`
+       +`<line x1="${B[0]}" y1="${B[1]}" x2="${b[0]+nx*9}" y2="${b[1]+ny*9}" stroke="${col}" stroke-width="3" stroke-dasharray="6 6" opacity=".7"/>`
+       +`<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${col}" stroke-width="4" stroke-dasharray="11 8"/>`;
+  for(const p of[a,b])s+=`<line x1="${p[0]-nx*9}" y1="${p[1]-ny*9}" x2="${p[0]+nx*9}" y2="${p[1]+ny*9}" stroke="${col}" stroke-width="5" stroke-linecap="round"/>`;
+  return s+tx(m[0]+nx*26,m[1]+ny*26+13,t,col,38)}
+
+/* ---- 구름 덮개 ---- */
+function cloud(cx,cy,rx,ry,sd){const n=11,P=[];
+  for(let i=0;i<n;i++){const a=i/n*Math.PI*2,b=1+.15*Math.sin(i*2.3+sd);P.push([cx+Math.cos(a)*rx*b,cy+Math.sin(a)*ry*b])}
+  let d=`M${P[0][0].toFixed(1)} ${P[0][1].toFixed(1)}`;
+  for(let i=0;i<n;i++){const p=P[i],q=P[(i+1)%n],L=Math.hypot(q[0]-p[0],q[1]-p[1])*.62;
+    d+=`A${L.toFixed(1)} ${L.toFixed(1)} 0 0 1 ${q[0].toFixed(1)} ${q[1].toFixed(1)}`}
+  return d+'Z'}
+function cover(pts,ring,sd){
+  const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+  const cx=(Math.min(...xs)+Math.max(...xs))/2,cy=(Math.min(...ys)+Math.max(...ys))/2;
+  const rx=(Math.max(...xs)-Math.min(...xs))/2*1.28+34,ry=(Math.max(...ys)-Math.min(...ys))/2*1.28+34;
+  return `<g class="bob"><path d="${cloud(cx,cy,rx,ry,sd)}" fill="#E2EAF3" stroke="${ring?HI:INK}" stroke-width="${ring?10:7}" stroke-linejoin="round"/>`
+    +tx(cx,cy+28,'?',ring?HI:INK,80)+'</g>'}
+
+/* ---- 직육면체 ---- */
+function box(cfg,opt){
+  const V=boxV(...cfg.d),Z=V.map(p=>[(p[0]+DZ*p[2])*S,-(p[1]+DY*p[2])*S]);
+  const xs=Z.map(p=>p[0]),ys=Z.map(p=>p[1]);
+  const ox=cfg.at[0]-(Math.min(...xs)+Math.max(...xs))/2,oy=cfg.at[1]-(Math.min(...ys)+Math.max(...ys))/2;
+  const P=Z.map(p=>[ox+p[0],oy+p[1]]),c=[P.reduce((a,p)=>a+p[0],0)/8,P.reduce((a,p)=>a+p[1],0)/8];
+  const F=opt.face.map(i=>P[i]);let s='';
+  if(opt.fill)s+=`<polygon points="${ps(F)}" fill="${HI}" fill-opacity=".32" stroke="${HI}" stroke-width="11" stroke-linejoin="round"/>`;
+  boxE.forEach(([i,j,hid])=>{s+=`<line x1="${P[i][0]}" y1="${P[i][1]}" x2="${P[j][0]}" y2="${P[j][1]}" stroke="${INK}" stroke-width="${hid?5:8}" stroke-linecap="round" ${hid?'stroke-dasharray="12 11" opacity=".5"':''}/>`});
+  if(opt.cover)s+=cover(F,opt.ring,1.3);
+  (cfg.dim||[]).concat(opt.rev?(cfg.rev||[]):[]).forEach(([i,j,t])=>{
+    const m=[(P[i][0]+P[j][0])/2,(P[i][1]+P[j][1])/2];
+    s+=dim(P[i],P[j],t,[m[0]-c[0],m[1]-c[1]],(cfg.rev||[]).some(r=>r[0]===i&&r[1]===j)?HI:DIM)});
+  return s}
+
+/* ---- 원기둥 ---- */
+function cyl(cfg,opt){
+  const [r,h]=cfg.d,rx=r*S,ry=rx*.34,H=h*S;
+  const cx=cfg.at[0],cy0=cfg.at[1]-(H+2*ry)/2+ry,cy1=cy0+H;
+  const ell=(cy,dash)=>`<path d="M${cx-rx} ${cy}A${rx} ${ry} 0 0 ${dash?1:0} ${cx+rx} ${cy}" fill="none" stroke="${INK}" stroke-width="${dash?5:8}" ${dash?'stroke-dasharray="12 11" opacity=".5"':'stroke-linecap="round"'}/>`;
+  let s='';
+  if(opt.fill)s+=`<ellipse cx="${cx}" cy="${cy0}" rx="${rx}" ry="${ry}" fill="${HI}" fill-opacity=".32" stroke="${HI}" stroke-width="11"/>`;
+  s+=ell(cy1,1)+ell(cy1,0)
+   +`<line x1="${cx-rx}" y1="${cy0}" x2="${cx-rx}" y2="${cy1}" stroke="${INK}" stroke-width="8" stroke-linecap="round"/>`
+   +`<line x1="${cx+rx}" y1="${cy0}" x2="${cx+rx}" y2="${cy1}" stroke="${INK}" stroke-width="8" stroke-linecap="round"/>`
+   +`<ellipse cx="${cx}" cy="${cy0}" rx="${rx}" ry="${ry}" fill="none" stroke="${INK}" stroke-width="8"/>`;
+  if(opt.cover)s+=cover([[cx-rx,cy0-ry],[cx+rx,cy0-ry],[cx+rx,cy0+ry],[cx-rx,cy0+ry]],opt.ring,2.1);
+  (cfg.dim||[]).concat(opt.rev?(cfg.rev||[]):[]).forEach(([k,t])=>{
+    const col=(cfg.rev||[]).some(q=>q[0]===k)?HI:DIM;
+    if(k==='dia'){const y=opt.cover&&!opt.rev?cy1:cy0;
+      s+=`<line x1="${cx-rx}" y1="${y}" x2="${cx+rx}" y2="${y}" stroke="${col}" stroke-width="4" stroke-dasharray="11 8"/>`
+        +[-1,1].map(d=>`<line x1="${cx+d*rx}" y1="${y-9}" x2="${cx+d*rx}" y2="${y+9}" stroke="${col}" stroke-width="5" stroke-linecap="round"/>`).join('')
+        +tx(cx,y-22,t,col,38)}
+    else s+=dim([cx+rx,cy0],[cx+rx,cy1],t,[1,0],col)});
+  return s}
+
+const DRAW={box,cyl};
+function confetti(){const cols=['#FF6B4A','#FFD93D','#2DBE7E','#4DA3FF','#B26BFF'];let s='';
+  for(let i=0;i<20;i++){const x=620+Math.random()*400,y=30+Math.random()*30,c=cols[i%5],d=(Math.random()*.5).toFixed(2);
+    s+=i%2?`<rect class="conf" x="${x}" y="${y}" width="16" height="16" rx="3" fill="${c}" style="animation-delay:${d}s"/>`:`<circle class="conf" cx="${x}" cy="${y}" r="9" fill="${c}" style="animation-delay:${d}s"/>`}return s}
+
+function draw(){
+  const P=PROB[st.t],ring=has('face'),rev=has('ans');
+  let s=DRAW[P.s.m](P.s,{face:P.face,fill:ring||rev})
+       +DRAW[P.b.m](P.b,{face:P.face,cover:!rev,ring,fill:rev,rev});
+  if(st.burst){s+=confetti();st.burst=0}
+  $('#sv').innerHTML=s;
+  $('#tabs').innerHTML=PROB.map((p,i)=>`<button data-t="${i}" class="${i===st.t?'on':''}" type="button">${p.tab}</button>`).join('');
+  const h=$('#hint');h.className=rev?'ok':'';h.textContent=rev?P.ans:'구름에 가려진 면은 어떤 모양일까?';
+  $('#foot').innerHTML=`<button class="btn ${ring?'on':''}" data-b="face" type="button">대응하는 면${ring?' — '+P.fname:''}</button>`
+   +`<button class="btn ${has('k')?'on':''}" data-b="k" type="button">닮음비${has('k')?' '+P.ratio:''}</button>`
+   +`<button class="btn ans ${rev?'on':''}" data-b="ans" type="button">정답</button>`}
+
+$('#foot').addEventListener('click',e=>{const b=e.target.closest('[data-b]');if(!b)return;
+  const id=b.dataset.b,Z=st.on[st.t];
+  if(Z.has(id))Z.delete(id);else{Z.add(id);if(id==='ans')st.burst=1}
+  draw()});
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('[data-t]');if(b){st.t=+b.dataset.t;draw()}});
+$('#reset').onclick=()=>{st.on[st.t]=new Set();draw()};
+draw();
+</script>

@@ -58,6 +58,10 @@ button:focus-visible{outline:3px solid var(--b);outline-offset:2px}
 #ghost polygon{fill:var(--a);fill-opacity:.28;stroke:var(--a);stroke-width:.14;stroke-dasharray:.35 .2;vector-effect:none}
 #ghost.ok polygon{stroke:var(--ok);fill:var(--ok)}
 #ghost.no polygon{stroke:var(--no);fill:var(--no)}
+#gap line{stroke:var(--no);stroke-width:.1;stroke-dasharray:.25 .15}
+#gap .m{fill:var(--no)} #gap .t{fill:var(--b)}
+#gap .ring{fill:none;stroke:var(--no);stroke-width:.08;animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
 
 #dock{border-top:2px solid var(--line);background:var(--dock);padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:64px}
 .msg{font-family:var(--display);font-size:clamp(19px,2.8vw,26px)}
@@ -116,6 +120,7 @@ footer{font-size:12px;color:var(--muted);text-align:right;padding-block:0 4px}
       <rect id="bg" x="-50" y="-50" width="300" height="300" fill="url(#g5cm)"/>
       <g id="tris"></g>
       <g id="ghost"></g>
+      <g id="gap"></g>
     </svg>
     <div id="found"></div>
   </div>
@@ -299,13 +304,24 @@ function angleMap(M,T){
     const sa=[(i+1)%3,(i+2)%3].map(k=>({k,v:sideVal(M,i,k)})),sb=[(j+1)%3,(j+2)%3].map(k=>({k,v:sideVal(T,j,k)}));
     if(sa.some(s=>s.v==null)||sb.some(s=>s.v==null))continue;
     sa.sort((a,b)=>b.v-a.v);sb.sort((a,b)=>b.v-a.v);
-    const p=[0,0,0];p[i]=j;p[sa[0].k]=sb[0].k;p[sa[1].k]=sb[1].k;return p;
+    const p=[0,0,0];p[i]=j;p[sa[0].k]=sb[0].k;p[sa[1].k]=sb[1].k;return {p,pin:[i,sa[0].k]};
   }
   return null;
 }
 function sideVal(t,i,j){const s=t.sides.find(s=>(s[0]===i&&s[1]===j)||(s[0]===j&&s[1]===i));return s?s[3]:null}
 function sideTxt(t,i,j){const s=t.sides.find(s=>(s[0]===i&&s[1]===j)||(s[0]===j&&s[1]===i));return s?s[2]:null}
 
+function pinFit(Z,W,p,refl,i,j){
+  const z=Z.map(q=>refl?[q[0],-q[1]]:q),w=p.map(k=>W[k]);
+  const dz=[z[j][0]-z[i][0],z[j][1]-z[i][1]],dw=[w[j][0]-w[i][0],w[j][1]-w[i][1]];
+  const dd=dz[0]**2+dz[1]**2;
+  const ar=(dw[0]*dz[0]+dw[1]*dz[1])/dd,ai=(dw[1]*dz[0]-dw[0]*dz[1])/dd;
+  const br=w[i][0]-(ar*z[i][0]-ai*z[i][1]),bi=w[i][1]-(ar*z[i][1]+ai*z[i][0]);
+  const map=q=>{const x=q[0],y=refl?-q[1]:q[1];return [ar*x-ai*y+br,ar*y+ai*x+bi]};
+  const zc=[(Z[0][0]+Z[1][0]+Z[2][0])/3,(Z[0][1]+Z[1][1]+Z[2][1])/3];
+  const k=3-i-j,m=map(Z[k]);
+  return {p,refl,s:Math.hypot(ar,ai),th:Math.atan2(ai,ar),wc:map(zc),map,err:Math.hypot(m[0]-w[k][0],m[1]-w[k][1])};
+}
 function gcd(a,b){return b?gcd(b,a%b):a}
 function ratio(a,b){let k=1;while((Math.abs(a*k-Math.round(a*k))>1e-6||Math.abs(b*k-Math.round(b*k))>1e-6)&&k<100)k*=2;
   const x=Math.round(a*k),y=Math.round(b*k),g=gcd(x,y);return [x/g,y/g]}
@@ -332,7 +348,19 @@ function compare(){
   const Z=world(mov),W=world(tgt);
   let f=bestFit(Z,W);
   const similar=f.res<1e-3;
-  if(!similar){const p=angleMap(mov,tgt);if(p)f=bestFit(Z,W,[p])}
+  let gap=null;
+  if(!similar){
+    // 닮지 않으면: 한 꼭짓점과 한 변을 정확히 맞춰 놓아 나머지 꼭짓점이 어긋나는 게 보이게
+    const am=angleMap(mov,tgt);
+    let p,pin;
+    if(am){p=am.p;pin=am.pin}
+    else{p=f.p;const d=(i,j)=>Math.hypot(Z[i][0]-Z[j][0],Z[i][1]-Z[j][1]);
+      pin=[[0,1],[1,2],[0,2]].sort((x,y)=>d(...y)-d(...x))[0]}
+    const cand=[false,true].map(r=>pinFit(Z,W,p,r,pin[0],pin[1]));
+    f=cand[0].err<cand[1].err?cand[0]:cand[1];
+    const k=3-pin[0]-pin[1];
+    gap={from:f.map(Z[k]),to:W[p[k]]};
+  }
   // 근거: 번호가 작은 쪽 → 큰 쪽
   const A=mov.id<tgt.id?mov:tgt,B=A===mov?tgt:mov;
   const m=A===mov?f.p:[0,1,2].map(j=>f.p.indexOf(j));
@@ -365,6 +393,13 @@ function compare(){
   requestAnimationFrame(frame);
   function done(){
     ghost.setAttribute('class',similar?'ok':'no');
+    if(gap){
+      const G=$('#gap');G.innerHTML='';
+      el('line',{x1:gap.from[0],y1:gap.from[1],x2:gap.to[0],y2:gap.to[1]},G);
+      el('circle',{cx:gap.from[0],cy:gap.from[1],r:.28,class:'m'},G);
+      el('circle',{cx:gap.to[0],cy:gap.to[1],r:.28,class:'t'},G);
+      el('circle',{cx:gap.to[0],cy:gap.to[1],r:.9,class:'ring'},G);
+    }
     mode='result';
     if(similar){
       const sp=result.ev.sides[0];
@@ -375,7 +410,7 @@ function compare(){
   }
 }
 function resetResult(){
-  ghost.innerHTML='';ghost.removeAttribute('transform');
+  ghost.innerHTML='';ghost.removeAttribute('transform');$('#gap').innerHTML='';
   TRIS.forEach(t=>gEls[t.id].classList.remove('faded','dimmed'));
   mode='pick';result=null;sel=[];refreshSel();
 }

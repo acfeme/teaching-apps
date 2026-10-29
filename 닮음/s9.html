@@ -55,6 +55,15 @@ button:focus-visible{outline:3px solid var(--b);outline-offset:2px}
 .badge text{font-family:var(--display);font-size:.78px;fill:var(--ink);text-anchor:middle;dominant-baseline:central}
 .tri.selA .badge circle{fill:var(--a);stroke:var(--a)} .tri.selA .badge text{fill:#fff}
 .tri.selB .badge circle{fill:var(--b);stroke:var(--b)} .tri.selB .badge text{fill:#fff}
+/* 회전 손잡이: 고른 삼각형에만 */
+.rot{display:none;cursor:grab}
+.tri.selA .rot,.tri.selB .rot{display:inline}
+.rot .hit{fill:transparent}
+.rot .stem{stroke:var(--muted);stroke-width:.05;stroke-dasharray:.15 .12}
+.rot .knob{fill:var(--card);stroke-width:.09}
+.tri.selA .rot .knob,.tri.selA .rot .arw{stroke:var(--a)} .tri.selB .rot .knob,.tri.selB .rot .arw{stroke:var(--b)}
+.rot .arw{fill:none;stroke-width:.09;stroke-linecap:round;stroke-linejoin:round}
+.tri.faded .rot,.tri.dimmed .rot{display:none}
 #ghost polygon{fill:var(--a);fill-opacity:.28;stroke:var(--a);stroke-width:.14;stroke-dasharray:.35 .2;vector-effect:none}
 #ghost.ok polygon{stroke:var(--ok);fill:var(--ok)}
 #ghost.no polygon{stroke:var(--no);fill:var(--no)}
@@ -189,6 +198,12 @@ function drawTri(t,parent,showBadge=true){
     const tx=el('text',{class:'lbl',x:mx+n[0]*off,y:my+n[1]*off},g);tx.textContent=text;
   }
   if(showBadge){
+    const R=Math.max(...L.map(q=>Math.hypot(q[0]-cx,q[1]-cy)));
+    const hg=el('g',{class:'rot'},g),hy=cy-R-1.1;
+    el('circle',{cx,cy:hy,r:1.2,class:'hit'},hg);
+    el('circle',{cx,cy:hy,r:.62,class:'knob'},hg);
+    el('path',{d:`M${cx+.3} ${hy-.18}A.34 .34 0 1 0 ${cx+.3} ${hy+.2}`,class:'arw'},hg);
+    el('path',{d:`M${cx+.12} ${hy-.34}L${cx+.34} ${hy-.18}L${cx+.12} ${hy-.02}`,class:'arw'},hg);
     const bg=el('g',{class:'badge'},g);
     el('circle',{cx:-.75,cy:-.75,r:.55},bg);
     const tx=el('text',{x:-.75,y:-.72},bg);tx.textContent=t.id;
@@ -235,8 +250,16 @@ function pack(items,W){
   }
   rows.push(cur);return rows;
 }
-function place(t){gEls[t.id].setAttribute('transform',`translate(${t.pos[0]} ${t.pos[1]})`)}
-const world=t=>t.local.map(p=>[p[0]+t.pos[0],p[1]+t.pos[1]]);
+TRIS.forEach(t=>{t.rot=0;t.c=[(t.local[0][0]+t.local[1][0]+t.local[2][0])/3,(t.local[0][1]+t.local[1][1]+t.local[2][1])/3]});
+function place(t){
+  const g=gEls[t.id],r=t.rot;
+  g.setAttribute('transform',`translate(${t.pos[0]} ${t.pos[1]}) rotate(${r} ${t.c[0]} ${t.c[1]})`);
+  g.querySelectorAll('text.lbl').forEach(x=>x.setAttribute('transform',`rotate(${-r} ${x.getAttribute('x')} ${x.getAttribute('y')})`));
+  const b=g.querySelector('.badge');if(b)b.setAttribute('transform',`rotate(${-r} -.75 -.75)`);
+}
+const world=t=>{const a=t.rot*Math.PI/180,co=Math.cos(a),si=Math.sin(a),[cx,cy]=t.c;
+  return t.local.map(([x,y])=>[cx+(x-cx)*co-(y-cy)*si+t.pos[0],cy+(x-cx)*si+(y-cy)*co+t.pos[1]])};
+const centerW=t=>[t.c[0]+t.pos[0],t.c[1]+t.pos[1]];
 
 /* ---------- 상태 ---------- */
 let sel=[];            // 고른 삼각형 id (최대 2)
@@ -250,30 +273,56 @@ function refreshSel(){
 }
 
 /* ---------- 포인터: 탭=고르기, 끌기=옮기기 ---------- */
-let drag=null;
+let drag=null;const ptrs=new Map();
 function svgPt(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}
+const angOf=(a,b)=>Math.atan2(b.y-a.y,b.x-a.x)*180/Math.PI;
+function startTwist(){
+  const [a,b]=[...ptrs.values()];const t=drag.t;
+  drag={type:'twist',t,a0:angOf(a,b),rot0:t.rot,m0:{x:(a.x+b.x)/2,y:(a.y+b.y)/2},pos0:[...t.pos],moved:true};
+}
+function wake(){if(mode==='result')resetResult()}
 svg.addEventListener('pointerdown',e=>{
   if(mode==='anim')return;
+  const p=svgPt(e);
+  if(drag&&drag.type!=='rot'&&ptrs.size===1){ptrs.set(e.pointerId,p);svg.setPointerCapture(e.pointerId);wake();startTwist();return}
+  if(drag)return;
   const g=e.target.closest('.tri');if(!g)return;
-  const id=+g.dataset.id,t=byId(id),p=svgPt(e);
-  drag={id,t,sx:e.clientX,sy:e.clientY,ox:p.x-t.pos[0],oy:p.y-t.pos[1],moved:false};
-  svg.setPointerCapture(e.pointerId);
+  const id=+g.dataset.id,t=byId(id);
+  ptrs.set(e.pointerId,p);svg.setPointerCapture(e.pointerId);
   trisG.appendChild(g);
+  if(e.target.closest('.rot')){
+    const c=centerW(t);wake();
+    drag={type:'rot',id,t,a0:Math.atan2(p.y-c[1],p.x-c[0])*180/Math.PI,rot0:t.rot,moved:true};return;
+  }
+  drag={type:'move',id,t,sx:e.clientX,sy:e.clientY,ox:p.x-t.pos[0],oy:p.y-t.pos[1],moved:false};
 });
 svg.addEventListener('pointermove',e=>{
-  if(!drag)return;
-  if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)>8){drag.moved=true;if(mode==='result')resetResult()}
-  if(drag.moved){const p=svgPt(e);drag.t.pos=[p.x-drag.ox,p.y-drag.oy];place(drag.t)}
+  if(!drag||!ptrs.has(e.pointerId))return;
+  const p=svgPt(e);ptrs.set(e.pointerId,p);const t=drag.t;
+  if(drag.type==='move'){
+    if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)>8){drag.moved=true;wake()}
+    if(drag.moved){t.pos=[p.x-drag.ox,p.y-drag.oy];place(t)}
+  }else if(drag.type==='rot'){
+    const c=centerW(t);t.rot=drag.rot0+Math.atan2(p.y-c[1],p.x-c[0])*180/Math.PI-drag.a0;place(t);
+  }else if(drag.type==='twist'&&ptrs.size>=2){
+    const [a,b]=[...ptrs.values()];
+    t.rot=drag.rot0+angOf(a,b)-drag.a0;
+    t.pos=[drag.pos0[0]+(a.x+b.x)/2-drag.m0.x,drag.pos0[1]+(a.y+b.y)/2-drag.m0.y];place(t);
+  }
 });
-svg.addEventListener('pointerup',e=>{
-  if(!drag)return;const {id,moved}=drag;drag=null;
-  if(moved)return;
-  if(mode==='result')resetResult();
+function endPtr(e,cancel){
+  if(!ptrs.has(e.pointerId))return;ptrs.delete(e.pointerId);
+  if(!drag)return;
+  if(drag.type==='twist'){if(ptrs.size===0)drag=null;return}
+  const {id,moved,type}=drag;drag=null;ptrs.clear();
+  if(cancel||moved||type!=='move')return;
+  wake();
   if(sel.includes(id))sel=sel.filter(x=>x!==id);
   else{sel.push(id);if(sel.length>2)sel.shift()}
   refreshSel();
-});
-svg.addEventListener('pointercancel',()=>{drag=null});
+}
+svg.addEventListener('pointerup',e=>endPtr(e,false));
+svg.addEventListener('pointercancel',e=>endPtr(e,true));
 
 /* ---------- 닮음 판정 (복소수 최소제곱) ---------- */
 const PERMS=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];

@@ -1,0 +1,465 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<title>닮은 삼각형 찾기</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: 1cm 모눈종이 보드가 화면을 채우고, 위엔 탭, 아래엔 조작 막대 */
+:root{
+  --paper:#f6f7f1; --grid:#e1e6d8; --grid2:#cfd7c4; --ink:#26302a; --muted:#6b766d;
+  --tri:#ffffff; --a:#e5643a; --a-soft:#fbe0d5; --b:#16857f; --b-soft:#d3ece9;
+  --ok:#2e8a3c; --no:#c33d36; --card:#ffffff; --dock:#ffffffee; --line:#d6dccd;
+  --g1:#d98a1f; --g2:#4f74cf; --g3:#a9529d; --g0:#8a948c;
+  --display:'Jua','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --body:'IBM Plex Sans KR','Apple SD Gothic Neo','Malgun Gothic',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --paper:#1b211d; --grid:#263029; --grid2:#2f3a32; --ink:#e8eee6; --muted:#9aa69c;
+  --tri:#232b25; --a:#ff8a5f; --a-soft:#4a2a1f; --b:#3cc2b9; --b-soft:#173b38;
+  --ok:#5cc46a; --no:#ff6b63; --card:#232b25; --dock:#202722ee; --line:#3a463d;
+  --g1:#f0a945; --g2:#7f9ef0; --g3:#d27fc6; --g0:#7c877e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#1b211d; --grid:#263029; --grid2:#2f3a32; --ink:#e8eee6; --muted:#9aa69c;
+  --tri:#232b25; --a:#ff8a5f; --a-soft:#4a2a1f; --b:#3cc2b9; --b-soft:#173b38;
+  --ok:#5cc46a; --no:#ff6b63; --card:#232b25; --dock:#202722ee; --line:#3a463d;
+  --g1:#f0a945; --g2:#7f9ef0; --g3:#d27fc6; --g0:#7c877e; color-scheme:dark}
+
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--body);display:flex;flex-direction:column;overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header{display:flex;align-items:center;gap:12px;padding-block:10px;flex-wrap:wrap}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(22px,3.4vw,34px);margin:0;letter-spacing:.5px}
+.tabs{margin-left:auto;display:flex;background:var(--card);border:2px solid var(--line);border-radius:999px;padding:3px}
+.tabs button{font-family:var(--display);font-size:clamp(17px,2.4vw,22px);border:0;background:none;color:var(--muted);padding:6px 18px;border-radius:999px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--paper)}
+button:focus-visible{outline:3px solid var(--b);outline-offset:2px}
+
+#find{flex:1;min-height:0;display:flex;flex-direction:column}
+#board{flex:1;min-height:0;position:relative}
+#svg{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+.tri{cursor:pointer}
+.tri polygon{fill:var(--tri);stroke:var(--ink);stroke-width:.09;stroke-linejoin:round;transition:fill .2s,stroke .2s}
+.tri.selA polygon{fill:var(--a-soft);stroke:var(--a);stroke-width:.16}
+.tri.selB polygon{fill:var(--b-soft);stroke:var(--b);stroke-width:.16}
+.tri.faded{opacity:.22}
+.tri.dimmed{opacity:.35}
+.lbl{font-family:var(--body);font-weight:500;fill:var(--ink);font-size:.68px;text-anchor:middle;dominant-baseline:central;paint-order:stroke;stroke:var(--paper);stroke-width:.22px;stroke-linejoin:round}
+.alb{font-size:.6px;stroke:var(--tri)}
+.tri.selA .alb{stroke:var(--a-soft)} .tri.selB .alb{stroke:var(--b-soft)}
+.arc{fill:none;stroke:var(--ink);stroke-width:.05}
+.badge circle{fill:var(--card);stroke:var(--ink);stroke-width:.07}
+.badge text{font-family:var(--display);font-size:.78px;fill:var(--ink);text-anchor:middle;dominant-baseline:central}
+.tri.selA .badge circle{fill:var(--a);stroke:var(--a)} .tri.selA .badge text{fill:#fff}
+.tri.selB .badge circle{fill:var(--b);stroke:var(--b)} .tri.selB .badge text{fill:#fff}
+#ghost polygon{fill:var(--a);fill-opacity:.28;stroke:var(--a);stroke-width:.14;stroke-dasharray:.35 .2;vector-effect:none}
+#ghost.ok polygon{stroke:var(--ok);fill:var(--ok)}
+#ghost.no polygon{stroke:var(--no);fill:var(--no)}
+
+#dock{border-top:2px solid var(--line);background:var(--dock);padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-height:64px}
+.msg{font-family:var(--display);font-size:clamp(19px,2.8vw,26px)}
+.msg .na{color:var(--a)} .msg .nb{color:var(--b)}
+.big{font-family:var(--display);font-size:clamp(19px,2.8vw,26px);border:0;border-radius:14px;padding:10px 22px;cursor:pointer;background:var(--ink);color:var(--paper)}
+.big.go{background:var(--a);color:#fff}
+.ghostbtn{font-family:var(--display);font-size:clamp(16px,2.2vw,20px);border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:7px 14px;cursor:pointer}
+.verdict{font-family:var(--display);font-size:clamp(22px,3.2vw,32px);display:flex;align-items:center;gap:10px}
+.verdict.ok{color:var(--ok)} .verdict.no{color:var(--no)}
+.ev{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-family:var(--body);font-weight:500;font-size:clamp(15px,2vw,19px);background:var(--card);border:2px solid var(--line);border-radius:10px;padding:4px 10px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip.bad{border-color:var(--no);color:var(--no)}
+.chip .r{color:var(--muted);font-weight:400}
+.spacer{flex:1}
+#found{position:absolute;top:8px;right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;align-items:flex-end;gap:6px;pointer-events:none}
+#found .chip{background:var(--card);font-size:clamp(14px,1.8vw,17px)}
+#found .chip b{color:var(--ok)}
+
+#sum{flex:1;min-height:0;overflow:auto;padding-block:8px 24px}
+.groups{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;max-width:1200px;margin:0 auto}
+.gcard{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.gcard .top{display:flex;align-items:center;gap:10px}
+.gcard .nums{font-family:var(--display);font-size:clamp(24px,3.4vw,32px)}
+.gcard .tag{margin-left:auto;font-family:var(--display);font-size:17px;padding:2px 10px;border-radius:999px;color:#fff}
+.gcard svg{width:100%;height:180px;display:block}
+.gcard .lbl{stroke:var(--card)}
+.gcard .tri polygon{stroke-width:.1}
+.reveal{font-family:var(--display);font-size:20px;border:2px dashed var(--line);background:none;color:var(--muted);border-radius:12px;padding:10px;cursor:pointer;text-align:center}
+.cond{font-size:clamp(18px,2.4vw,22px);font-weight:500;line-height:1.5;word-break:keep-all}
+.cond b{color:var(--b)}
+.sumhead{font-family:var(--display);font-size:clamp(22px,3vw,30px);text-align:center;margin:6px 0 14px}
+footer{font-size:12px;color:var(--muted);text-align:right;padding-block:0 4px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<header class="wrap">
+  <h1>닮은 삼각형 찾기</h1>
+  <div class="tabs" role="tablist">
+    <button id="tabFind" role="tab" aria-selected="true">찾기</button>
+    <button id="tabSum" role="tab" aria-selected="false">정리</button>
+  </div>
+</header>
+
+<main id="find">
+  <div id="board">
+    <svg id="svg" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <pattern id="g1cm" width="1" height="1" patternUnits="userSpaceOnUse">
+          <path d="M1 0H0V1" fill="none" stroke="var(--grid)" stroke-width=".03"/>
+        </pattern>
+        <pattern id="g5cm" width="5" height="5" patternUnits="userSpaceOnUse">
+          <rect width="5" height="5" fill="url(#g1cm)"/>
+          <path d="M5 0H0V5" fill="none" stroke="var(--grid2)" stroke-width=".05"/>
+        </pattern>
+      </defs>
+      <rect id="bg" x="-50" y="-50" width="300" height="300" fill="url(#g5cm)"/>
+      <g id="tris"></g>
+      <g id="ghost"></g>
+    </svg>
+    <div id="found"></div>
+  </div>
+  <div id="dock" class="wrap"></div>
+</main>
+
+<main id="sum" class="wrap" hidden>
+  <div class="sumhead">무엇을 보고 닮음을 알았을까?</div>
+  <div class="groups" id="groups"></div>
+  <footer>이송원 제작</footer>
+</main>
+
+<script>
+(()=>{
+/* ---------- 삼각형 데이터 (수학 좌표, cm) ---------- */
+const RAW=[
+ {id:1,v:[[0,0],[3,0],[1.875,-1.6536]],sides:[[0,1,'3 cm',3],[0,2,'2.5 cm',2.5],[1,2,'2 cm',2]],angles:[]},
+ {id:2,v:[[0,0],[-1.247,-5.869],[2.463,-3.152]],sides:[[0,1,'6 cm',6],[0,2,'4 cm',4]],angles:[[0,'50°',50]]},
+ {id:3,v:[[0,0],[2.294,3.277],[3.398,0.910]],sides:[[0,1,'4 cm',4]],angles:[[0,'40°',40],[1,'60°',60]]},
+ {id:4,v:[[0,0],[12,0],[4.5,6.614]],sides:[[0,2,'8 cm',8],[1,2,'10 cm',10],[0,1,'12 cm',12]],angles:[]},
+ {id:5,v:[[0,0],[4.981,0.436],[2.294,3.277]],sides:[[0,2,'4 cm',4],[0,1,'5 cm',5]],angles:[[0,'50°',50]]},
+ {id:6,v:[[0,0],[9.962,-0.872],[4.589,-6.553]],sides:[[0,1,'10 cm',10],[0,2,'8 cm',8]],angles:[[0,'50°',50]]},
+ {id:7,v:[[0,0],[7.922,-1.113],[3.215,4.115]],sides:[[0,1,'8 cm',8]],angles:[[0,'60°',60],[2,'80°',80]]},
+ {id:8,v:[[0,0],[3,0],[1.125,1.6536]],sides:[[0,1,'3 cm',3],[0,2,'2 cm',2],[1,2,'2.5 cm',2.5]],angles:[]},
+ {id:9,v:[[0,0],[3.717,0.790],[2.058,2.634]],sides:[],angles:[[0,'40°',40],[2,'80°',80]]},
+];
+const CIRC='①②③④⑤⑥⑦⑧⑨';
+const PAD=1.5;
+const NS='http://www.w3.org/2000/svg';
+const $=s=>document.querySelector(s);
+const el=(tag,attrs={},parent)=>{const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e};
+
+const TRIS=RAW.map(r=>{
+  const v=r.v.map(([x,y])=>[x,-y]);
+  const xs=v.map(p=>p[0]),ys=v.map(p=>p[1]);
+  const mx=Math.min(...xs),my=Math.min(...ys);
+  const local=v.map(p=>[p[0]-mx,p[1]-my]);
+  const ang=[0,1,2].map(i=>{const P=local[i],Q=local[(i+1)%3],R=local[(i+2)%3];
+    const a=[Q[0]-P[0],Q[1]-P[1]],b=[R[0]-P[0],R[1]-P[1]];
+    return Math.round(Math.acos((a[0]*b[0]+a[1]*b[1])/Math.hypot(...a)/Math.hypot(...b))*180/Math.PI)});
+  const area=Math.abs((local[1][0]-local[0][0])*(local[2][1]-local[0][1])-(local[2][0]-local[0][0])*(local[1][1]-local[0][1]))/2;
+  return {...r,local,w:Math.max(...xs)-mx,h:Math.max(...ys)-my,pos:[0,0],ang,area};
+});
+const byId=id=>TRIS.find(t=>t.id===id);
+
+/* ---------- 그리기 ---------- */
+function drawTri(t,parent,showBadge=true){
+  const g=el('g',{class:'tri','data-id':t.id},parent);
+  const L=t.local;
+  el('polygon',{points:L.map(p=>p.join(',')).join(' ')},g);
+  const cx=(L[0][0]+L[1][0]+L[2][0])/3, cy=(L[0][1]+L[1][1]+L[2][1])/3;
+  for(const [i,text,] of t.angles){
+    const P=L[i],Q=L[(i+1)%3],R=L[(i+2)%3];
+    const u1=norm([Q[0]-P[0],Q[1]-P[1]]),u2=norm([R[0]-P[0],R[1]-P[1]]);
+    const rr=.55, cross=u1[0]*u2[1]-u1[1]*u2[0];
+    el('path',{class:'arc',d:`M${P[0]+rr*u1[0]} ${P[1]+rr*u1[1]} A${rr} ${rr} 0 0 ${cross>0?1:0} ${P[0]+rr*u2[0]} ${P[1]+rr*u2[1]}`},g);
+    const b=norm([u1[0]+u2[0],u1[1]+u2[1]]);
+    const th=t.ang[i]*Math.PI/180, d=Math.min(1.9,Math.max(1.05,.55/Math.sin(th/2)));
+    const tx=el('text',{class:'lbl alb',x:P[0]+b[0]*d,y:P[1]+b[1]*d},g);tx.textContent=text;
+  }
+  for(const [i,j,text] of t.sides){
+    const P=L[i],Q=L[j];const mx=(P[0]+Q[0])/2,my=(P[1]+Q[1])/2;
+    let n=norm([-(Q[1]-P[1]),Q[0]-P[0]]);
+    if((mx-cx)*n[0]+(my-cy)*n[1]<0)n=[-n[0],-n[1]];
+    const off=.55+.35*Math.abs(n[0]);
+    const tx=el('text',{class:'lbl',x:mx+n[0]*off,y:my+n[1]*off},g);tx.textContent=text;
+  }
+  if(showBadge){
+    const bg=el('g',{class:'badge'},g);
+    el('circle',{cx:-.75,cy:-.75,r:.55},bg);
+    const tx=el('text',{x:-.75,y:-.72},bg);tx.textContent=t.id;
+  }
+  return g;
+}
+function norm(v){const l=Math.hypot(v[0],v[1])||1;return [v[0]/l,v[1]/l]}
+
+const svg=$('#svg'),trisG=$('#tris'),ghost=$('#ghost');
+const gEls={};
+TRIS.forEach(t=>{gEls[t.id]=drawTri(t,trisG)});
+
+/* ---------- 배치 ---------- */
+let VB=[0,0,40,24];
+function layout(){
+  const cw=svg.clientWidth||800,ch=svg.clientHeight||500;
+  const items=TRIS.map(t=>({t,w:t.w+2*PAD,h:t.h+2*PAD}));
+  const total=items.reduce((s,i)=>s+i.w,0),maxw=Math.max(...items.map(i=>i.w));
+  let best=null;
+  for(let W=maxw;W<=total+.01;W+=.25){
+    const rows=pack(items,W);
+    const Wact=Math.max(...rows.map(r=>r.w)),H=rows.reduce((s,r)=>s+r.h,0);
+    const sc=Math.min(cw/Wact,ch/H);
+    if(!best||sc>best.sc+1e-9)best={sc,rows,Wact,H};
+  }
+  const {rows,Wact,H}=best;
+  const VW=Math.max(Wact,H*cw/ch),VH=Math.max(H,Wact*ch/cw);
+  const vgap=(VH-H)/(rows.length+1);
+  let y=vgap;
+  for(const r of rows){
+    const space=(VW-r.w)/(r.items.length+1);let x=space;
+    for(const it of r.items){it.t.pos=[x+PAD,y+(r.h-it.h)/2+PAD];x+=it.w+space}
+    y+=r.h+vgap;
+  }
+  VB=[0,0,VW,VH];
+  svg.setAttribute('viewBox',VB.join(' '));
+  TRIS.forEach(place);
+}
+function pack(items,W){
+  const rows=[];let cur={items:[],w:0,h:0};
+  for(const it of items){
+    if(cur.items.length&&cur.w+it.w>W+1e-9){rows.push(cur);cur={items:[],w:0,h:0}}
+    cur.items.push(it);cur.w+=it.w;cur.h=Math.max(cur.h,it.h);
+  }
+  rows.push(cur);return rows;
+}
+function place(t){gEls[t.id].setAttribute('transform',`translate(${t.pos[0]} ${t.pos[1]})`)}
+const world=t=>t.local.map(p=>[p[0]+t.pos[0],p[1]+t.pos[1]]);
+
+/* ---------- 상태 ---------- */
+let sel=[];            // 고른 삼각형 id (최대 2)
+let mode='pick';       // pick | anim | result
+let result=null;
+const found=new Map();
+
+function refreshSel(){
+  TRIS.forEach(t=>{const g=gEls[t.id];g.classList.toggle('selA',sel[0]===t.id);g.classList.toggle('selB',sel[1]===t.id)});
+  renderDock();
+}
+
+/* ---------- 포인터: 탭=고르기, 끌기=옮기기 ---------- */
+let drag=null;
+function svgPt(e){const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}
+svg.addEventListener('pointerdown',e=>{
+  if(mode==='anim')return;
+  const g=e.target.closest('.tri');if(!g)return;
+  const id=+g.dataset.id,t=byId(id),p=svgPt(e);
+  drag={id,t,sx:e.clientX,sy:e.clientY,ox:p.x-t.pos[0],oy:p.y-t.pos[1],moved:false};
+  svg.setPointerCapture(e.pointerId);
+  trisG.appendChild(g);
+});
+svg.addEventListener('pointermove',e=>{
+  if(!drag)return;
+  if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)>8){drag.moved=true;if(mode==='result')resetResult()}
+  if(drag.moved){const p=svgPt(e);drag.t.pos=[p.x-drag.ox,p.y-drag.oy];place(drag.t)}
+});
+svg.addEventListener('pointerup',e=>{
+  if(!drag)return;const {id,moved}=drag;drag=null;
+  if(moved)return;
+  if(mode==='result')resetResult();
+  if(sel.includes(id))sel=sel.filter(x=>x!==id);
+  else{sel.push(id);if(sel.length>2)sel.shift()}
+  refreshSel();
+});
+svg.addEventListener('pointercancel',()=>{drag=null});
+
+/* ---------- 닮음 판정 (복소수 최소제곱) ---------- */
+const PERMS=[[0,1,2],[0,2,1],[1,0,2],[1,2,0],[2,0,1],[2,1,0]];
+function fit(Z,W,p,refl){
+  const z=Z.map(q=>refl?[q[0],-q[1]]:q),w=p.map(j=>W[j]);
+  const zc=[(z[0][0]+z[1][0]+z[2][0])/3,(z[0][1]+z[1][1]+z[2][1])/3];
+  const wc=[(w[0][0]+w[1][0]+w[2][0])/3,(w[0][1]+w[1][1]+w[2][1])/3];
+  let nr=0,ni=0,den=0,wv=0;
+  for(let i=0;i<3;i++){
+    const zx=z[i][0]-zc[0],zy=z[i][1]-zc[1],wx=w[i][0]-wc[0],wy=w[i][1]-wc[1];
+    nr+=wx*zx+wy*zy;ni+=wy*zx-wx*zy;den+=zx*zx+zy*zy;wv+=wx*wx+wy*wy;
+  }
+  const ar=nr/den,ai=ni/den;let res=0;
+  for(let i=0;i<3;i++){
+    const zx=z[i][0]-zc[0],zy=z[i][1]-zc[1];
+    const px=ar*zx-ai*zy+wc[0],py=ar*zy+ai*zx+wc[1];
+    res+=(px-w[i][0])**2+(py-w[i][1])**2;
+  }
+  return {p,refl,s:Math.hypot(ar,ai),th:Math.atan2(ai,ar),wc,res:res/wv};
+}
+function bestFit(Z,W,perms=PERMS){
+  let b=null;for(const p of perms)for(const r of [false,true]){const f=fit(Z,W,p,r);if(!b||f.res<b.res)b=f}return b;
+}
+// 닮지 않은 경우: 같은 크기의 표시된 각이 있으면 그 각끼리, 긴 변끼리 맞춰 비교
+function angleMap(M,T){
+  for(const [i,,va] of M.angles)for(const [j,,vb] of T.angles){
+    if(va!==vb)continue;
+    const sa=[(i+1)%3,(i+2)%3].map(k=>({k,v:sideVal(M,i,k)})),sb=[(j+1)%3,(j+2)%3].map(k=>({k,v:sideVal(T,j,k)}));
+    if(sa.some(s=>s.v==null)||sb.some(s=>s.v==null))continue;
+    sa.sort((a,b)=>b.v-a.v);sb.sort((a,b)=>b.v-a.v);
+    const p=[0,0,0];p[i]=j;p[sa[0].k]=sb[0].k;p[sa[1].k]=sb[1].k;return p;
+  }
+  return null;
+}
+function sideVal(t,i,j){const s=t.sides.find(s=>(s[0]===i&&s[1]===j)||(s[0]===j&&s[1]===i));return s?s[3]:null}
+function sideTxt(t,i,j){const s=t.sides.find(s=>(s[0]===i&&s[1]===j)||(s[0]===j&&s[1]===i));return s?s[2]:null}
+
+function gcd(a,b){return b?gcd(b,a%b):a}
+function ratio(a,b){let k=1;while((Math.abs(a*k-Math.round(a*k))>1e-6||Math.abs(b*k-Math.round(b*k))>1e-6)&&k<100)k*=2;
+  const x=Math.round(a*k),y=Math.round(b*k),g=gcd(x,y);return [x/g,y/g]}
+const num=v=>String(v);
+
+function evidence(A,B,m){ // m: A의 꼭짓점 → B의 꼭짓점
+  const sides=[],angles=[];
+  for(const [i,j,,va] of A.sides){const vb=sideVal(B,m[i],m[j]);if(vb!=null)sides.push({a:va,b:vb,r:ratio(va,vb)})}
+  const dA=A.angles.length>=2,dB=B.angles.length>=2;
+  for(let i=0;i<3;i++){
+    const la=A.angles.find(x=>x[0]===i),lb=B.angles.find(x=>x[0]===m[i]);
+    if(!la&&!lb)continue;
+    const ta=la?la[1]:(dA?`(${A.ang[i]}°)`:null),tb=lb?lb[1]:(dB?`(${B.ang[m[i]]}°)`:null);
+    if(ta&&tb)angles.push({a:ta,b:tb,eq:A.ang[i]===B.ang[m[i]]});
+  }
+  return {sides,angles};
+}
+
+/* ---------- 포개 보기 애니메이션 ---------- */
+function compare(){
+  const [i1,i2]=sel,T1=byId(i1),T2=byId(i2);
+  let mov,tgt;
+  if(Math.abs(T1.area-T2.area)<1e-3){mov=T2;tgt=T1}else if(T1.area<T2.area){mov=T1;tgt=T2}else{mov=T2;tgt=T1}
+  const Z=world(mov),W=world(tgt);
+  let f=bestFit(Z,W);
+  const similar=f.res<1e-3;
+  if(!similar){const p=angleMap(mov,tgt);if(p)f=bestFit(Z,W,[p])}
+  // 근거: 번호가 작은 쪽 → 큰 쪽
+  const A=mov.id<tgt.id?mov:tgt,B=A===mov?tgt:mov;
+  const m=A===mov?f.p:[0,1,2].map(j=>f.p.indexOf(j));
+  result={A,B,similar,ev:evidence(A,B,m),mov,tgt};
+
+  mode='anim';renderDock();
+  TRIS.forEach(t=>gEls[t.id].classList.toggle('dimmed',t!==mov&&t!==tgt));
+  gEls[mov.id].classList.add('faded');
+  ghost.innerHTML='';ghost.setAttribute('class','');
+  const poly=el('polygon',{points:Z.map(p=>p.join(',')).join(' ')},ghost);
+  const c0=[(Z[0][0]+Z[1][0]+Z[2][0])/3,(Z[0][1]+Z[1][1]+Z[2][1])/3],c1=f.wc;
+  let th=f.th; // 뒤집기 없이 회전이 크면 그대로
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const T_MOVE=reduce?1:1000,T_PAUSE=reduce?0:250,T_SCALE=(reduce||Math.abs(f.s-1)<1e-3)?1:1100;
+  const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+  const t0=performance.now();
+  const sw=.14;
+  function frame(now){
+    const e=now-t0;
+    const e1=ease(Math.min(1,e/T_MOVE));
+    const e2=ease(Math.max(0,Math.min(1,(e-T_MOVE-T_PAUSE)/T_SCALE)));
+    const fy=f.refl?1-2*e1:1;
+    const s=Math.pow(f.s,e2);
+    const cx=c0[0]+(c1[0]-c0[0])*e1,cy=c0[1]+(c1[1]-c0[1])*e1;
+    ghost.setAttribute('transform',`translate(${cx} ${cy}) rotate(${th*e1*180/Math.PI}) scale(${s} ${s*fy}) translate(${-c0[0]} ${-c0[1]})`);
+    poly.style.strokeWidth=sw/s;poly.style.strokeDasharray=`${.35/s} ${.2/s}`;
+    if(e<T_MOVE+T_PAUSE+T_SCALE)requestAnimationFrame(frame);
+    else done();
+  }
+  requestAnimationFrame(frame);
+  function done(){
+    ghost.setAttribute('class',similar?'ok':'no');
+    mode='result';
+    if(similar){
+      const sp=result.ev.sides[0];
+      found.set(`${A.id}-${B.id}`,{a:A.id,b:B.id,r:sp?sp.r.join(' : '):'?'});
+      renderFound();
+    }
+    renderDock();
+  }
+}
+function resetResult(){
+  ghost.innerHTML='';ghost.removeAttribute('transform');
+  TRIS.forEach(t=>gEls[t.id].classList.remove('faded','dimmed'));
+  mode='pick';result=null;sel=[];refreshSel();
+}
+
+/* ---------- 아래 막대 ---------- */
+const dock=$('#dock');
+function renderDock(){
+  dock.innerHTML='';
+  const add=(html,cls,tag='div')=>{const d=document.createElement(tag);if(cls)d.className=cls;d.innerHTML=html;dock.appendChild(d);return d};
+  if(mode==='pick'){
+    if(sel.length===0)add('닮은 것 같은 두 삼각형을 골라 보자','msg');
+    else if(sel.length===1)add(`<span class="na">${CIRC[sel[0]-1]}</span> 하고 또 하나는?`,'msg');
+    else{
+      add(`<span class="na">${CIRC[sel[0]-1]}</span> 와 <span class="nb">${CIRC[sel[1]-1]}</span>`,'msg');
+      add('','spacer');
+      const b=add('포개 보기','big go','button');b.onclick=compare;
+    }
+    if(sel.length){add('','spacer');const c=add('취소','ghostbtn','button');c.onclick=()=>{sel=[];refreshSel()};}
+  }else if(mode==='anim'){
+    add('포개 보는 중…','msg');
+  }else if(mode==='result'){
+    const {A,B,similar,ev}=result;
+    const sp=ev.sides[0];
+    let head;
+    if(similar){
+      const r=sp?sp.r.join(' : '):'?';
+      head=`닮음! <span style="color:var(--ink)">${CIRC[A.id-1]} ∽ ${CIRC[B.id-1]}</span>&nbsp;&nbsp;닮음비 ${r}${sp&&sp.r[0]===sp.r[1]?' (합동)':''}`;
+    }else head=`안 포개져요 <span style="color:var(--ink)">${CIRC[A.id-1]}, ${CIRC[B.id-1]}</span>`;
+    add(head,'verdict '+(similar?'ok':'no'));
+    const evd=add('','ev');
+    const mixed=new Set(ev.sides.map(s=>s.r.join(':'))).size>1;
+    for(const s of ev.sides){
+      const bad=mixed;
+      const c=document.createElement('span');c.className='chip'+(bad?' bad':'');
+      c.innerHTML=`${num(s.a)} : ${num(s.b)} <span class="r">= ${s.r[0]} : ${s.r[1]}</span>`;evd.appendChild(c);
+    }
+    for(const a of ev.angles){
+      const c=document.createElement('span');c.className='chip'+(a.eq?'':' bad');
+      c.textContent=`${a.a} ${a.eq?'=':'≠'} ${a.b}`;evd.appendChild(c);
+    }
+    if(similar&&!sp){const c=document.createElement('span');c.className='chip';c.innerHTML='<span class="r">길이가 없어 닮음비는 몰라요</span>';evd.appendChild(c)}
+    add('','spacer');
+    const b=add('제자리','ghostbtn','button');b.onclick=resetResult;
+  }
+}
+function renderFound(){
+  const f=$('#found');f.innerHTML='';
+  for(const {a,b,r} of found.values()){const c=document.createElement('span');c.className='chip';c.innerHTML=`<b>✓</b> ${CIRC[a-1]} ∽ ${CIRC[b-1]} <span class="r">${r}</span>`;f.appendChild(c)}
+}
+
+/* ---------- 정리 화면 ---------- */
+const GROUPS=[
+  {ids:[1,4,8],col:'--g1',tag:'SSS',cond:'세 쌍의 대응변의 <b>길이의 비</b>가 같다'},
+  {ids:[5,6],col:'--g2',tag:'SAS',cond:'두 쌍의 대응변의 <b>길이의 비</b>가 같고, 그 <b>끼인각</b>의 크기가 같다'},
+  {ids:[3,7,9],col:'--g3',tag:'AA',cond:'두 쌍의 대응각의 <b>크기</b>가 같다'},
+  {ids:[2],col:'--g0',tag:'짝 없음',cond:'끼인각은 50°로 같지만 ②와 ⑥은 <b>6 : 10 ≠ 4 : 8</b>'},
+];
+function buildGroups(){
+  const box=$('#groups');
+  for(const g of GROUPS){
+    const card=document.createElement('div');card.className='gcard';
+    card.innerHTML=`<div class="top"><span class="nums">${g.ids.map(i=>CIRC[i-1]).join(' ')}</span><span class="tag" style="background:var(${g.col})">${g.tag}</span></div>`;
+    const s=document.createElementNS(NS,'svg');card.appendChild(s);
+    let x=0,maxH=0;
+    for(const id of g.ids){const t=byId(id);const gg=drawTri(t,s);gg.setAttribute('transform',`translate(${x+PAD} ${PAD})`);x+=t.w+2*PAD;maxH=Math.max(maxH,t.h+2*PAD)}
+    s.setAttribute('viewBox',`0 0 ${x} ${maxH}`);
+    const b=document.createElement('button');b.className='reveal';b.textContent='무엇을 보고?';
+    b.onclick=()=>{const c=document.createElement('div');c.className='cond';c.innerHTML=g.cond;b.replaceWith(c)};
+    card.appendChild(b);box.appendChild(card);
+  }
+}
+buildGroups();
+
+/* ---------- 탭 ---------- */
+function setTab(which){
+  $('#tabFind').setAttribute('aria-selected',which==='find');
+  $('#tabSum').setAttribute('aria-selected',which==='sum');
+  $('#find').hidden=which!=='find';$('#sum').hidden=which!=='sum';
+  if(which==='find')requestAnimationFrame(layout);
+}
+$('#tabFind').onclick=()=>setTab('find');
+$('#tabSum').onclick=()=>setTab('sum');
+
+let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(()=>{if(mode==='result')resetResult();if(mode!=='anim')layout()},150)});
+layout();renderDock();
+})();
+</script>

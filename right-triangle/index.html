@@ -199,9 +199,7 @@ const P=[
    steps:[
     {},
     {m:[[0,2,'r','--yellow'],[1,2,'r','--yellow']],line:'∠AHB = ∠CHA = 90°',c:'--yellow'},
-    {m:[[0,0,'a','--pink'],[1,1,'b','--mint']],line:'∠BAH + ∠CAH = 90°'},
-    {m:[[1,0,'a','--chalk']],line:'△CAH 에서 ∠ACH + ∠CAH = 90°'},
-    {clear:1,m:[[0,2,'r','--yellow'],[1,2,'r','--yellow'],[0,0,'a','--pink'],[1,0,'a','--pink']],line:'그래서 ∠BAH = ∠ACH',c:'--pink'},
+    {m:[[0,0,'a','--pink'],[1,0,'a','--pink']],line:'∠BAH = ∠ACH',c:'--pink'},
     {end:1}
    ]}
 ];
@@ -270,6 +268,7 @@ function draw(){
     });
   }
   const lit=st.page===0?marksUpTo(p,n).filter(x=>x.m[2]==='r').map(x=>p.tris[x.m[0]][x.m[1]]):[];
+  if(st.page===0&&st.i===2&&n>=1)lit.push('A');
   h+=rightMarks(lit);
   if(st.page===0)marksUpTo(p,n).forEach(({m,now})=>{h+=angleMark(V[m[0]],m[1],m[2],m[3],'st'+(now?' now':''))});
   const off={A:[0,-30],B:[-26,20],C:[26,20],H:[0,32]};

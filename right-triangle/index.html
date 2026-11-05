@@ -101,18 +101,29 @@ footer{flex:none;display:flex;align-items:center;gap:.5em;min-height:2.1em}
 .sc.small{pointer-events:none}
 .mk{fill:none;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
 .now{animation:pulse .7s ease-in-out 3}
-.blink{animation:blink .36s steps(2,jump-none) 3}
+.side.hot{stroke-width:14}
+.flash{stroke:none;opacity:0;animation:flash .62s ease-in-out 1}
+.flash.big{fill:var(--big)}
+.flash.small{fill:var(--small)}
 #sv .seg-lab{font-size:36px}
 #sv .lg{font-size:32px;text-anchor:start}
 @keyframes pulse{50%{opacity:.25}}
-@keyframes blink{0%{opacity:1}100%{opacity:.08}}
-@media (prefers-reduced-motion:reduce){.now,.blink{animation-duration:.01s}}
+@keyframes flash{50%{opacity:.85}}
+@media (prefers-reduced-motion:reduce){.now,.flash{animation-duration:.01s}}
+main[data-page="1"] #panel{display:flex;flex-direction:column;gap:.2em}
+main[data-page="1"] .prop{flex:1;height:auto;min-height:0}
+.say{display:grid;grid-template-columns:1fr 1fr;gap:.6em;min-height:1.4em;font-size:.9em;text-align:center}
+#sayB{color:var(--big)}#sayS{color:var(--small)}
+.rg{display:flex;flex-direction:column;align-items:center;gap:.12em}
+.rr{display:flex;align-items:center;gap:.3em}
+.cap{font-size:.56em;min-height:1.3em;color:var(--chalk)}
+main[data-page="1"] .prop>.op{margin-bottom:.85em}
 @media (max-width:760px){
   .goal{margin-left:0;width:100%}
   footer{flex-wrap:wrap}
   #msg{flex:1 0 100%}
   .by{margin-right:auto}
-  .lines{grid-template-columns:1fr}
+  .lines,.say{grid-template-columns:1fr}
   main[data-page="2"]{flex-direction:column}
   main[data-page="2"] #panel{flex:none;border-left:0;padding:0}
   #panel{height:auto}
@@ -192,7 +203,7 @@ const P=[
     {m:[[0,1,'b','--mint']],end:1}
    ]}
 ];
-const st={i:0,page:0,busy:false,blink:null,s:P.map(()=>[0,[],0])};
+const st={i:0,page:0,busy:false,act:null,flash:null,s:P.map(()=>[0,[],0])};
 const stepOf=()=>st.s[st.i][0];
 const filled=()=>st.s[st.i][1];
 const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
@@ -229,6 +240,10 @@ function chip(c,txt,cls,attr=''){
     <rect x="${-w/2}" y="${-h/2}" width="${w}" height="${h}" rx="9"/><text>${txt}</text>
     <line x1="-22" x2="22" y1="-14" y2="-14"/></g>`;
 }
+function rightMarks(){
+  const A=O(S.A),B=O(S.B),C=O(S.C),H=O(S.H);
+  return angleMark([A,B,C],0,'r','--chalk','')+angleMark([H,C,A],0,'r','--chalk','');
+}
 function draw(){
   if(st.page===2) return drawFinal();
   sv.setAttribute('viewBox','130 30 740 450');
@@ -238,15 +253,20 @@ function draw(){
   let h='';
   [p.big,sm].forEach(t=>h+=`<polygon class="tri ${t===p.big?'big':'small'}" points="${pts(W[t])}"/>`);
   if(st.page===1){
-    const col=k=>k===0?'--yellow':'--pink';
+    const col=k=>k===0?'--yellow':'--pink', a=st.act;
     p.sides.forEach((s,idx)=>{
-      const on=filled().indexOf(idx), bl=st.blink===idx;
-      if(on<0&&!bl)return;
+      const on=filled().indexOf(idx), cur=a&&a.idx===idx;
+      if(on<0&&!cur)return;
       const c=on>=0?col(on):(s.use?col(filled().length):'--violet');
-      [0,1].forEach(t=>{const a=W[t][s.i],b=W[t][s.j];
-        h+=`<line class="side ${bl?'blink':''}" stroke="var(${c})" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/>`});
+      [0,1].forEach(t=>{
+        const shown=on>=0||a.show[t===p.big?0:1];
+        if(!shown)return;
+        const u=W[t][s.i],v=W[t][s.j];
+        h+=`<line class="side ${cur?'hot':''}" stroke="var(${c})" x1="${u[0]}" y1="${u[1]}" x2="${v[0]}" y2="${v[1]}"/>`});
     });
+    if(st.flash!==null)h+=`<polygon class="flash ${st.flash===p.big?'big':'small'}" points="${pts(W[st.flash])}"/>`;
   }
+  h+=rightMarks();
   marksUpTo(p,n).forEach(({m,now})=>{h+=angleMark(V[m[0]],m[1],m[2],m[3],now&&st.page===0?'now':'')});
   const off={A:[0,-30],B:[-26,20],C:[26,20],H:[0,32]};
   ['A','B','C','H'].forEach(q=>{const c=O(S[q]);
@@ -259,7 +279,7 @@ function draw(){
     p.sides.forEach((s,idx)=>{
       const nm=t=>p.tris[t][s.i]+p.tris[t][s.j];
       h+=chip(spot(p.big,'bl')(s),nm(p.big),'big',`data-s="${idx}" id="bc${idx}"`);
-      if(filled().includes(idx)||st.blink===idx) h+=chip(spot(sm,'sl')(s),nm(sm),'small',`id="sc${idx}"`);
+      if(filled().includes(idx)||(st.act&&st.act.idx===idx&&st.act.show[1])) h+=chip(spot(sm,'sl')(s),nm(sm),'small',`id="sc${idx}"`);
     });
   }
   sv.innerHTML=h;
@@ -269,7 +289,7 @@ function drawFinal(){
   const p=P[st.i], on=st.s[st.i][2]>=3, A=O(S.A),B=O(S.B),C=O(S.C),H=O(S.H);
   let h=`<polygon class="ghost" points="${pts([A,B,C])}"/>
     <line x1="${A[0]}" y1="${A[1]}" x2="${H[0]}" y2="${H[1]}" stroke="var(--chalk)" stroke-width="3"/>`;
-  h+=angleMark([H,C,A],0,'r','--dim','')+angleMark([A,B,C],0,'r','--dim','');
+  h+=rightMarks();
   if(on) p.segs.forEach(g=>{
     const a=O(S[g.a]),b=O(S[g.b]),o=g.off||0;
     h+=`<line class="side" stroke="var(${g.c})" x1="${a[0]}" y1="${a[1]+o}" x2="${b[0]}" y2="${b[1]+o}"/>`;
@@ -303,7 +323,8 @@ function panelRender(){
   }else if(st.page===1){
     const f=filled(),t=f.map(idx=>{const s=p.sides[idx],sm=1-p.big;return[p.tris[p.big][s.i]+p.tris[p.big][s.j],p.tris[sm][s.i]+p.tris[sm][s.j]]});
     const sl=(i)=>{const q=t[i>>1];return q?`<span class="chip ${i%2?'small':'big'}" id="sl${i}">${ov(q[i%2])}</span>`:`<span class="slot" id="sl${i}"></span>`};
-    panel.innerHTML=`<div class="prop">${sl(0)}<span class="op">:</span>${sl(1)}<span class="op">=</span>${sl(2)}<span class="op">:</span>${sl(3)}</div>`;
+    const rg=(k)=>`<div class="rg"><div class="rr">${sl(k*2)}<span class="op">:</span>${sl(k*2+1)}</div><div class="cap">${f[k]!==undefined?'대응변: '+rankOf(p,p.sides[f[k]])+'끼리':''}</div></div>`;
+    panel.innerHTML=`<div class="say"><span id="sayB"></span><span id="sayS"></span></div><div class="prop">${rg(0)}<span class="op">=</span>${rg(1)}</div>`;
   }else{
     const n=st.s[st.i][2],t=terms();
     let h=propHTML(n>=1?['ext','mean','mean','ext']:[]);
@@ -345,12 +366,17 @@ function hint(t,warn){msgEl.textContent=t||'';msgEl.className=warn?'warn':''}
 function defaultHint(){
   const p=P[st.i];
   if(st.page===1){
-    if(filled().length<2)hint(`파란 테두리 ${tri(p.tris[p.big])}의 변을 눌러 보세요`);else hint('');
+    if(filled().length<2)hint(`대응변으로 비례식을 세워 봐요. 파란 테두리 ${tri(p.tris[p.big])}의 변을 눌러 보세요`);else hint('');
   }else if(st.page===0&&stepOf()===0)hint(`${p.name} 를 찾아보세요`);else hint('');
 }
 function render(){draw();panelRender();chrome();defaultHint()}
+const RANK=['가장 짧은 변','중간 길이의 변','가장 긴 변'];
+function rankOf(p,s){
+  const big=[...p.tris[p.big]].map(q=>S[q]),L=x=>Math.hypot(big[x.i][0]-big[x.j][0],big[x.i][1]-big[x.j][1]);
+  return RANK[[...p.sides].sort((a,b)=>L(a)-L(b)).indexOf(s)];
+}
 function setStep(n){st.s[st.i][0]=n;render()}
-function goPage(g){st.page=g;st.blink=null;render()}
+function goPage(g){st.page=g;st.act=null;st.flash=null;render()}
 const wait=ms=>new Promise(r=>setTimeout(r,matchMedia('(prefers-reduced-motion:reduce)').matches?1:ms));
 async function fly(fromId,toId,html,cls){
   const from=$(fromId),to=$(toId);if(!from||!to)return;
@@ -372,26 +398,33 @@ async function fly(fromId,toId,html,cls){
   el.remove();
   to.animate([{transform:'scale(1.22)'},{transform:'scale(1)'}],{duration:reduce?1:220,easing:'ease-out'});
 }
+async function write(el,txt,name){
+  if(!matchMedia('(prefers-reduced-motion:reduce)').matches)
+    for(let i=1;i<=txt.length;i++){el.textContent=txt.slice(0,i);await wait(45)}
+  el.innerHTML=txt+' '+ov(name);
+}
 async function press(idx){
   if(st.busy)return;
-  const p=P[st.i],s=p.sides[idx],f=filled(),sm=1-p.big;
+  const p=P[st.i],s=p.sides[idx],f=filled(),sm=1-p.big,rank=rankOf(p,s);
   const big=p.tris[p.big][s.i]+p.tris[p.big][s.j],small=p.tris[sm][s.i]+p.tris[sm][s.j];
-  if(!s.use){
-    st.busy=true;st.blink=idx;draw();chrome();
-    hint(`${big} 의 대응변은 ${small} — 만들려는 식에 없는 변이라 넣지 않아요`,true);
-    await wait(1200);st.blink=null;st.busy=false;draw();chrome();return;
+  const add=s.use&&!f.includes(idx)&&f.length<2, say=[$('sayB'),$('sayS')];
+  st.busy=true;st.act={idx,show:[false,false]};say[0].textContent=say[1].textContent='';hint('');chrome();
+  st.flash=p.big;draw();await wait(650);
+  st.flash=null;st.act.show[0]=true;draw();
+  await write(say[0],'큰 삼각형의 '+rank,big);await wait(450);
+  st.flash=sm;draw();await wait(650);
+  st.flash=null;st.act.show[1]=true;draw();
+  await write(say[1],'작은 삼각형의 '+rank,small);hint(`${big} 와 ${small} 는 대응변`);await wait(800);
+  if(add){
+    const at=f.length*2;
+    await fly('bc'+idx,'sl'+at,ov(big),'big');
+    await wait(90);
+    await fly('sc'+idx,'sl'+(at+1),ov(small),'small');
+    f.push(idx);st.act=null;st.busy=false;render();
+  }else{
+    if(!s.use)hint(`${big} 와 ${small} 는 대응변이지만 만들려는 식에 없어서 넣지 않아요`,true);
+    await wait(900);st.act=null;st.busy=false;draw();chrome();
   }
-  if(f.includes(idx)||f.length>=2){
-    st.busy=true;st.blink=idx;draw();chrome();await wait(1200);st.blink=null;st.busy=false;draw();chrome();return;
-  }
-  st.busy=true;st.blink=idx;draw();chrome();
-  hint(`${big} 의 대응변은 ${small}`);
-  await wait(1200);
-  const at=f.length*2;
-  await fly('bc'+idx,'sl'+at,ov(big),'big');
-  await wait(90);
-  await fly('sc'+idx,'sl'+(at+1),ov(small),'small');
-  f.push(idx);st.blink=null;st.busy=false;render();
 }
 
 $('probs').addEventListener('click',e=>{const b=e.target.closest('[data-p]');if(!b||st.busy)return;st.i=+b.dataset.p;goPage(st.page)});

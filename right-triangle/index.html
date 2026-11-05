@@ -86,11 +86,11 @@ footer{flex:none;display:flex;align-items:center;gap:.5em;min-height:2.1em}
 #sv text{font-family:var(--font);fill:var(--chalk);text-anchor:middle;dominant-baseline:central}
 #sv .vx{font-size:34px}
 #sv .vx.v0{fill:var(--yellow)}#sv .vx.v1{fill:var(--mint)}#sv .vx.v2{fill:var(--pink)}
-.tri{stroke:var(--chalk);stroke-width:3;stroke-linejoin:round}
-.tri.big{fill:rgba(124,201,234,.34)}
-.tri.small{fill:rgba(255,176,124,.4)}
+.tri{stroke-width:5;stroke-linejoin:round}
+.tri.big{fill:rgba(124,201,234,.3);stroke:var(--big)}
+.tri.small{fill:rgba(255,176,124,.4);stroke:var(--small)}
 .ghost{fill:none;stroke:var(--chalk);stroke-width:3;stroke-linejoin:round}
-.side{stroke-width:10;stroke-linecap:round}
+.side{stroke-width:9;stroke-linecap:round}
 .hit{stroke:transparent;stroke-width:54;cursor:pointer}
 .sc{cursor:pointer}
 .sc rect{stroke:var(--chalk);stroke-width:2.5}
@@ -103,6 +103,7 @@ footer{flex:none;display:flex;align-items:center;gap:.5em;min-height:2.1em}
 .now{animation:pulse .7s ease-in-out 3}
 .blink{animation:blink .36s steps(2,jump-none) 3}
 #sv .seg-lab{font-size:36px}
+#sv .lg{font-size:32px;text-anchor:start}
 @keyframes pulse{50%{opacity:.25}}
 @keyframes blink{0%{opacity:1}100%{opacity:.08}}
 @media (prefers-reduced-motion:reduce){.now,.blink{animation-duration:.01s}}
@@ -153,74 +154,59 @@ const S={A:[3.6,4.8],B:[0,0],C:[10,0],H:[3.6,0]};
 const O=q=>[180+q[0]*64,400-q[1]*64];
 
 const P=[
- { label:'(1)', tris:['ABC','HBA'], big:0, s:48, k:.6, x:[50,640], base:345,
+ { label:'(1)', tris:['ABC','HBA'], big:0, ins:[0,8],
    name:'△ABC 와 △HBA',
-   sides:[{i:0,j:1,use:1},{i:1,j:2,use:1},{i:2,j:0,use:0}],
+   sides:[{i:0,j:1,use:1,bl:[-46,-30],sl:[0,-36]},{i:1,j:2,use:1,bl:[0,44],sl:[40,26]},{i:2,j:0,use:0,bl:[50,-30],sl:[52,0]}],
    sq:'AB', final:`${ov('AB')}<sup>2</sup> = ${ov('BH')} × ${ov('BC')}`,
    note:`${ov('BA')} = ${ov('AB')},  ${ov('HB')} = ${ov('BH')}`,
    segs:[{a:'A',b:'B',c:'--yellow',l:'AB',lo:[-50,-24]},{a:'B',b:'H',c:'--mint',l:'BH',lo:[0,-30]},{a:'B',b:'C',c:'--pink',off:30,l:'BC',lo:[0,32]}],
    steps:[
-    {sep:0},
-    {sep:1,m:[]},
-    {sep:1,m:[[0,0,'r','--yellow'],[1,0,'r','--yellow']],line:'∠BAC = ∠BHA = 90°'},
-    {sep:1,m:[[0,1,'a','--mint'],[1,1,'a','--mint']],line:'∠B 는 공통'},
-    {sep:1,m:[[0,2,'b','--pink'],[1,2,'b','--pink']],end:1}
+    {},
+    {m:[[0,0,'r','--yellow'],[1,0,'r','--yellow']],line:'∠BAC = ∠BHA = 90°'},
+    {m:[[0,1,'a','--mint'],[1,1,'a','--mint']],line:'∠B 는 공통'},
+    {m:[[0,2,'b','--pink'],[1,2,'b','--pink']],end:1}
    ]},
- { label:'(2)', tris:['ABC','HAC'], big:0, s:43, k:.8, x:[40,570], base:335,
+ { label:'(2)', tris:['ABC','HAC'], big:0, ins:[0,8],
    name:'△ABC 와 △HAC',
-   sides:[{i:0,j:2,use:1},{i:1,j:2,use:1},{i:0,j:1,use:0}],
+   sides:[{i:0,j:2,use:1,bl:[50,-30],sl:[0,-36]},{i:1,j:2,use:1,bl:[0,44],sl:[-40,26]},{i:0,j:1,use:0,bl:[-46,-30],sl:[-52,0]}],
    sq:'AC', final:`${ov('AC')}<sup>2</sup> = ${ov('HC')} × ${ov('BC')}`, note:'',
    segs:[{a:'A',b:'C',c:'--yellow',l:'AC',lo:[50,-24]},{a:'H',b:'C',c:'--mint',l:'HC',lo:[0,-30]},{a:'B',b:'C',c:'--pink',off:30,l:'BC',lo:[0,32]}],
    steps:[
-    {sep:0},
-    {sep:1,m:[]},
-    {sep:1,m:[[0,0,'r','--yellow'],[1,0,'r','--yellow']],line:'∠BAC = ∠AHC = 90°'},
-    {sep:1,m:[[0,2,'a','--pink'],[1,2,'a','--pink']],line:'∠C 는 공통'},
-    {sep:1,m:[[0,1,'b','--mint'],[1,1,'b','--mint']],end:1}
+    {},
+    {m:[[0,0,'r','--yellow'],[1,0,'r','--yellow']],line:'∠BAC = ∠AHC = 90°'},
+    {m:[[0,2,'a','--pink'],[1,2,'a','--pink']],line:'∠C 는 공통'},
+    {m:[[0,1,'b','--mint'],[1,1,'b','--mint']],end:1}
    ]},
- { label:'(3)', tris:['ABH','CAH'], big:1, s:60, k:.75, x:[90,510], base:395, rot:0,
+ { label:'(3)', tris:['ABH','CAH'], big:1, ins:[5,5],
    name:'△ABH 와 △CAH',
-   sides:[{i:1,j:2,use:1},{i:2,j:0,use:1},{i:0,j:1,use:0}],
+   sides:[{i:1,j:2,use:1,bl:[52,0],sl:[0,44]},{i:2,j:0,use:1,bl:[0,44],sl:[-52,0]},{i:0,j:1,use:0,bl:[50,-30],sl:[-46,-30]}],
    sq:'AH', final:`${ov('AH')}<sup>2</sup> = ${ov('BH')} × ${ov('HC')}`,
    note:`${ov('HA')} = ${ov('AH')}`,
    segs:[{a:'A',b:'H',c:'--yellow',l:'AH',lo:[-42,-10]},{a:'B',b:'H',c:'--mint',l:'BH',lo:[0,-30]},{a:'H',b:'C',c:'--pink',l:'HC',lo:[0,-30]}],
    steps:[
-    {sep:0},
-    {sep:0,m:[[0,2,'r','--yellow'],[1,2,'r','--yellow']],line:'∠AHB = ∠CHA = 90°'},
-    {sep:0,m:[[0,0,'a','--pink'],[1,1,'b','--mint']],line:'∠BAH + ∠CAH = 90°'},
-    {sep:0,m:[[1,0,'a','--chalk']],line:'△CAH 에서 ∠ACH + ∠CAH = 90°'},
-    {sep:0,m:[[1,0,'a','--pink']],line:'그래서 ∠BAH = ∠ACH'},
-    {sep:1,m:[[0,1,'b','--mint']],end:1}
+    {},
+    {m:[[0,2,'r','--yellow'],[1,2,'r','--yellow']],line:'∠AHB = ∠CHA = 90°'},
+    {m:[[0,0,'a','--pink'],[1,1,'b','--mint']],line:'∠BAH + ∠CAH = 90°'},
+    {m:[[1,0,'a','--chalk']],line:'△CAH 에서 ∠ACH + ∠CAH = 90°'},
+    {m:[[1,0,'a','--pink']],line:'그래서 ∠BAH = ∠ACH'},
+    {m:[[0,1,'b','--mint']],end:1}
    ]}
 ];
-/* 떼어 놓은 뒤의 자리: 작은 삼각형은 큰 삼각형과 같은 방향으로 맞춘다 */
-P.forEach(p=>{
-  const bp=[...p.tris[p.big]].map(n=>S[n]), mx=Math.min(...bp.map(q=>q[0]));
-  const sh=bp.map(q=>[q[0]-mx,q[1]]);
-  p.end=[0,1].map(t=>{const k=t===p.big?1:p.k;return sh.map(q=>[p.x[t]+p.s*k*q[0],p.base-p.s*k*q[1]])});
-});
-
-const st={i:0,page:0,sep:0,busy:false,blink:null,s:P.map(()=>[0,[],0])};
+const st={i:0,page:0,busy:false,blink:null,s:P.map(()=>[0,[],0])};
 const stepOf=()=>st.s[st.i][0];
 const filled=()=>st.s[st.i][1];
 const ease=t=>t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
 const lerp=(a,b,t)=>a+(b-a)*t;
 
-function pos(p,t,i,T){
-  const a=O(S[p.tris[t][i]]), b=p.end[t][i];
-  if(p.rot!==t) return [lerp(a[0],b[0],T),lerp(a[1],b[1],T)];
-  const cen=f=>[0,1].map(k=>[0,1,2].reduce((s,n)=>s+f(n)[k],0)/3);
-  const fa=n=>O(S[p.tris[t][n]]), fb=n=>p.end[t][n];
-  const c0=cen(fa), c1=cen(fb);
-  const v0=[fa(0)[0]-c0[0],fa(0)[1]-c0[1]], v1=[fb(0)[0]-c1[0],fb(0)[1]-c1[1]];
-  let d=Math.atan2(v1[1],v1[0])-Math.atan2(v0[1],v0[0]);
-  while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI;
-  const r=Math.hypot(...v1)/Math.hypot(...v0), th=d*T, sc=lerp(1,r,T);
-  const q=[a[0]-c0[0],a[1]-c0[1]];
-  return [lerp(c0[0],c1[0],T)+sc*(q[0]*Math.cos(th)-q[1]*Math.sin(th)),
-          lerp(c0[1],c1[1],T)+sc*(q[0]*Math.sin(th)+q[1]*Math.cos(th))];
-}
 const unit=(a,b)=>{const d=Math.hypot(b[0]-a[0],b[1]-a[1])||1;return[(b[0]-a[0])/d,(b[1]-a[1])/d]};
+/* 두 삼각형의 테두리가 함께 보이도록 안쪽으로 살짝 줄인 꼭짓점 */
+function inset(v,d){
+  if(!d)return v;
+  const L=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1]),a=L(v[1],v[2]),b=L(v[0],v[2]),c=L(v[0],v[1]),per=a+b+c;
+  const I=[0,1].map(k=>(a*v[0][k]+b*v[1][k]+c*v[2][k])/per);
+  const area=Math.abs((v[1][0]-v[0][0])*(v[2][1]-v[0][1])-(v[2][0]-v[0][0])*(v[1][1]-v[0][1]))/2,f=1-d/(2*area/per);
+  return v.map(q=>[I[0]+(q[0]-I[0])*f,I[1]+(q[1]-I[1])*f]);
+}
 const pts=v=>v.map(q=>q.map(n=>n.toFixed(1)).join(',')).join(' ');
 const cent=v=>[(v[0][0]+v[1][0]+v[2][0])/3,(v[0][1]+v[1][1]+v[2][1])/3];
 
@@ -245,47 +231,35 @@ function chip(c,txt,cls,attr=''){
 }
 function draw(){
   if(st.page===2) return drawFinal();
-  sv.setAttribute('viewBox','0 0 1000 470');
-  const p=P[st.i], T=st.sep, n=st.page===1?p.steps.length-1:stepOf();
-  const V=[0,1].map(t=>[0,1,2].map(i=>pos(p,t,i,T)));
+  sv.setAttribute('viewBox','130 30 740 450');
+  const p=P[st.i], n=st.page===1?p.steps.length-1:stepOf(), sm=1-p.big;
+  const V=[0,1].map(t=>[...p.tris[t]].map(q=>O(S[q])));
+  const W=[0,1].map(t=>inset(V[t],p.ins[t]));
   let h='';
-  if(T<1){h+=`<polygon class="ghost" style="opacity:${1-T}" points="${pts(['A','B','C'].map(q=>O(S[q])))}"/>`}
-  [p.big,1-p.big].forEach(t=>h+=`<polygon class="tri ${t===p.big?'big':'small'}" points="${pts(V[t])}"/>`);
-  if(T===1&&st.page===1){
+  [p.big,sm].forEach(t=>h+=`<polygon class="tri ${t===p.big?'big':'small'}" points="${pts(W[t])}"/>`);
+  if(st.page===1){
     const col=k=>k===0?'--yellow':'--pink';
     p.sides.forEach((s,idx)=>{
       const on=filled().indexOf(idx), bl=st.blink===idx;
       if(on<0&&!bl)return;
-      const c=on>=0?col(on):(p.sides[idx].use?col(filled().length):'--violet');
-      [0,1].forEach(t=>{const a=V[t][s.i],b=V[t][s.j];
+      const c=on>=0?col(on):(s.use?col(filled().length):'--violet');
+      [0,1].forEach(t=>{const a=W[t][s.i],b=W[t][s.j];
         h+=`<line class="side ${bl?'blink':''}" stroke="var(${c})" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/>`});
     });
   }
   marksUpTo(p,n).forEach(({m,now})=>{h+=angleMark(V[m[0]],m[1],m[2],m[3],now&&st.page===0?'now':'')});
-  /* 꼭짓점 이름 */
-  if(T===0){
-    const off={A:[0,-30],B:[-26,20],C:[26,20],H:[0,32]}, use=new Set(p.tris.join(''));
-    ['A','B','C','H'].filter(q=>q!=='H'||use.has('H')).forEach(q=>{const c=O(S[q]);
-      h+=`<text class="vx" x="${c[0]+off[q][0]}" y="${c[1]+off[q][1]}">${q}</text>`});
-  }else{
-    const cor=st.page===0&&p.steps[n].end;
-    [0,1].forEach(t=>{const c=cent(V[t]);V[t].forEach((q,i)=>{const u=unit(c,q);
-      h+=`<text class="vx ${cor?'v'+i:''}" x="${q[0]+u[0]*30}" y="${q[1]+u[1]*30}">${p.tris[t][i]}</text>`})});
-  }
-  /* 2쪽: 눌러서 고르는 변 */
-  if(st.page===1&&T===1){
-    const small=1-p.big;
-    p.sides.forEach((s,idx)=>{
-      const a=V[p.big][s.i],b=V[p.big][s.j];
-      h+=`<line class="hit" data-s="${idx}" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/>`;
-    });
-    const spot=(t,s)=>{const a=V[t][s.i],b=V[t][s.j],m=[(a[0]+b[0])/2,(a[1]+b[1])/2],c=cent(V[t]);
-      const u=unit(a,b);let w=[-u[1],u[0]];if((m[0]-c[0])*w[0]+(m[1]-c[1])*w[1]<0)w=[-w[0],-w[1]];
-      const d=38+20*Math.abs(w[0]);return[m[0]+w[0]*d,m[1]+w[1]*d]};
+  const off={A:[0,-30],B:[-26,20],C:[26,20],H:[0,32]};
+  ['A','B','C','H'].forEach(q=>{const c=O(S[q]);
+    h+=`<text class="vx" x="${c[0]+off[q][0]}" y="${c[1]+off[q][1]}">${q}</text>`});
+  h+=`<text class="lg" style="fill:var(--${p.big===0?'big':'small'})" x="205" y="62">△${p.tris[0]}</text><text class="lg" style="fill:var(--${p.big===1?'big':'small'})" x="205" y="104">△${p.tris[1]}</text>`;
+  if(st.page===1){
+    p.sides.forEach((s,idx)=>{const a=V[p.big][s.i],b=V[p.big][s.j];
+      h+=`<line class="hit" data-s="${idx}" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}"/>`});
+    const spot=(t,d)=>(s=>{const a=V[t][s.i],b=V[t][s.j];return[(a[0]+b[0])/2+s[d][0],(a[1]+b[1])/2+s[d][1]]});
     p.sides.forEach((s,idx)=>{
       const nm=t=>p.tris[t][s.i]+p.tris[t][s.j];
-      h+=chip(spot(p.big,s),nm(p.big),'big',`data-s="${idx}" id="bc${idx}"`);
-      if(filled().includes(idx)||st.blink===idx) h+=chip(spot(small,s),nm(small),'small',`id="sc${idx}"`);
+      h+=chip(spot(p.big,'bl')(s),nm(p.big),'big',`data-s="${idx}" id="bc${idx}"`);
+      if(filled().includes(idx)||st.blink===idx) h+=chip(spot(sm,'sl')(s),nm(sm),'small',`id="sc${idx}"`);
     });
   }
   sv.innerHTML=h;
@@ -371,30 +345,12 @@ function hint(t,warn){msgEl.textContent=t||'';msgEl.className=warn?'warn':''}
 function defaultHint(){
   const p=P[st.i];
   if(st.page===1){
-    if(filled().length<2)hint(`${p.big===0?'왼쪽':'오른쪽'} 파란 삼각형의 변을 눌러 보세요`);else hint('');
-  }else if(st.page===0&&stepOf()===0)hint('두 삼각형이 겹쳐 있어요');else hint('');
+    if(filled().length<2)hint(`파란 테두리 ${tri(p.tris[p.big])}의 변을 눌러 보세요`);else hint('');
+  }else if(st.page===0&&stepOf()===0)hint(`${p.name} 를 찾아보세요`);else hint('');
 }
 function render(){draw();panelRender();chrome();defaultHint()}
-function runSep(to){
-  return new Promise(res=>{
-    const from=st.sep,dur=matchMedia('(prefers-reduced-motion:reduce)').matches?1:1100,t0=performance.now();
-    st.busy=true;chrome();
-    const f=now=>{const t=Math.min(1,(now-t0)/dur);st.sep=lerp(from,to,ease(t));draw();
-      if(t<1)requestAnimationFrame(f);else{st.sep=to;st.busy=false;res()}};
-    requestAnimationFrame(f);
-  });
-}
-async function setStep(n){
-  const p=P[st.i],want=p.steps[n].sep;st.s[st.i][0]=n;
-  panelRender();
-  if(want!==st.sep)await runSep(want);
-  render();
-}
-function goPage(g){
-  st.page=g;st.blink=null;
-  st.sep=g===0?P[st.i].steps[stepOf()].sep:1;
-  render();
-}
+function setStep(n){st.s[st.i][0]=n;render()}
+function goPage(g){st.page=g;st.blink=null;render()}
 const wait=ms=>new Promise(r=>setTimeout(r,matchMedia('(prefers-reduced-motion:reduce)').matches?1:ms));
 async function fly(fromId,toId,html,cls){
   const from=$(fromId),to=$(toId);if(!from||!to)return;

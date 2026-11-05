@@ -102,14 +102,16 @@ footer{flex:none;display:flex;align-items:center;gap:.5em;min-height:2.1em}
 .mk{fill:none;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}
 .now{animation:pulse .7s ease-in-out 3}
 .side.hot{stroke-width:14}
-.flash{stroke:none;opacity:0;animation:flash .62s ease-in-out 1}
+.flash{stroke:none;opacity:0;animation:flash .56s ease-in-out 2}
+.side.sbl{animation:sbl .56s ease-in-out 2}
 .flash.big{fill:var(--big)}
 .flash.small{fill:var(--small)}
 #sv .seg-lab{font-size:36px}
 #sv .lg{font-size:32px;text-anchor:start}
 @keyframes pulse{50%{opacity:.25}}
 @keyframes flash{50%{opacity:.85}}
-@media (prefers-reduced-motion:reduce){.now,.flash{animation-duration:.01s}}
+@keyframes sbl{0%,100%{opacity:.15}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){.now,.flash,.sbl{animation-duration:.01s}}
 main[data-page="1"] #panel{display:flex;flex-direction:column;gap:.2em}
 main[data-page="1"] .prop{flex:1;height:auto;min-height:0}
 .say{display:grid;grid-template-columns:1fr 1fr;gap:.6em;min-height:1.4em;font-size:.9em;text-align:center}
@@ -256,6 +258,7 @@ function draw(){
   let h='';
   [p.big,sm].forEach(t=>h+=`<polygon class="tri ${t===p.big?'big':'small'}" points="${pts(W[t])}"/>`);
   if(st.page===1){
+    if(st.flash!==null)h+=`<polygon class="flash ${st.flash===p.big?'big':'small'}" points="${pts(W[st.flash])}"/>`;
     const col=k=>k===0?'--yellow':'--pink', a=st.act;
     p.sides.forEach((s,idx)=>{
       if(!(a&&a.idx===idx))return;
@@ -263,9 +266,8 @@ function draw(){
       [0,1].forEach(t=>{
         if(!a.show[t===p.big?0:1])return;
         const u=W[t][s.i],v=W[t][s.j];
-        h+=`<line class="side hot" stroke="var(${c})" x1="${u[0]}" y1="${u[1]}" x2="${v[0]}" y2="${v[1]}"/>`});
+        h+=`<line class="side hot ${a.pulse===(t===p.big?0:1)?'sbl':''}" stroke="var(${c})" x1="${u[0]}" y1="${u[1]}" x2="${v[0]}" y2="${v[1]}"/>`});
     });
-    if(st.flash!==null)h+=`<polygon class="flash ${st.flash===p.big?'big':'small'}" points="${pts(W[st.flash])}"/>`;
   }
   const lit=st.page===0?marksUpTo(p,n).filter(x=>x.m[2]==='r').map(x=>p.tris[x.m[0]][x.m[1]]):[];
   h+=rightMarks(lit);
@@ -412,12 +414,14 @@ async function press(idx){
   const big=p.tris[p.big][s.i]+p.tris[p.big][s.j],small=p.tris[sm][s.i]+p.tris[sm][s.j];
   const say=[$('sayB'),$('sayS')];
   st.busy=true;st.act={idx,show:[false,false]};say[0].textContent=say[1].textContent='';hint('');chrome();
-  st.flash=p.big;draw();await wait(650);
-  st.flash=null;st.act.show[0]=true;draw();
-  await write(say[0],'큰 삼각형의 '+rank,big);await wait(450);
-  st.flash=sm;draw();await wait(650);
-  st.flash=null;st.act.show[1]=true;draw();
-  await write(say[1],'작은 삼각형의 '+rank,small);hint(`${big} 와 ${small} 는 대응변`);await wait(800);
+  const pulse=async(k,t,txt,nm)=>{
+    st.act.show[k]=true;st.act.pulse=k;st.flash=t;draw();
+    await Promise.all([write(say[k],txt,nm),wait(1120)]);
+    st.flash=null;st.act.pulse=null;draw();
+  };
+  await pulse(0,p.big,'큰 삼각형의 '+rank,big);await wait(350);
+  await pulse(1,sm,'작은 삼각형의 '+rank,small);
+  hint(`${big} 와 ${small} 는 대응변`);await wait(800);
   const at=f.length*2;
   await fly('bc'+idx,'sl'+at,ov(big),'big');
   await wait(90);

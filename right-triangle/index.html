@@ -81,7 +81,7 @@ footer{flex:none;display:flex;align-items:center;gap:.5em;min-height:2.1em}
 #prev{border:2px solid var(--line);color:var(--dim)}
 #next{background:var(--yellow);color:var(--ink)}
 .nav:disabled{opacity:.35;cursor:default}
-.by{font-size:.5em;color:var(--dim);opacity:.7;white-space:nowrap}
+.by{font-size:.68em;color:var(--chalk);white-space:nowrap}
 
 #sv text{font-family:var(--font);fill:var(--chalk);text-anchor:middle;dominant-baseline:central}
 #sv .vx{font-size:34px}
@@ -121,10 +121,10 @@ main[data-page="1"] .prop{flex:1;height:auto;min-height:0}
 .cap{font-size:.56em;min-height:1.3em;color:var(--chalk)}
 main[data-page="1"] .prop>.op{margin-bottom:.85em}
 @media (max-width:760px){
-  .goal{margin-left:0;width:100%}
+  .goal{margin-left:0;width:100%;order:3}
   footer{flex-wrap:wrap}
   #msg{flex:1 0 100%}
-  .by{margin-right:auto}
+  .by{margin-left:auto}
   .lines,.say{grid-template-columns:1fr}
   main[data-page="2"]{flex-direction:column}
   main[data-page="2"] #panel{flex:none;border-left:0;padding:0}
@@ -142,6 +142,7 @@ main[data-page="1"] .prop>.op{margin-bottom:.85em}
     <div class="tabs" id="probs" role="group" aria-label="문제"></div>
     <div class="tabs" id="pages" role="group" aria-label="단계"></div>
     <div class="goal" id="goal"></div>
+    <span class="by">이송원 제작</span>
   </header>
   <main id="main">
     <div class="stage"><svg id="sv" viewBox="0 0 1000 470" preserveAspectRatio="xMidYMid meet" aria-label="삼각형 그림"></svg></div>
@@ -149,7 +150,6 @@ main[data-page="1"] .prop>.op{margin-bottom:.85em}
   </main>
   <footer>
     <div id="msg"></div>
-    <span class="by">이송원 제작</span>
     <button class="nav" id="prev" type="button">◀ 이전</button>
     <button class="nav" id="next" type="button">다음 ▶</button>
   </footer>

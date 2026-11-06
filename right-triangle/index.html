@@ -366,7 +366,7 @@ function chrome(){
   if(st.page===2&&m===3){nx=st.i<2?`${P[st.i+1].label}번으로 ▶`:'끝';dis=st.i===2}
   $('next').textContent=nx;$('next').disabled=dis||st.busy;$('prev').disabled=prevDis||st.busy;
 }
-function hint(t,warn){msgEl.textContent=t||'';msgEl.className=warn?'warn':''}
+function hint(t,warn){msgEl.innerHTML=t||'';msgEl.className=warn?'warn':''}
 function defaultHint(){
   const p=P[st.i];
   if(st.page===1){
@@ -420,7 +420,7 @@ async function press(idx){
   };
   await pulse(0,p.big,(st.i===2?'중간':'큰')+' 삼각형의 '+rank,big);await wait(500);
   await pulse(1,sm,'작은 삼각형의 '+rank,small);
-  hint(`${big} 와 ${small} 는 대응변`);await wait(800);
+  hint(`${ov(big)} 와 ${ov(small)} 는 대응변`);await wait(800);
   const at=f.length*2;
   await fly('bc'+idx,'sl'+at,ov(big),'big');
   await wait(90);

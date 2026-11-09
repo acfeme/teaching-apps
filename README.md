@@ -17,3 +17,5 @@
 빌드 과정이 없는 정적 사이트입니다. `index.html`이 목록 화면이고 `s1~s9.html`이 각 수업 화면입니다.
 
 `right-triangle/`: 직각삼각형의 닮음(수선의 발 문제 3개) 단독 페이지. Vercel 프로젝트 right-triangle-similarity.
+
+`triangle-parallel/`: 삼각형과 평행선 단답형 문제풀이(25문항, 순위, 교사 관리자 `/admin`). Upstash Redis 사용. Vercel 프로젝트 triangle-parallel.

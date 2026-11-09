@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>교사 관리자</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+  body { font-size: 19px; }
+  .wrap { max-width: 1320px; }
+  .login { max-width: 460px; margin: 12vh auto 0; background: var(--card); border: 2px solid var(--line); border-radius: 22px; padding: 30px; }
+  .login input { width: 100%; min-height: 64px; font-size: 24px; padding: 0 16px; border: 2px solid var(--line); border-radius: 14px; margin-top: 16px; }
+  .login button { width: 100%; min-height: 64px; margin-top: 14px; border-radius: 14px; background: var(--brand); color: #fff; font-weight: 800; }
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 14px; }
+  select { font: inherit; min-height: 52px; padding: 0 12px; border-radius: 12px; border: 2px solid var(--line); background: #fff; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tab { min-height: 52px; padding: 0 20px; border-radius: 12px; background: var(--card); border: 2px solid var(--line); font-weight: 700; }
+  .tab.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .live { color: var(--muted); font-size: 17px; margin-left: auto; }
+  .live b { color: var(--brand-dark); }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+  .tile { background: var(--card); border: 2px solid var(--line); border-radius: 16px; padding: 14px 18px; }
+  .tile div { color: var(--muted); font-size: 17px; }
+  .tile b { font-size: 36px; font-variant-numeric: tabular-nums; }
+  .panel { background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 18px 20px; margin-top: 16px; }
+  .panel h2 { font-size: 23px; margin-bottom: 4px; }
+  .note { color: var(--muted); font-size: 16px; margin-bottom: 10px; }
+  .rate { display: grid; grid-template-columns: 44px minmax(120px, 230px) 1fr 104px; align-items: center; gap: 10px; padding: 5px 0; font-size: 17px; }
+  .rate .no { font-weight: 800; text-align: right; font-variant-numeric: tabular-nums; }
+  .rate .lab { color: var(--muted); font-size: 15px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .track { height: 20px; background: #edf0f3; border-radius: 6px; overflow: hidden; }
+  .fill { height: 100%; background: var(--brand); }
+  .fill.low { background: var(--warn); }
+  .rate .val { text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .ranks { display: grid; grid-template-columns: repeat(5, minmax(200px, 1fr)); gap: 12px; overflow-x: auto; }
+  .ranks h3 { font-size: 19px; margin-bottom: 6px; }
+  .r { display: flex; gap: 8px; padding: 5px 0; border-top: 1px solid var(--line); font-size: 18px; }
+  .r span:first-child { width: 28px; font-weight: 800; color: var(--muted); text-align: right; font-variant-numeric: tabular-nums; }
+  .r span:nth-child(2) { flex: 1; }
+  .r span:last-child { font-weight: 800; font-variant-numeric: tabular-nums; }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 17px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 6px 8px; text-align: center; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { background: #f6f7f8; position: sticky; top: 0; }
+  td.o { color: var(--brand-dark); font-weight: 800; }
+  td.x { color: var(--warn); background: var(--warn-soft); font-weight: 800; }
+  .err { color: var(--warn); font-weight: 700; margin-top: 12px; }
+  @media (max-width: 760px) {
+    .tiles { grid-template-columns: 1fr 1fr; }
+    .rate { grid-template-columns: 34px 1fr 92px; }
+    .rate .lab { display: none; }
+    .live { margin-left: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="/problems.js"></script>
+<script src="/admin.js"></script>
+</body>
+</html>

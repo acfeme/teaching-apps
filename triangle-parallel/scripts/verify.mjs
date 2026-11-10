@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ANSWERS, EXPLAIN, FB_BLANKS } from '../api/_answers.js';
+import { ANSWERS, EXPLAIN, FB_BLANKS, FB_MID, FB_MID_COUNT } from '../api/_answers.js';
 import { parseNumber, sameValue } from '../api/_grade.js';
 
 const gcd = (a, b) => (b === 0n ? (a < 0n ? -a : a) : gcd(b, a % b));
@@ -118,8 +118,10 @@ for (const p of W.STAGES[1].items) {
     return Array.from({ length: cnt }, (_, j) => starts[i] + j);
   });
   if (expect.join() !== idx.join()) fail(`${p.id} 피드백 칸 위치 화면 ${expect} / 서버 ${idx}`);
-  if (!p.fbSteps.some((i) => p.steps[i].eq.includes(':'))) fail(`${p.id} 피드백 문제에 비례식이 없음`);
+  if (!FB_MID.includes(p.id) && !p.fbSteps.some((i) => p.steps[i].eq.includes(':'))) fail(`${p.id} 피드백 문제에 비례식이 없음`);
 }
+if (!FB_MID.every((id) => FB_BLANKS[id]) || FB_MID.length < FB_MID_COUNT) fail('중점 연결 피드백 문제 설정 오류');
+if (Object.keys(FB_BLANKS).length - FB_MID.length < 5 - FB_MID_COUNT) fail('비례식 피드백 문제가 모자람');
 console.log('피드백 문제(비례식만):', Object.entries(FB_BLANKS).map(([id, ix]) => `${id} ${ix.map((i) => ANSWERS[1][id][i]).join(',')}`).join(' | '));
 
 // 답 입력 형식 시험

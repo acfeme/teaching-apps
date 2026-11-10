@@ -51,6 +51,7 @@
   // 피드백 문제는 비례식 단계만 보여 주고 채점한다(계산 단계는 숨김)
   const visSteps = (p) => (isFb() && p.fbSteps ? p.fbSteps.map((i) => p.steps[i]) : p.steps);
   const nBlanks = (p) => (p.steps ? visSteps(p).reduce((t, st) => t + st.eq.split('@').length - 1, 0) : window.blankCount(p));
+  const isPropFb = (p) => isFb() && visSteps(p).some((st) => st.eq.includes(':')); // 비례식 세우기 문제인지
   const isSolved = (p) => isFb() && S.fb.solved.includes(p.id);
   const isDone = (p) => {
     if (isFb()) return isSolved(p);
@@ -182,7 +183,7 @@
     }
     return `<div class="stage-card fb-card ${f.status}">
       <div class="st-head"><h2>💡 피드백 문제</h2><span class="st-count">${f.count}문제</span></div>
-      <div class="st-desc">1단계 문제 중 ${f.count}문제가 무작위로 나와요. 계산은 하지 않고 <b>비례식만</b> 세워요. 힌트를 보면서 모두 맞힐 때까지 풀어요.</div>
+      <div class="st-desc">1단계 문제 중 ${f.count}문제가 무작위로 나와요. <b>비례식 세우기 4문제</b>(계산은 안 해요)와 <b>중점 연결 1문제</b>예요. 힌트를 보면서 모두 맞힐 때까지 풀어요.</div>
       ${body}<div class="msg hidden" data-err="fb"></div></div>`;
   }
 
@@ -285,7 +286,7 @@
     if (!isFb()) return '';
     if (isSolved(p)) {
       const ex = S.fb.done?.[p.id];
-      return `<div class="help solved">🎉 비례식을 바르게 세웠어요!${ex ? `<div class="help-row"><b>풀이 요약</b> ${M(ex)}</div>` : ''}</div>`;
+      return `<div class="help solved">🎉 ${isPropFb(p) ? '비례식을 바르게 세웠어요!' : '정답이에요!'}${ex ? `<div class="help-row"><b>풀이 요약</b> ${M(ex)}</div>` : ''}</div>`;
     }
     const h = S.fb.help[p.id];
     if (!h) return '<div class="help idle">빈칸을 모두 채우고 <b>확인하기</b>를 누르세요. 틀리면 힌트가 나와요.</div>';
@@ -310,7 +311,7 @@
   function renderProblem() {
     const p = items()[S.i];
     const body = p.steps
-      ? `<div class="step-title">${isFb() ? '비례식의 빈칸을 채워 보세요 <small>(계산은 하지 않아요)</small>' : '풀이 순서대로 빈칸을 채워 보세요'}</div>${stepsHtml(p, (k) => boxHtml(p, k))}`
+      ? `<div class="step-title">${isPropFb(p) ? '비례식의 빈칸을 채워 보세요 <small>(계산은 하지 않아요)</small>' : '풀이 순서대로 빈칸을 채워 보세요'}</div>${stepsHtml(p, (k) => boxHtml(p, k))}`
       : `<div class="blanks">${p.blanks.map((b, k) => `<div class="blank"><span>${M(b.label)}</span><span>=</span>${boxHtml(p, k)}${b.unit ? `<span class="unit">${b.unit}</span>` : ''}</div>`).join('')}</div>`;
     app.querySelector('#card').innerHTML = `
       <div class="sec">${esc(p.sec)}</div>

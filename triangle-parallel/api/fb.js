@@ -3,7 +3,7 @@ import {
   FB_COUNT, LOCK_FIELDS, attField, fbEligible, fbField, gradeFb, noStore, normAtt, normCfg, normFb,
   readBody, requireStore, todayKST, validStudent,
 } from './_lib.js';
-import { FB_BLANKS } from './_answers.js';
+import { FB_BLANKS, FB_MID, FB_MID_COUNT } from './_answers.js';
 
 // 피드백(보충) 문제 — 1단계를 FB_MAX개 이하로 맞힌 학생에게 자동으로 열리고, 1단계 문제 5개를 맞힐 때까지 푼다.
 // 한 번 끝내면 선생님이 관리자 화면에서 재응시를 열어야 다시 풀 수 있다.
@@ -47,13 +47,18 @@ async function start(res, s, cls, num, field) {
   if (!cfg[cls].open) return res.status(403).json({ code: 'CLASS_CLOSED', error: '아직 반이 열리지 않았어요. 선생님을 기다려 주세요.' });
   if (fb.done >= fb.allowed) return res.status(409).json({ code: 'FB_DONE', error: '이미 피드백 문제를 끝냈어요. 다시 풀려면 선생님께 요청하세요.' });
 
-  const pool = Object.keys(FB_BLANKS); // 비례식이 있는 1단계 문제만
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = crypto.randomInt(i + 1);
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  // 문제 순서는 1단계 순서대로(쉬운 것부터)
-  const ids = pool.slice(0, FB_COUNT).sort();
+  const shuffle = (list) => {
+    const a = [...list];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = crypto.randomInt(i + 1);
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  // 중점 연결 문제 1개 + 비례식 문제 4개를 무작위로. 순서는 1단계 순서대로(쉬운 것부터)
+  const mid = shuffle(FB_MID).slice(0, FB_MID_COUNT);
+  const prop = shuffle(Object.keys(FB_BLANKS).filter((id) => !FB_MID.includes(id))).slice(0, FB_COUNT - mid.length);
+  const ids = [...mid, ...prop].sort();
   fb.active = { v: FB_VERSION, ids, startedAt: Date.now(), tries: {}, wrong: {}, solved: [], round: fb.done + 1 };
   await s.hset('state', { [field]: JSON.stringify(fb) });
   return res.status(200).json({ ok: true, resumed: false, ...publicActive(fb.active) });

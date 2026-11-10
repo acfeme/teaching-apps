@@ -158,6 +158,7 @@
 
   async function startStage(no, btn) {
     btn.disabled = true;
+    guard.arm(); // 버튼을 누른 순간에만 허락되는 일(전체 화면, 알림 허용, 소리)을 먼저 준비
     try {
       const d = await post('/api/start', { cls: S.cls, num: S.num, stage: no });
       S.stage = no; S.startedAt = d.startedAt; S.attempt = d.attempt;
@@ -168,6 +169,7 @@
       showQuiz();
     } catch (e) {
       btn.disabled = false;
+      guard.release();
       const m = app.querySelector(`[data-err="${no}"]`);
       if (m) { m.textContent = e.message; m.classList.remove('hidden'); }
     }
@@ -329,10 +331,114 @@
         body: JSON.stringify({ cls: S.cls, num: S.num, stage: S.stage, kind }),
       }).catch(() => {});
     } catch (e) { /* 경고 기록 실패는 화면 경고만 남김 */ }
+    guard.alarm(); // 다른 창에 있어도 알아채도록: 기기 알림, 경고음, 탭 제목 깜빡임
     showWarn();
   }
-  document.addEventListener('visibilitychange', () => { if (document.hidden) flagLeave('hidden'); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) flagLeave('hidden');
+    else guard.calm();
+  });
   window.addEventListener('blur', () => flagLeave('blur'));
+  window.addEventListener('focus', () => guard.calm());
+  const fsEl = () => document.fullscreenElement || document.webkitFullscreenElement || null;
+  const onFs = () => { if (!fsEl() && S.screen === 'quiz' && guard.wantFull) flagLeave('fullscreen'); };
+  document.addEventListener('fullscreenchange', onFs);
+  document.addEventListener('webkitfullscreenchange', onFs);
+
+  // 웹페이지는 다른 창 위에 그림을 띄울 수 없다. 대신 다른 창에 있어도 알 수 있는 신호를 보낸다.
+  const guard = (() => {
+    const TITLE = document.title;
+    let audio = null;
+    let flash = null;
+    const g = { wantFull: false };
+
+    g.arm = () => {
+      // 전체 화면(지원하는 기기만). 나가면 경고로 기록된다.
+      const el = document.documentElement;
+      const req = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (req && !fsEl()) {
+        try {
+          const p = req.call(el, { navigationUI: 'hide' });
+          g.wantFull = true;
+          if (p && p.catch) p.catch(() => { g.wantFull = false; });
+        } catch (e) { g.wantFull = false; }
+      } else if (fsEl()) g.wantFull = true;
+      // 기기 알림 허용 묻기(한 번만 뜬다)
+      try { if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission().catch(() => {}); } catch (e) { /* 지원 안 함 */ }
+      // 경고음은 사용자가 누른 뒤에만 낼 수 있어 미리 깨워 둔다
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (AC && !audio) audio = new AC();
+        if (audio && audio.state === 'suspended') audio.resume();
+      } catch (e) { audio = null; }
+    };
+
+    g.release = () => {
+      g.wantFull = false;
+      g.calm();
+      try {
+        if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+        else if (document.webkitFullscreenElement && document.webkitExitFullscreen) document.webkitExitFullscreen();
+      } catch (e) { /* 무시 */ }
+    };
+
+    function beep() {
+      if (!audio) return;
+      try {
+        const t0 = audio.currentTime;
+        for (let i = 0; i < 3; i++) {
+          const o = audio.createOscillator();
+          const v = audio.createGain();
+          o.type = 'square';
+          o.frequency.value = 880;
+          v.gain.setValueAtTime(0.0001, t0 + i * 0.35);
+          v.gain.exponentialRampToValueAtTime(0.25, t0 + i * 0.35 + 0.02);
+          v.gain.exponentialRampToValueAtTime(0.0001, t0 + i * 0.35 + 0.25);
+          o.connect(v).connect(audio.destination);
+          o.start(t0 + i * 0.35);
+          o.stop(t0 + i * 0.35 + 0.26);
+        }
+      } catch (e) { /* 소리 실패는 무시 */ }
+    }
+
+    async function notify() {
+      try {
+        if (!('Notification' in window) || Notification.permission !== 'granted') return;
+        const title = '⚠ 문제 풀이 중이에요!';
+        const opts = {
+          body: `${S.cls}반 ${S.num}번 · 다른 창을 열면 선생님께 기록돼요. 지금 바로 돌아오세요.`,
+          tag: 'tp-leave', renotify: true, requireInteraction: true,
+        };
+        const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+        if (reg) await reg.showNotification(title, opts); // 안드로이드 크롬은 이 방법만 된다
+        else new Notification(title, opts).onclick = function () { window.focus(); this.close(); };
+      } catch (e) { /* 알림 실패는 무시 */ }
+    }
+
+    g.alarm = () => {
+      beep();
+      notify();
+      clearInterval(flash);
+      let on = false;
+      flash = setInterval(() => {
+        on = !on;
+        document.title = on ? '⚠ 돌아오세요!' : '⚠ 문제 풀이 중';
+      }, 700);
+    };
+
+    g.calm = () => {
+      clearInterval(flash);
+      flash = null;
+      document.title = TITLE;
+      navigator.serviceWorker?.getRegistration()
+        .then((reg) => reg?.getNotifications({ tag: 'tp-leave' }))
+        .then((list) => list?.forEach((n) => n.close()))
+        .catch(() => {});
+    };
+
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {});
+    return g;
+  })();
 
   function showWarn() {
     let w = document.querySelector('.warn-screen');
@@ -347,7 +453,11 @@
       <p>문제를 푸는 동안 다른 인터넷 창이나 앱을 열면 안 돼요.<br>이 일은 선생님 화면에 바로 기록되었어요.</p>
       <div class="warn-count">경고 ${S.warns}회</div>
       <button id="warnOk">확인했어요. 계속 풀게요</button></div>`;
-    w.querySelector('#warnOk').onclick = () => w.remove();
+    w.querySelector('#warnOk').onclick = () => {
+      w.remove();
+      guard.calm();
+      if (guard.wantFull && !fsEl()) guard.arm(); // 전체 화면으로 다시
+    };
   }
 
   // ---- 제출 ----
@@ -371,10 +481,11 @@
         ls.del(draftKey());
         ls.set(resultKey(S.stage), data);
         m.remove();
+        guard.release();
         S.screen = 'result';
         showResult(data);
       } catch (e) {
-        if (e.code === 'NOT_ACTIVE') { m.remove(); ls.del(draftKey()); showHome(); return; }
+        if (e.code === 'NOT_ACTIVE') { m.remove(); ls.del(draftKey()); guard.release(); showHome(); return; }
         err.textContent = e.message;
         err.classList.remove('hidden');
         yes.disabled = false; yes.textContent = '다시 제출';

@@ -2,7 +2,7 @@ import {
   noStore, readBody, requireStore, todayKST, validStage, validStudent,
 } from './_lib.js';
 
-const KINDS = { hidden: '다른 창·앱으로 이동', blur: '화면 밖을 누름(다른 창)' };
+const KINDS = { hidden: '다른 창·앱으로 이동', blur: '화면 밖을 누름(다른 창)', fullscreen: '전체 화면에서 나감' };
 
 // POST /api/warn {cls, num, stage, kind} → 풀이 중 다른 창을 연 기록
 export default async function handler(req, res) {

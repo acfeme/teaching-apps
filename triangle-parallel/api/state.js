@@ -1,5 +1,5 @@
 import {
-  attField, noStore, normAtt, normCfg, requireStore, stageStatus, validStudent,
+  LOCK_FIELDS, attField, noStore, normAtt, normCfg, requireStore, stageStatus, validStudent,
 } from './_lib.js';
 import { STAGES } from './_answers.js';
 
@@ -13,15 +13,16 @@ export default async function handler(req, res) {
 
   try {
     if (!req.query?.cls) {
-      const cfg = normCfg(await s.hget('state', 'cfg'));
+      const cfg = normCfg(await s.hmget('state', ...LOCK_FIELDS));
       return res.status(200).json({ open: Object.fromEntries(Object.entries(cfg).map(([c, v]) => [c, v.open])) });
     }
     const cls = req.query.cls;
     const num = validStudent(cls, req.query.num);
     if (!num) return res.status(400).json({ error: '반 또는 번호가 올바르지 않습니다.' });
 
-    const [cfgRaw, ...atts] = await s.hmget('state', 'cfg', ...STAGES.map((st) => attField(cls, num, st)));
-    const cfg = normCfg(cfgRaw);
+    const vals = await s.hmget('state', ...LOCK_FIELDS, ...STAGES.map((st) => attField(cls, num, st)));
+    const cfg = normCfg(vals.slice(0, LOCK_FIELDS.length));
+    const atts = vals.slice(LOCK_FIELDS.length);
     const stages = {};
     let tree = 0;
     STAGES.forEach((st, i) => {

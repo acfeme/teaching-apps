@@ -1,5 +1,5 @@
 import {
-  attField, noStore, normAtt, normCfg, readBody, requireStore, validStage, validStudent,
+  LOCK_FIELDS, attField, noStore, normAtt, normCfg, readBody, requireStore, validStage, validStudent,
 } from './_lib.js';
 
 // POST /api/start {cls, num, stage} → 응시 시작(이미 시작했으면 이어서 풀기)
@@ -16,8 +16,9 @@ export default async function handler(req, res) {
   if (!s) return undefined;
   const field = attField(cls, num, stage);
   try {
-    const [cfgRaw, attRaw] = await s.hmget('state', 'cfg', field);
-    const cfg = normCfg(cfgRaw);
+    const vals = await s.hmget('state', ...LOCK_FIELDS, field);
+    const cfg = normCfg(vals.slice(0, LOCK_FIELDS.length));
+    const attRaw = vals[LOCK_FIELDS.length];
     const att = normAtt(attRaw);
     if (att.active) return res.status(200).json({ ok: true, resumed: true, ...att.active });
     if (!cfg[cls].open) return res.status(403).json({ code: 'CLASS_CLOSED', error: '아직 반이 열리지 않았어요. 선생님을 기다려 주세요.' });

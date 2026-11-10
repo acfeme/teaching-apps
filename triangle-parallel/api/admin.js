@@ -1,5 +1,5 @@
 import {
-  CLASSES, adminView, attField, checkAdmin, noStore, normAtt, normCfg, readBody, readList,
+  CLASSES, LOCK_KEYS, adminView, lockField, attField, checkAdmin, noStore, normAtt, normCfg, readBody, readList,
   requireStore, todayKST, validStage, validStudent,
 } from './_lib.js';
 
@@ -38,7 +38,7 @@ async function view(req, res, s) {
     dates.sort().reverse();
   }
 
-  const cfg = normCfg(state.cfg);
+  const cfg = normCfg(state);
   const students = {};
   for (const [field, raw] of Object.entries(state)) {
     const m = /^(\d-\d):(\d+):(\d)$/.exec(field);
@@ -74,13 +74,12 @@ async function view(req, res, s) {
 async function act(req, res, s) {
   const body = readBody(req) || {};
   if (body.action === 'cfg') {
-    if (!CLASSES.includes(body.cls) || !['open', 's1', 's2'].includes(body.key)) {
+    if (!CLASSES.includes(body.cls) || !LOCK_KEYS.includes(body.key) || typeof body.value !== 'boolean') {
       return res.status(400).json({ error: '설정 값이 올바르지 않습니다.' });
     }
-    const cfg = normCfg(await s.hget('state', 'cfg'));
-    cfg[body.cls][body.key] = !!body.value;
-    await s.hset('state', { cfg: JSON.stringify(cfg) });
-    return res.status(200).json({ ok: true, cfg });
+    // 스위치 하나만 바로 덮어쓴다(다른 스위치는 건드리지 않음).
+    await s.hset('state', { [lockField(body.cls, body.key)]: body.value ? '1' : '0' });
+    return res.status(200).json({ ok: true, cls: body.cls, key: body.key, value: body.value });
   }
 
   if (body.action === 'retake') {

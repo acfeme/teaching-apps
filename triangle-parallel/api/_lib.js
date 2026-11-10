@@ -8,7 +8,7 @@ export const MAX_NUMBER = 35;
 const PREFIX = 'tp:';
 
 // Redis 키
-//   state (hash)       cfg → 반별 입장·단계 잠금, `${반}:${번호}:${단계}` → 응시 상태
+//   state (hash)       `lock:${반}:${open|s1|s2}` → 잠금 스위치('1' 열림), `${반}:${번호}:${단계}` → 응시 상태
 //   subs:{날짜} (list) 제출 기록
 //   warn:{날짜} (list) 다른 창 경고 기록
 //   dates (set)        기록이 있는 날짜
@@ -93,12 +93,21 @@ const parse = (raw) => {
 };
 
 // ---- 반별 잠금 ----
-export function normCfg(raw) {
-  const v = parse(raw) || {};
+// 잠금 스위치는 하나씩 따로 저장한다(`lock:2-1:open` = '1' | '0').
+// 예전처럼 cfg 하나에 통째로 저장하면 스위치를 연달아 바꿀 때 앞의 변경이 덮어써져 사라진다.
+export const LOCK_KEYS = ['open', 's1', 's2'];
+export const lockField = (cls, key) => `lock:${cls}:${key}`;
+export const LOCK_FIELDS = CLASSES.flatMap((c) => LOCK_KEYS.map((k) => lockField(c, k)));
+
+// values: { 필드: 값 } 또는 LOCK_FIELDS 순서의 배열
+export function normCfg(values) {
+  const get = Array.isArray(values)
+    ? (f) => values[LOCK_FIELDS.indexOf(f)]
+    : (f) => values?.[f];
   const out = {};
   for (const c of CLASSES) {
-    const x = v[c] || {};
-    out[c] = { open: !!x.open, s1: !!x.s1, s2: !!x.s2 };
+    out[c] = {};
+    for (const k of LOCK_KEYS) out[c][k] = String(get(lockField(c, k)) ?? '0') === '1';
   }
   return out;
 }

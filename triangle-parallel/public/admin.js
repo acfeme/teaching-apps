@@ -56,11 +56,13 @@
   }
 
   async function refresh() {
-    if (document.hidden || st.busy) return;
+    if (document.hidden || st.pending) return;
     try {
       st.tick++;
+      const ver = st.ver;
       const d = await call('GET', null, st.tick % DATES_EVERY === 0);
       if (d.dates) st.dates = d.dates;
+      if (st.pending || ver !== st.ver) return; // 그 사이 스위치를 바꿨으면 예전 상태로 덮지 않음
       st.data = d;
       paint();
       setLive(true);
@@ -71,14 +73,19 @@
 
   async function act(body, btn) {
     if (btn) btn.disabled = true;
-    st.busy = true;
+    st.pending = (st.pending || 0) + 1;
+    st.ver = (st.ver || 0) + 1;
     try {
       await call('POST', body);
-      st.busy = false;
-      st.data = await call('GET');
+      st.pending--;
+      if (st.pending) return; // 다른 변경이 저장 중이면 마지막 것이 끝난 뒤 한 번에 새로 그림
+      const ver = st.ver;
+      const d = await call('GET');
+      if (st.pending || ver !== st.ver) return;
+      st.data = d;
       paint();
     } catch (e) {
-      st.busy = false;
+      st.pending = Math.max(0, st.pending - 1);
       if (e.auth) { setPw(''); showLogin(e.message); return; }
       toast(`처리하지 못했습니다: ${e.message}`);
       if (btn) btn.disabled = false;
@@ -151,14 +158,16 @@
       if (!d) return;
       const dx = e.clientX - d.x;
       if (Math.abs(dx) < 16) return; // 짧은 움직임은 일반 클릭으로 처리
-      st.skipClick = Date.now();
+      st.skipClick = { t: d.t, at: Date.now() }; // 밀고 난 뒤 같은 스위치에 따라오는 클릭만 무시
       setSwitch(d.t, dx > 0);
     });
     app.addEventListener('pointercancel', () => { st.drag = null; });
     app.addEventListener('click', (e) => {
       const t = e.target.closest('[data-cfg]');
       if (t) {
-        if (Date.now() - (st.skipClick || 0) < 500) return;
+        const sk = st.skipClick;
+        st.skipClick = null;
+        if (sk && sk.t === t && Date.now() - sk.at < 500) return;
         setSwitch(t, t.dataset.on !== '1');
         return;
       }

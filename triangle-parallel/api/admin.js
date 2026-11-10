@@ -1,5 +1,5 @@
 import {
-  CLASSES, LOCK_KEYS, adminView, lockField, attField, checkAdmin, noStore, normAtt, normCfg, readBody, readList,
+  CLASSES, LOCK_KEYS, adminView, fbEligible, lockField, normFb, attField, checkAdmin, noStore, normAtt, normCfg, readBody, readList,
   requireStore, todayKST, validStage, validStudent,
 } from './_lib.js';
 
@@ -28,8 +28,8 @@ async function view(req, res, s) {
   const asked = String(req.query?.date || today);
   const date = /^\d{4}-\d{2}-\d{2}$/.test(asked) ? asked : today;
 
-  const [state, records, warnings] = await Promise.all([
-    s.hgetall('state'), readList(s, `subs:${date}`), readList(s, `warn:${date}`),
+  const [state, records, warnings, fbRecs] = await Promise.all([
+    s.hgetall('state'), readList(s, `subs:${date}`), readList(s, `warn:${date}`), readList(s, `fbs:${date}`),
   ]);
   let dates;
   if (req.query?.dates) {
@@ -41,11 +41,21 @@ async function view(req, res, s) {
   const cfg = normCfg(state);
   const students = {};
   for (const [field, raw] of Object.entries(state)) {
-    const m = /^(\d-\d):(\d+):(\d)$/.exec(field);
+    const m = /^(\d-\d):(\d+):(\d|fb)$/.exec(field);
     if (!m) continue;
     const key = `${m[1]}#${m[2]}`;
     students[key] ||= { cls: m[1], num: Number(m[2]), stages: {} };
-    students[key].stages[m[3]] = normAtt(raw);
+    if (m[3] === 'fb') {
+      const fb = normFb(raw);
+      students[key].fbRaw = { done: fb.done, last: fb.last, active: fb.active && { solved: fb.active.solved.length, count: fb.active.ids.length, startedAt: fb.active.startedAt } };
+    } else students[key].stages[m[3]] = normAtt(raw);
+  }
+  // 피드백 문제 상태: none(대상 아님) | wait(대상, 아직 안 함) | active | done
+  for (const st of Object.values(students)) {
+    const f = st.fbRaw || { done: 0, last: null, active: null };
+    delete st.fbRaw;
+    const eligible = fbEligible(st.stages[1] || normAtt(null));
+    st.fb = { ...f, eligible, status: f.active ? 'active' : f.done > 0 ? 'done' : eligible ? 'wait' : 'none' };
   }
   for (const r of records) {
     const key = `${r.cls}#${r.num}`;
@@ -67,6 +77,7 @@ async function view(req, res, s) {
 
   return res.status(200).json({
     today, date, dates, cfg, students: list, warnings: [...warnings].reverse(), log,
+    fbLog: [...fbRecs].sort((a, b) => b.finishedAt - a.finishedAt),
     scopes: adminView(records),
   });
 }

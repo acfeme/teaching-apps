@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   const body = readBody(req);
   const cls = body?.cls;
   const num = validStudent(cls, body?.num);
-  const stage = validStage(body?.stage);
+  const stage = body?.stage === 'fb' ? 'fb' : validStage(body?.stage);
   if (!num || !stage) return res.status(400).json({ error: '반, 번호, 단계가 올바르지 않습니다.' });
   const kind = KINDS[body?.kind] ? body.kind : 'hidden';
 

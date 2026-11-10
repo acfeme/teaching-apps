@@ -97,6 +97,8 @@
     if (el) el.innerHTML = ok ? `<b>실시간</b> · ${fmtTime(Date.now())} 갱신` : '연결이 끊겨 다시 시도 중…';
   }
 
+  const stageName = (s) => (s === 'fb' ? '피드백 문제' : `${s}단계`);
+
   // ---- 경고 알림 ----
   function toast(text, isWarn) {
     const box = document.querySelector('#alerts');
@@ -113,7 +115,7 @@
     if (st.data.date !== st.data.today) return;
     const fresh = list.filter((w) => !st.seen.has(wKey(w)));
     fresh.forEach((w) => st.seen.add(wKey(w)));
-    fresh.reverse().forEach((w) => toast(`⚠ <b>${w.cls}반 ${w.num}번</b> · ${w.stage}단계 풀이 중 ${esc(w.label || '다른 창으로 이동')} <small>${fmtTime(w.at)}</small>`, true));
+    fresh.reverse().forEach((w) => toast(`⚠ <b>${w.cls}반 ${w.num}번</b> · ${stageName(w.stage)} 풀이 중${esc(w.label || '다른 창으로 이동')} <small>${fmtTime(w.at)}</small>`, true));
   }
 
   // ---- 화면 ----
@@ -122,8 +124,8 @@
       <div class="head-row"><h1 class="title" style="font-size:30px">삼각형과 평행선 · 교사 관리자</h1>
       <button class="back" id="out">나가기</button></div>
       <div class="panel"><h2>수업 열기·잠그기</h2>
-        <div class="note">학생은 <b>입장</b>이 열린 반만 들어올 수 있고, 각 단계는 열린 동안에만 <b>시작</b>할 수 있어요. 이미 시작한 학생은 단계를 잠가도 제출할 수 있어요.</div>
-        <div class="scroll"><table class="ctl"><thead><tr><th>반</th><th>입장</th><th>1단계</th><th>2단계</th></tr></thead><tbody id="ctl"></tbody></table></div>
+        <div class="note">학생은 <b>입장</b>이 열린 반만 들어올 수 있고, 각 단계는 열린 동안에만 <b>시작</b>할 수 있어요. 이미 시작한 학생은 단계를 잠가도 제출할 수 있어요.<br><b>피드백 문제</b>는 1단계에서 5문제 이하로 맞힌 학생에게만 보여요. 1단계 중 무작위 5문제를 힌트를 보며 모두 맞힐 때까지 풀어요.</div>
+        <div class="scroll"><table class="ctl"><thead><tr><th>반</th><th>입장</th><th>1단계</th><th>2단계</th><th>피드백 문제</th></tr></thead><tbody id="ctl"></tbody></table></div>
       </div>
       <div class="toolbar">
         <div class="tabs" id="tabs">${['all', ...CLASSES].map((c) => `<button class="tab" data-s="${c}">${clsName(c)}</button>`).join('')}</div>
@@ -132,7 +134,7 @@
       <div class="panel"><h2 id="stuTitle">학생 현황</h2>
         <div class="note">지금 상태입니다. 다시 풀게 하려면 <b>재응시 허용</b>을 누르세요. 이전 기록은 날짜별로 그대로 남아요. 경고 수는 오늘 기준이에요.</div>
         <div class="bulk" id="bulk"></div>
-        <div class="scroll"><table><thead><tr><th>반</th><th>번호</th><th>1단계</th><th>2단계</th><th>경고</th><th>재응시</th></tr></thead><tbody id="stu"></tbody></table></div>
+        <div class="scroll"><table><thead><tr><th>반</th><th>번호</th><th>1단계</th><th>2단계</th><th>피드백 문제</th><th>경고</th><th>재응시</th></tr></thead><tbody id="stu"></tbody></table></div>
       </div>
       <div class="panel"><h2>오늘 다른 창 경고 기록</h2><div class="scroll warn-log" id="wlog"></div></div>
       <div class="toolbar"><label class="date-pick">기록 날짜 <select id="date" aria-label="날짜"></select></label></div>
@@ -191,9 +193,9 @@
     m.querySelector('#yes').onclick = () => { m.remove(); act({ action: 'retakeAll', cls, stage: Number(stage) }, btn); };
   }
 
-  const SW_LABEL = { open: '입장', s1: '1단계', s2: '2단계' };
-  const swText = (keyName, on) => `${SW_LABEL[keyName]} ${on ? '열림' : '잠김'}`;
-  const sw = (cls, keyName, on) => `<button class="sw${on ? ' on' : ''}" data-cfg="${cls}|${keyName}" data-on="${on ? 1 : 0}" aria-pressed="${on}">
+  const SW_LABEL = { open: '입장', s1: '1단계', s2: '2단계', fb: '피드백' };
+  const swText = (keyName, on) => (on ? '열림' : '잠김'); // 무엇의 스위치인지는 열 제목에 있다
+  const sw = (cls, keyName, on) => `<button class="sw${on ? ' on' : ''}" data-cfg="${cls}|${keyName}" data-on="${on ? 1 : 0}" aria-pressed="${on}" aria-label="${cls}반 ${SW_LABEL[keyName]} ${on ? '열림' : '잠김'}">
     <span class="knob"></span><span class="sw-t">${swText(keyName, on)}</span></button>`;
 
   // 누르는 즉시 스위치 모양을 바꾸고 서버에 저장한다. 실패하면 서버 상태로 되돌아간다.
@@ -214,13 +216,20 @@
     return `<span class="tag done">완료 ${a.last?.score ?? '-'}점</span> <small>${a.used}회</small>`;
   }
 
+  function fbCell(f) {
+    if (!f || f.status === 'none') return '<span class="tag">-</span>';
+    if (f.status === 'active') return `<span class="tag live">푸는 중 ${f.active.solved}/${f.active.count}</span>`;
+    if (f.status === 'wait') return '<span class="tag ok">대상 · 안 함</span>';
+    return `<span class="tag done">완료 ${f.done}회</span>${f.last ? ` <small>확인 ${f.last.totalTries}번</small>` : ''}`;
+  }
+
   function paint() {
     const d = st.data;
     newWarnings(d.warnings);
 
     app.querySelector('#ctl').innerHTML = CLASSES.map((c) => {
       const v = d.cfg[c];
-      return `<tr><td><b>${c}반</b></td><td>${sw(c, 'open', v.open)}</td><td>${sw(c, 's1', v.s1)}</td><td>${sw(c, 's2', v.s2)}</td></tr>`;
+      return `<tr><td><b>${c}반</b></td><td>${sw(c, 'open', v.open)}</td><td>${sw(c, 's1', v.s1)}</td><td>${sw(c, 's2', v.s2)}</td><td>${sw(c, 'fb', v.fb)}</td></tr>`;
     }).join('');
 
     app.querySelectorAll('[data-s]').forEach((b) => b.classList.toggle('on', b.dataset.s === st.scope));
@@ -234,12 +243,12 @@
         return `<button class="mini" data-retake="${s.cls}|${s.num}|${n}"${can ? '' : ' disabled'}>${n}단계</button>`;
       };
       return `<tr class="${s.warnings ? 'warned' : ''}"><td>${s.cls}</td><td>${s.num}</td><td>${stageCell(s.stages[1])}</td><td>${stageCell(s.stages[2])}</td>
-        <td>${s.warnings ? `<b class="wcount">⚠ ${s.warnings}</b>` : '0'}</td><td>${btn(1)} ${btn(2)}</td></tr>`;
-    }).join('') || '<tr><td colspan="6">아직 들어온 학생이 없습니다.</td></tr>';
+        <td>${fbCell(s.fb)}</td><td>${s.warnings ? `<b class="wcount">⚠ ${s.warnings}</b>` : '0'}</td><td>${btn(1)} ${btn(2)}</td></tr>`;
+    }).join('') || '<tr><td colspan="7">아직 들어온 학생이 없습니다.</td></tr>';
 
     const wl = d.warnings.filter((w) => st.scope === 'all' || w.cls === st.scope);
     app.querySelector('#wlog').innerHTML = wl.length
-      ? `<table><thead><tr><th>시각</th><th>반</th><th>번호</th><th>단계</th><th>내용</th></tr></thead><tbody>${wl.map((w) => `<tr><td>${fmtTime(w.at)}</td><td>${w.cls}</td><td>${w.num}</td><td>${w.stage}</td><td>${esc(w.label || '')}</td></tr>`).join('')}</tbody></table>`
+      ? `<table><thead><tr><th>시각</th><th>반</th><th>번호</th><th>단계</th><th>내용</th></tr></thead><tbody>${wl.map((w) => `<tr><td>${fmtTime(w.at)}</td><td>${w.cls}</td><td>${w.num}</td><td>${stageName(w.stage)}</td><td>${esc(w.label || '')}</td></tr>`).join('')}</tbody></table>`
       : '<div class="empty">경고가 없습니다.</div>';
 
     const sel = app.querySelector('#date');
@@ -279,7 +288,21 @@
           const wrong = ST[r.stage].items.map((p, k) => (r.results?.[p.id]?.ok ? null : k + 1)).filter(Boolean).join(', ');
           return `<tr><td>${fmtTime(r.submittedAt)}</td><td>${r.cls}</td><td>${r.num}</td><td>${r.stage}</td><td>${r.attempt}</td><td>${r.score}</td><td>${r.correct}/${r.total}</td><td>${r.warnings ? `<b class="wcount">${r.warnings}</b>` : 0}</td><td class="left">${wrong || '-'}</td></tr>`;
         }).join('') || '<tr><td colspan="9">이 날짜에는 제출이 없습니다.</td></tr>'}</tbody></table></div>
-      </div>`;
+      </div>
+      ${fbLogHtml(d)}`;
+  }
+
+  // 피드백 문제 완료 기록: 문제마다 몇 번 만에 맞혔는지
+  function fbLogHtml(d) {
+    const list = (d.fbLog || []).filter((r) => st.scope === 'all' || r.cls === st.scope);
+    const no = Object.fromEntries(ST[1].items.map((p, k) => [p.id, k + 1]));
+    return `<div class="panel"><h2>피드백 문제 완료 기록</h2>
+      <div class="note">1단계에서 5문제 이하로 맞힌 학생이 1단계 문제 중 무작위 5문제를 모두 맞힐 때까지 푼 기록이에요. 괄호 안은 맞히기까지 확인한 횟수예요(1이면 한 번에 정답).</div>
+      <div class="scroll" style="max-height:360px;overflow-y:auto"><table><thead><tr><th>끝낸 시각</th><th>반</th><th>번호</th><th>회차</th><th>한 번에 맞힘</th><th>총 확인</th><th>경고</th><th>문제별 (1단계 번호: 확인 횟수)</th></tr></thead>
+      <tbody>${list.map((r) => `<tr><td>${fmtTime(r.finishedAt)}</td><td>${r.cls}</td><td>${r.num}</td><td>${r.round}</td><td>${r.firstTry}/${r.ids.length}</td><td>${r.totalTries}</td>
+        <td>${r.warnings ? `<b class="wcount">${r.warnings}</b>` : 0}</td>
+        <td class="left">${r.ids.map((id) => `${no[id]}번(${r.tries[id]})`).join(', ')}</td></tr>`).join('') || '<tr><td colspan="8">이 날짜에는 완료 기록이 없습니다.</td></tr>'}</tbody></table></div>
+    </div>`;
   }
 
   st.pw = savedPw();

@@ -10,6 +10,8 @@
   const S = {
     screen: '', cls: null, num: null, stage: null, startedAt: null, attempt: 0,
     i: 0, blank: 0, answers: {}, warns: 0,
+    mode: 'test', // 'test' = 1·2단계 시험, 'fb' = 피드백(보충) 문제
+    fb: null, // { ids, startedAt, tries, solved, help: {id: {level, explain, reveal}}, marks: {id: [1|0]} }
   };
   let timer = null;
   let lastWarnAt = 0;
@@ -40,10 +42,15 @@
   }
   const post = (path, body) => api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
-  const draftKey = () => `tp-draft:${S.cls}:${S.num}:${S.stage}:${S.startedAt}`;
+  const isFb = () => S.mode === 'fb';
+  const draftKey = () => (isFb()
+    ? `tp-fbdraft:${S.cls}:${S.num}:${S.startedAt}`
+    : `tp-draft:${S.cls}:${S.num}:${S.stage}:${S.startedAt}`);
   const resultKey = (stage) => `tp-result:${S.cls}:${S.num}:${stage}`;
-  const items = () => ST[S.stage].items;
+  const items = () => (isFb() ? ST[1].items.filter((p) => S.fb.ids.includes(p.id)) : ST[S.stage].items);
+  const isSolved = (p) => isFb() && S.fb.solved.includes(p.id);
   const isDone = (p) => {
+    if (isFb()) return isSolved(p);
     const a = S.answers[p.id] || [];
     for (let k = 0; k < window.blankCount(p); k++) if (!a[k]) return false;
     return true;
@@ -149,15 +156,59 @@
       return `<div class="stage-card ${info.status}">
         <div class="st-head"><h2>${stg.title}</h2><span class="st-count">${stg.items.length}문제</span></div>
         <div class="st-desc">${stg.desc}</div>${body}<div class="msg hidden" data-err="${no}"></div></div>`;
-    }).join('');
+    }).join('') + fbCardHtml(d.fb);
     box.querySelectorAll('[data-start]').forEach((b) => { b.onclick = () => startStage(Number(b.dataset.start), b); });
+    box.querySelectorAll('[data-fb]').forEach((b) => { b.onclick = () => startFb(b); });
     box.querySelectorAll('[data-view]').forEach((b) => {
       b.onclick = () => { const r = ls.get(resultKey(Number(b.dataset.view))); if (r) showResult({ ...r, prevTree: r.tree }); };
     });
   }
 
+  // 피드백(보충) 문제 카드: 1단계에서 맞힌 문제가 5개 이하인 학생에게만 보인다.
+  function fbCardHtml(f) {
+    if (!f || f.status === 'none') return '';
+    let body;
+    if (f.status === 'locked') {
+      body = '<div class="st-note">🔒 선생님이 열어 주시면 시작할 수 있어요.</div><button class="st-btn" disabled>잠김</button>';
+    } else if (f.status === 'active') {
+      body = `<div class="st-note">${f.count}문제 중 ${f.solved}문제를 해결했어요.</div><button class="st-btn go" data-fb>이어서 풀기</button>`;
+    } else if (f.status === 'again') {
+      body = `<div class="st-score">완료 <small>(${f.done}번 끝냄)</small></div><button class="st-btn go" data-fb>새 문제로 한 번 더 연습하기</button>`;
+    } else {
+      body = '<button class="st-btn go" data-fb>피드백 문제 풀기</button>';
+    }
+    return `<div class="stage-card fb-card ${f.status}">
+      <div class="st-head"><h2>💡 피드백 문제</h2><span class="st-count">${f.count}문제</span></div>
+      <div class="st-desc">1단계 문제 중 ${f.count}문제가 무작위로 나와요. 힌트를 보면서 모두 맞힐 때까지 풀어요.</div>
+      ${body}<div class="msg hidden" data-err="fb"></div></div>`;
+  }
+
+  async function startFb(btn) {
+    btn.disabled = true;
+    guard.arm();
+    try {
+      const d = await post('/api/fb', { action: 'start', cls: S.cls, num: S.num });
+      S.mode = 'fb'; S.stage = 1; S.startedAt = d.startedAt;
+      S.fb = { ids: d.ids, startedAt: d.startedAt, tries: d.tries || {}, solved: d.solved || [], help: {}, marks: {} };
+      const draft = ls.get(draftKey()) || {};
+      S.answers = draft.answers || {};
+      S.warns = draft.warns || 0;
+      if (draft.help) S.fb.help = draft.help;
+      if (draft.marks) S.fb.marks = draft.marks;
+      const first = items().findIndex((p) => !isSolved(p));
+      S.i = first < 0 ? 0 : first; S.blank = 0;
+      showQuiz();
+    } catch (e) {
+      btn.disabled = false;
+      guard.release();
+      const m = app.querySelector('[data-err="fb"]');
+      if (m) { m.textContent = e.message; m.classList.remove('hidden'); }
+    }
+  }
+
   async function startStage(no, btn) {
     btn.disabled = true;
+    S.mode = 'test';
     guard.arm(); // 버튼을 누른 순간에만 허락되는 일(전체 화면, 알림 허용, 소리)을 먼저 준비
     try {
       const d = await post('/api/start', { cls: S.cls, num: S.num, stage: no });
@@ -180,11 +231,11 @@
     stopTimer();
     S.screen = 'quiz';
     const varKeys = S.stage === 1;
-    app.innerHTML = `<div class="quiz">
+    app.innerHTML = `<div class="quiz${isFb() ? ' fb-mode' : ''}">
       <div class="topbar">
-        <div class="who">${S.cls}반 ${S.num}번 · ${S.stage}단계</div>
+        <div class="who">${S.cls}반 ${S.num}번 · ${isFb() ? '💡 피드백 문제' : `${S.stage}단계`}</div>
         <div class="prog" id="prog"></div>
-        <button class="submit-top" id="submit">제출하기</button>
+        <button class="submit-top" id="submit">${isFb() ? '확인하기' : '제출하기'}</button>
       </div>
       <div class="quiz-main">
         <div class="pcard" id="card"></div>
@@ -210,16 +261,34 @@
     });
     app.querySelector('#prev').onclick = () => go(S.i - 1);
     app.querySelector('#next').onclick = () => go(S.i + 1);
-    app.querySelector('#submit').onclick = askSubmit;
+    app.querySelector('#submit').onclick = isFb() ? checkFb : askSubmit;
     renderProblem();
     window.scrollTo(0, 0);
   }
   const key = (k, cls = '') => `<button class="key ${cls}" data-k="${k}">${k}</button>`;
 
+  // 피드백 문제에서 확인한 뒤 칸마다 맞음/틀림 표시
+  const markOf = (p, k) => (isFb() ? S.fb.marks[p.id]?.[k] : undefined);
+  const markCls = (p, k) => (markOf(p, k) === 1 ? ' ok' : markOf(p, k) === 0 ? ' bad' : '');
+
   function boxHtml(p, k) {
     const v = S.answers[p.id]?.[k] || '';
     const shown = /^[xy]$/.test(v) ? `<i class="v">${v}</i>` : esc(v);
-    return `<button class="box${k === S.blank ? ' on' : ''}" data-b="${k}" aria-label="빈칸 ${k + 1}">${shown}</button>`;
+    return `<button class="box${k === S.blank && !isSolved(p) ? ' on' : ''}${markCls(p, k)}" data-b="${k}" aria-label="빈칸 ${k + 1}"${isSolved(p) ? ' disabled' : ''}>${shown}</button>`;
+  }
+
+  function helpHtml(p) {
+    if (!isFb()) return '';
+    if (isSolved(p)) return '<div class="help solved">🎉 해결했어요! 다른 문제로 넘어가세요.</div>';
+    const h = S.fb.help[p.id];
+    if (!h) return '<div class="help idle">빈칸을 모두 채우고 <b>확인하기</b>를 누르세요. 틀리면 힌트가 나와요.</div>';
+    const reveal = h.reveal ? Object.entries(h.reveal) : [];
+    return `<div class="help">
+      <div class="help-head">❌ 아직 틀린 칸이 있어요 <small>(${h.wrong}번째 확인)</small> · 빨간 칸을 고쳐 보세요.</div>
+      <div class="help-row"><b>힌트</b> ${M(p.hint || '')}</div>
+      ${h.explain ? `<div class="help-row"><b>풀이 요약</b> ${M(h.explain)}</div>` : ''}
+      ${reveal.length ? `<div class="help-row reveal"><b>정답 알려 주기</b> ${reveal.map(([k, a]) => `${Number(k) + 1}번째 칸 → <span class="chip y">${/^[xy]$/.test(a) ? `<i class="v">${a}</i>` : esc(a)}</span>`).join(' &nbsp; ')}<br>이 답을 직접 넣고 다시 확인해요.</div>` : ''}
+    </div>`;
   }
 
   function stepsHtml(p, cell) {
@@ -242,12 +311,13 @@
       <div class="pbody">
         <div class="ptext">${M(p.text)}</div>
         <div class="pfig">${window.figureSvg(p.fig)}</div>
-      </div>${body}`;
+      </div>${body}<div id="help">${helpHtml(p)}</div>`;
     app.querySelectorAll('[data-b]').forEach((b) => {
       b.onclick = () => { S.blank = Number(b.dataset.b); paintBoxes(); };
     });
     app.querySelector('#prev').disabled = S.i === 0;
     app.querySelector('#next').disabled = S.i === items().length - 1;
+    if (isFb()) app.querySelector('#submit').disabled = isSolved(p);
     paintProgress();
     paintStrip();
   }
@@ -257,7 +327,9 @@
     app.querySelectorAll('[data-b]').forEach((b) => {
       const k = Number(b.dataset.b);
       const v = S.answers[p.id]?.[k] || '';
-      b.classList.toggle('on', k === S.blank);
+      b.classList.toggle('on', k === S.blank && !isSolved(p));
+      b.classList.toggle('ok', markOf(p, k) === 1);
+      b.classList.toggle('bad', markOf(p, k) === 0);
       b.innerHTML = /^[xy]$/.test(v) ? `<i class="v">${v}</i>` : esc(v);
     });
     const on = app.querySelector('.box.on');
@@ -266,7 +338,7 @@
 
   function paintProgress() {
     const done = items().filter(isDone).length;
-    app.querySelector('#prog').innerHTML = `<b>${S.i + 1}</b> / ${items().length}번<span class="prog-more"> · 완성 ${done}개</span>`;
+    app.querySelector('#prog').innerHTML = `<b>${S.i + 1}</b> / ${items().length}번<span class="prog-more"> · ${isFb() ? '해결' : '완성'} ${done}개</span>`;
   }
 
   function paintStrip() {
@@ -281,7 +353,11 @@
     window.scrollTo({ top: 0 });
   }
 
-  function saveDraft() { ls.set(draftKey(), { answers: S.answers, warns: S.warns }); }
+  function saveDraft() {
+    ls.set(draftKey(), isFb()
+      ? { answers: S.answers, warns: S.warns, help: S.fb.help, marks: S.fb.marks }
+      : { answers: S.answers, warns: S.warns });
+  }
 
   function press(k) {
     const p = items()[S.i];
@@ -290,6 +366,8 @@
       if (S.blank < n - 1) { S.blank++; paintBoxes(); } else if (S.i < items().length - 1) go(S.i + 1);
       return;
     }
+    if (isSolved(p)) return;
+    if (isFb() && S.fb.marks[p.id]) S.fb.marks[p.id][S.blank] = undefined; // 고친 칸은 표시를 지움
     const list = S.answers[p.id] || Array.from({ length: n }, () => '');
     let v = list[S.blank] || '';
     const isVar = /^[xy]$/.test(v);
@@ -328,7 +406,7 @@
     try {
       fetch('/api/warn', {
         method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cls: S.cls, num: S.num, stage: S.stage, kind }),
+        body: JSON.stringify({ cls: S.cls, num: S.num, stage: isFb() ? 'fb' : S.stage, kind }),
       }).catch(() => {});
     } catch (e) { /* 경고 기록 실패는 화면 경고만 남김 */ }
     guard.alarm(); // 다른 창에 있어도 알아채도록: 기기 알림, 경고음, 탭 제목 깜빡임
@@ -460,6 +538,84 @@
     };
   }
 
+  // ---- 피드백 문제: 한 문제씩 확인 ----
+  async function checkFb() {
+    const p = items()[S.i];
+    if (isSolved(p)) return;
+    const btn = app.querySelector('#submit');
+    if (!isDoneBlanks(p)) { flashHelp('빈칸을 모두 채운 뒤 확인해요.'); return; }
+    btn.disabled = true; btn.textContent = '확인 중…';
+    try {
+      const d = await post('/api/fb', { action: 'check', cls: S.cls, num: S.num, id: p.id, answers: S.answers[p.id] || [], warnings: S.warns });
+      S.fb.tries[p.id] = d.tries ?? S.fb.tries[p.id];
+      if (d.solved) S.fb.solved = d.solved;
+      if (d.ok || d.already) {
+        S.fb.marks[p.id] = (S.answers[p.id] || []).map(() => 1);
+        delete S.fb.help[p.id];
+      } else {
+        S.fb.marks[p.id] = d.blanks;
+        S.fb.help[p.id] = { wrong: d.wrong, explain: d.explain, reveal: d.reveal };
+        const first = d.blanks.indexOf(0);
+        if (first >= 0) S.blank = first;
+      }
+      saveDraft();
+      if (d.finished) {
+        ls.del(draftKey());
+        guard.release();
+        showFbDone(d.summary);
+        return;
+      }
+      renderProblem();
+      if (d.ok) {
+        // 다음 안 푼 문제로 자동 이동
+        const next = items().findIndex((q, k) => k > S.i && !isSolved(q));
+        const any = next >= 0 ? next : items().findIndex((q) => !isSolved(q));
+        setTimeout(() => { if (S.screen === 'quiz' && isFb() && any >= 0) go(any); }, 1300);
+      } else {
+        app.querySelector('#help')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    } catch (e) {
+      if (e.code === 'FB_NOT_ACTIVE') { guard.release(); S.mode = 'test'; showHome(); return; }
+      flashHelp(e.message);
+    } finally {
+      const b = app.querySelector('#submit');
+      if (b) { b.textContent = '확인하기'; b.disabled = isSolved(items()[S.i]); }
+    }
+  }
+  const isDoneBlanks = (p) => {
+    const a = S.answers[p.id] || [];
+    for (let k = 0; k < window.blankCount(p); k++) if (!a[k]) return false;
+    return true;
+  };
+  function flashHelp(text) {
+    const h = app.querySelector('#help');
+    if (!h) return;
+    const el = document.createElement('div');
+    el.className = 'msg';
+    el.textContent = text;
+    h.prepend(el);
+    setTimeout(() => el.remove(), 2500);
+  }
+
+  function showFbDone(sum) {
+    stopTimer();
+    S.screen = 'result';
+    S.mode = 'test';
+    const perfect = sum && sum.firstTry === sum.count;
+    app.innerHTML = `<div class="wrap">
+      <div class="head-row"><h1 class="title">${S.cls}반 ${S.num}번 · 피드백 문제</h1></div>
+      <div class="fb-done">
+        <div class="big">🎉</div>
+        <h2>${sum ? sum.count : 5}문제를 모두 해결했어요!</h2>
+        <p>${sum ? `모두 ${sum.totalTries}번 확인했고, 한 번에 맞힌 문제는 ${sum.firstTry}개예요.` : ''}<br>
+        ${perfect ? '처음부터 다 맞혔어요. 이제 2단계도 자신 있게 도전해 봐요!' : '힌트를 보고 끝까지 해냈어요. 틀렸던 문제의 풀이 순서를 한 번 더 떠올려 보세요.'}</p>
+        <button class="st-btn go" id="home">처음 화면으로</button>
+      </div>
+    </div>`;
+    app.querySelector('#home').onclick = showHome;
+    window.scrollTo(0, 0);
+  }
+
   // ---- 제출 ----
   function askSubmit() {
     const blank = items().filter((p) => !isDone(p)).length;
@@ -512,6 +668,7 @@
         <div class="tree-card"><div id="tree"></div><div class="tree-cap" id="treeCap"></div>
           <div class="grow-msg">${grown > 0 ? `🌱 ${grown}문제를 맞혀서 나무가 자랐어요!` : '다음 단계에서 나무를 키워 봐요.'}</div></div>
       </div>
+      ${R.stage === 1 && R.correct <= 5 ? `<div class="fb-banner">💡 <span>1단계 문제를 힌트와 함께 다시 공부할 수 있어요. 처음 화면의 <b>피드백 문제</b>를 눌러 보세요. (선생님이 열어 주셔야 시작돼요)</span><button class="st-btn go" id="toFb">피드백 문제로 가기</button></div>` : ''}
       <h2 class="fb-title">문제별 피드백</h2>
       <div class="fb-list">${list.map((p, k) => feedbackHtml(p, k, R)).join('')}</div>
       <div class="rank-grid">
@@ -521,6 +678,7 @@
       <div class="sub center">순위 점수는 1단계와 2단계 점수의 합(200점 만점)이에요.</div>
     </div>`;
     app.querySelector('#home').onclick = showHome;
+    app.querySelector('#toFb')?.addEventListener('click', showHome);
     window.scrollTo(0, 0);
     growTree(R.prevTree, R.tree);
     every(RANK_POLL_MS, loadRanks);

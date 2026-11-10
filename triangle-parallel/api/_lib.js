@@ -95,7 +95,7 @@ const parse = (raw) => {
 // ---- 반별 잠금 ----
 // 잠금 스위치는 하나씩 따로 저장한다(`lock:2-1:open` = '1' | '0').
 // 예전처럼 cfg 하나에 통째로 저장하면 스위치를 연달아 바꿀 때 앞의 변경이 덮어써져 사라진다.
-export const LOCK_KEYS = ['open', 's1', 's2'];
+export const LOCK_KEYS = ['open', 's1', 's2', 'fb'];
 export const lockField = (cls, key) => `lock:${cls}:${key}`;
 export const LOCK_FIELDS = CLASSES.flatMap((c) => LOCK_KEYS.map((k) => lockField(c, k)));
 
@@ -161,6 +161,33 @@ export function gradeStage(stage, submitted) {
   }
   const total = Object.keys(key).length;
   return { results, answers, correct, total, score: Math.round((correct / total) * 100) };
+}
+
+// 한 문제만 채점(피드백 문제용)
+export function gradeOne(stage, id, submitted) {
+  const want = ANSWERS[stage]?.[id];
+  if (!want) return null;
+  const got = Array.isArray(submitted) ? submitted : [];
+  const given = want.map((_, i) => String(got[i] ?? '').trim().slice(0, 16));
+  const blanks = want.map((a, i) => (matchBlank(given[i], a) ? 1 : 0));
+  return { ok: blanks.every(Boolean), blanks, given, want, explain: EXPLAIN[id] };
+}
+
+// ---- 피드백(보충) 문제: 1단계에서 맞힌 문제가 FB_MAX개 이하인 학생이 1단계 문제 FB_COUNT개를 완전학습 ----
+export const FB_MAX = 5;
+export const FB_COUNT = 5;
+export const fbField = (cls, num) => `${cls}:${num}:fb`;
+export function normFb(raw) {
+  const v = parse(raw) || {};
+  return { active: v.active || null, done: Number.isInteger(v.done) ? v.done : 0, last: v.last || null };
+}
+// 1단계 응시 상태로 대상인지 판단(풀이 중이면 아직 대상 아님)
+export const fbEligible = (att1) => !att1.active && !!att1.last && att1.last.correct <= FB_MAX;
+export function fbStatus(cfg, cls, att1, fb) {
+  if (fb.active) return 'active';
+  if (!fbEligible(att1)) return 'none';
+  if (!cfg[cls]?.open || !cfg[cls].fb) return 'locked';
+  return fb.done > 0 ? 'again' : 'ready';
 }
 
 export function feedbackFor(stage, results) {

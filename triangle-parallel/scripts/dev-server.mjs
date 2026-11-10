@@ -15,6 +15,7 @@ const handlers = {
   submit: (await import('../api/submit.js')).default,
   ranking: (await import('../api/ranking.js')).default,
   admin: (await import('../api/admin.js')).default,
+  fb: (await import('../api/fb.js')).default,
 };
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
 

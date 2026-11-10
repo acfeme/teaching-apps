@@ -212,3 +212,32 @@ a.ox { text-decoration: none; }
   .prog-more { display: none; }
   .submit-top { padding: 0 16px; }
 }
+
+/* ---- 피드백(보충) 문제 ---- */
+.stage-card.fb-card { border-style: dashed; }
+.stage-card.fb-card.ready, .stage-card.fb-card.active, .stage-card.fb-card.again { border-color: var(--gold); box-shadow: 0 0 0 3px #fff3d6; border-style: solid; }
+.stage-card.fb-card .st-btn.go { background: var(--gold); }
+.fb-mode .submit-top { background: var(--gold); }
+.fb-mode .submit-top:disabled { background: #c9cfd6; }
+.box.ok { border-color: var(--brand); background: var(--brand-soft); color: var(--brand-dark); }
+.box.bad { border-color: var(--warn); background: var(--warn-soft); color: var(--warn); }
+.box.bad.on { box-shadow: 0 0 0 3px var(--warn); }
+.box:disabled { opacity: 1; }
+.help { margin-top: 18px; padding: 14px 18px; border-radius: 16px; background: #fff8e6; border: 2px solid #f0d58a; font-size: 20px; line-height: 1.6; }
+.help.idle { background: #f6f7f8; border-color: var(--line); color: var(--muted); }
+.help.solved { background: var(--brand-soft); border-color: #a7d8c2; color: var(--brand-dark); font-weight: 800; font-size: 22px; }
+.help-head { font-weight: 800; color: var(--warn); margin-bottom: 6px; }
+.help-head small { color: var(--muted); font-weight: 600; }
+.help-row { margin-top: 6px; }
+.help-row b { display: inline-block; margin-right: 8px; padding: 0 10px; border-radius: 8px; background: #fff; color: var(--gold); border: 1px solid #f0d58a; font-size: 17px; }
+.help-row.reveal b { color: var(--warn); border-color: var(--warn-soft); }
+.help .chip { font-size: 22px; min-height: 36px; }
+.help .msg { margin: 0 0 8px; text-align: left; }
+.fb-banner { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 18px; padding: 16px 18px; border-radius: 18px; background: #fff8e6; border: 2px solid #f0d58a; font-size: 20px; }
+.fb-banner span { flex: 1 1 320px; }
+.fb-banner .st-btn { width: auto; margin: 0; padding: 0 24px; background: var(--gold); }
+.fb-done { margin-top: 24px; text-align: center; background: var(--card); border: 2px solid var(--line); border-radius: 22px; padding: 30px 22px; }
+.fb-done .big { font-size: 80px; line-height: 1; }
+.fb-done h2 { margin-top: 10px; font-size: 32px; color: var(--brand-dark); }
+.fb-done p { margin-top: 10px; font-size: 21px; line-height: 1.6; }
+.fb-done .st-btn { max-width: 420px; }

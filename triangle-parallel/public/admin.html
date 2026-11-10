@@ -67,6 +67,26 @@
   .tag.ok { background: #fff3d6; color: #8a5a00; }
   tr.warned td { background: #fff5f3; }
   .wcount { color: #c0261d; }
+  .head-acts { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .prog-open { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .progress-screen { position: fixed; inset: 0; z-index: 20; background: var(--bg); overflow-y: auto; padding-bottom: 40px; }
+  .pick-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; margin-top: 12px; }
+  .pick { min-height: 72px; padding: 12px 16px; border-radius: 16px; background: var(--card); border: 2px solid var(--line); font-size: 22px; font-weight: 800; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+  .pick:hover { border-color: var(--brand); }
+  .pick small { font-size: 15px; color: var(--brand-dark); }
+  .cls-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .pick.cls { align-items: flex-start; text-align: left; min-height: 150px; }
+  .pick.cls b { font-size: 28px; }
+  .pick.cls span { font-size: 17px; font-weight: 600; color: var(--muted); }
+  .pick.empty-cls { opacity: .55; }
+  .ptable td { vertical-align: top; white-space: normal; min-width: 150px; }
+  .ptable td:first-child { min-width: 50px; text-align: center; }
+  .ptable b.low { color: var(--warn); }
+  .ptable .wrong { font-size: 14px; color: var(--warn); margin-top: 2px; }
+  .ptable .wrong.ok { color: var(--brand-dark); }
+  .ptable tr.target td { background: #fffaf0; }
+  .ptable .fbdots { justify-content: flex-start; margin-bottom: 6px; }
+  .live-note { font-size: 15px; color: var(--muted); font-weight: 600; margin-left: 6px; }
   .fbdots { display: flex; gap: 3px; justify-content: center; margin-top: 4px; }
   .fbd { min-width: 26px; padding: 0 4px; border-radius: 7px; background: #eef0f2; color: var(--muted); font-size: 14px; font-weight: 800; text-align: center; }
   .fbd.y { background: var(--brand-soft); color: var(--brand-dark); }

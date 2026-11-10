@@ -16,6 +16,7 @@
 
   function showLogin(msg) {
     if (st.timer) { clearInterval(st.timer); st.timer = null; }
+    document.querySelector('.progress-screen')?.remove();
     app.innerHTML = `<form class="login" id="f">
       <h1 class="title" style="font-size:28px">교사 관리자</h1>
       <input id="pw" type="password" autocomplete="current-password" placeholder="비밀번호" aria-label="비밀번호">
@@ -26,8 +27,8 @@
     app.querySelector('#pw').focus();
   }
 
-  async function call(method, body, withDates) {
-    const q = method === 'GET' ? `?date=${encodeURIComponent(st.date || '')}${withDates ? '&dates=1' : ''}` : '';
+  async function call(method, body, withDates, date) {
+    const q = method === 'GET' ? `?date=${encodeURIComponent(date || st.date || '')}${withDates ? '&dates=1' : ''}` : '';
     const r = await fetch(`/api/admin${q}`, {
       method, cache: 'no-store',
       headers: { 'x-admin-password': st.pw, ...(body ? { 'Content-Type': 'application/json' } : {}) },
@@ -122,7 +123,7 @@
   function render() {
     app.innerHTML = `<div id="alerts" class="alerts"></div><div class="wrap">
       <div class="head-row"><h1 class="title" style="font-size:30px">삼각형과 평행선 · 교사 관리자</h1>
-      <button class="back" id="out">나가기</button></div>
+      <div class="head-acts"><button class="back prog-open" id="progOpen">📊 진도현황</button><button class="back" id="out">나가기</button></div></div>
       <div class="panel"><h2>수업 열기·잠그기</h2>
         <div class="note">학생은 <b>입장</b>이 열린 반만 들어올 수 있고, 각 단계는 열린 동안에만 <b>시작</b>할 수 있어요. 이미 시작한 학생은 단계를 잠가도 제출할 수 있어요.<br><b>피드백 문제</b>는 1단계에서 4문제 이하로 맞힌 학생에게 <b>자동으로</b> 열려요(스위치 없음). 1단계 중 무작위 5문제를 힌트를 보며 모두 맞힐 때까지 풀고, 한 번 끝내면 아래 학생 현황의 <b>피드백</b> 재응시 버튼을 눌러야 다시 풀 수 있어요.</div>
         <div class="scroll"><table class="ctl"><thead><tr><th>반</th><th>입장</th><th>1단계</th><th>2단계</th></tr></thead><tbody id="ctl"></tbody></table></div>
@@ -141,6 +142,7 @@
       <div id="body"></div>
     </div>`;
     app.querySelector('#out').onclick = () => { setPw(''); st.pw = ''; st.date = ''; showLogin(); };
+    app.querySelector('#progOpen').onclick = () => progress.open();
     app.querySelector('#date').onchange = async (e) => {
       st.date = e.target.value;
       try { st.data = await call('GET'); paint(); } catch (err) { setLive(false); }
@@ -316,6 +318,166 @@
         <td class="left">${r.ids.map((id) => `${no[id]}번(${r.tries[id]})`).join(', ')}</td></tr>`).join('') || '<tr><td colspan="8">이 날짜에는 완료 기록이 없습니다.</td></tr>'}</tbody></table></div>
     </div>`;
   }
+
+  // ---- 진도현황: 날짜 → 그날 활동한 반 → 반의 1·2단계·피드백 문제 진도 ----
+  // 지난 날짜는 그날의 제출·완료 기록으로, 오늘은 지금 푸는 중인 상태까지 함께 보여 준다.
+  const progress = (() => {
+    const p = { box: null, date: '', cls: '', data: null, timer: null };
+    const avg = (xs) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0);
+    const no1 = (id) => ST[1].items.findIndex((q) => q.id === id) + 1;
+
+    // 그날 기록으로 반별 학생 진도 만들기
+    function build(d, cls) {
+      const by = new Map();
+      const get = (num) => {
+        if (!by.has(num)) by.set(num, { num, s: { 1: [], 2: [] }, fbDone: [], fbLive: null });
+        return by.get(num);
+      };
+      [...d.log].filter((r) => r.cls === cls).sort((a, b) => a.submittedAt - b.submittedAt)
+        .forEach((r) => get(r.num).s[r.stage].push(r));
+      (d.fbLog || []).filter((r) => r.cls === cls).sort((a, b) => a.finishedAt - b.finishedAt)
+        .forEach((r) => get(r.num).fbDone.push(r));
+      if (d.date === d.today) {
+        d.students.filter((x) => x.cls === cls).forEach((x) => {
+          const sp = x.stages || {};
+          if (sp[1]?.active || sp[2]?.active || x.fb?.status === 'active') {
+            const row = get(x.num);
+            row.live = { 1: !!sp[1]?.active, 2: !!sp[2]?.active };
+            if (x.fb?.status === 'active') row.fbLive = x.fb.active;
+          }
+        });
+      }
+      const rows = [...by.values()].sort((a, b) => a.num - b.num);
+      rows.forEach((r) => {
+        const last1 = r.s[1][r.s[1].length - 1];
+        r.fbTarget = !!last1 && last1.correct <= 4;
+      });
+      return rows;
+    }
+
+    function summary(rows) {
+      const lastScore = (n) => rows.map((r) => r.s[n][r.s[n].length - 1]).filter(Boolean).map((x) => x.score);
+      const s1 = lastScore(1), s2 = lastScore(2);
+      const target = rows.filter((r) => r.fbTarget).length;
+      const fbDone = rows.filter((r) => r.fbDone.length).length;
+      return { n: rows.length, s1: s1.length, a1: avg(s1), s2: s2.length, a2: avg(s2), target, fbDone, fbLive: rows.filter((r) => r.fbLive).length };
+    }
+
+    function stageCell(r, n) {
+      const list = r.s[n];
+      const live = r.live?.[n] ? '<span class="tag live">푸는 중</span> ' : '';
+      if (!list.length) return live || '<span class="tag">-</span>';
+      const last = list[list.length - 1];
+      const tries = list.length > 1 ? ` <small>${list.length}회 (첫 ${list[0].score}점)</small>` : '';
+      const wrong = ST[n].items.map((q, k) => (last.results?.[q.id]?.ok ? null : k + 1)).filter(Boolean);
+      return `${live}<b class="${last.correct <= 4 && n === 1 ? 'low' : ''}">${last.score}점</b> <small>${last.correct}/${last.total}</small>${tries}
+        ${wrong.length ? `<div class="wrong">틀림: ${wrong.join(', ')}</div>` : '<div class="wrong ok">모두 정답</div>'}`;
+    }
+
+    function fbCellP(r) {
+      const parts = [];
+      if (r.fbLive) {
+        const it = r.fbLive.items;
+        parts.push(`<div><span class="tag live">푸는 중 ${it.filter((x) => x.solved).length}/${it.length}</span></div>
+          <div class="fbdots">${it.map((x) => `<span class="fbd${x.solved ? ' y' : x.tries ? ' n' : ''}" title="1단계 ${no1(x.id)}번 · 확인 ${x.tries}번">${no1(x.id)}${x.tries ? `<sub>${x.tries}</sub>` : ''}</span>`).join('')}</div>`);
+      }
+      r.fbDone.forEach((f) => {
+        parts.push(`<div><span class="tag done">${f.round}회차 완료</span> <small>${fmtTime(f.finishedAt)} · 확인 ${f.totalTries}번 · 한 번에 ${f.firstTry}/${f.ids.length}</small></div>
+          <div class="fbdots">${f.ids.map((id) => `<span class="fbd ${f.tries[id] === 1 ? 'y' : 'n'}" title="1단계 ${no1(id)}번 · 확인 ${f.tries[id]}번">${no1(id)}<sub>${f.tries[id]}</sub></span>`).join('')}</div>`);
+      });
+      if (!parts.length) return r.fbTarget ? '<span class="tag ok">대상 · 안 함</span>' : '<span class="tag">-</span>';
+      return parts.join('');
+    }
+
+    function frame(title, back, body) {
+      p.box.innerHTML = `<div class="wrap">
+        <div class="head-row"><h1 class="title" style="font-size:28px">${title}</h1>
+          <div class="head-acts">${back ? '<button class="back" id="pBack">← 뒤로</button>' : ''}<button class="back" id="pClose">관리 화면으로</button></div></div>
+        ${body}</div>`;
+      p.box.querySelector('#pClose').onclick = close;
+      if (back) p.box.querySelector('#pBack').onclick = back;
+      p.box.scrollTop = 0;
+    }
+
+    function showDates() {
+      p.cls = ''; p.date = ''; stopLive();
+      const dates = st.dates?.length ? st.dates : [st.data?.today].filter(Boolean);
+      const today = st.data?.today;
+      frame('📊 진도현황 · 날짜', null, `<div class="note">날짜를 누르면 그날 활동한 반이 나와요.</div>
+        <div class="pick-grid">${dates.map((x) => `<button class="pick" data-date="${x}">${x}${x === today ? '<small>오늘</small>' : ''}</button>`).join('')}</div>`);
+      p.box.querySelectorAll('[data-date]').forEach((b) => { b.onclick = () => showClasses(b.dataset.date); });
+    }
+
+    async function load(date) {
+      p.data = await call('GET', null, false, date);
+      return p.data;
+    }
+
+    async function showClasses(date) {
+      p.date = date; p.cls = ''; stopLive();
+      frame(`📊 ${date} · 반 고르기`, showDates, '<div class="empty">불러오는 중…</div>');
+      let d;
+      try { d = await load(date); } catch (e) { frame(`📊 ${date}`, showDates, `<div class="err">${esc(e.message)}</div>`); return; }
+      if (p.date !== date || p.cls) return;
+      const cards = CLASSES.map((c) => {
+        const sm = summary(build(d, c));
+        return `<button class="pick cls${sm.n ? '' : ' empty-cls'}" data-cls="${c}"><b>${c}반</b>
+          ${sm.n ? `<span>1단계 ${sm.s1}명 · 평균 ${sm.a1}점</span><span>2단계 ${sm.s2}명 · 평균 ${sm.a2}점</span>
+          <span>피드백 대상 ${sm.target}명 · 완료 ${sm.fbDone}명${sm.fbLive ? ` · 푸는 중 ${sm.fbLive}명` : ''}</span>` : '<span>이날 기록 없음</span>'}</button>`;
+      }).join('');
+      frame(`📊 ${date} · 반 고르기`, showDates, `<div class="note">반을 누르면 학생별 단계 진도와 피드백 문제 진도가 나와요.</div><div class="pick-grid cls-grid">${cards}</div>`);
+      p.box.querySelectorAll('[data-cls]').forEach((b) => { b.onclick = () => showClass(date, b.dataset.cls); });
+    }
+
+    function paintClass() {
+      const d = p.data;
+      const rows = build(d, p.cls);
+      const sm = summary(rows);
+      const isToday = d.date === d.today;
+      frame(`📊 ${p.date} · ${p.cls}반 진도`, () => showClasses(p.date), `
+        <div class="tiles">
+          <div class="tile"><div>1단계</div><b>${sm.s1}</b>명 · 평균 <b>${sm.a1}</b>점</div>
+          <div class="tile"><div>2단계</div><b>${sm.s2}</b>명 · 평균 <b>${sm.a2}</b>점</div>
+          <div class="tile"><div>피드백 문제 (대상 = 1단계 4개 이하)</div><b>${sm.fbDone}</b> / ${sm.target}명 완료${sm.fbLive ? ` · 푸는 중 ${sm.fbLive}` : ''}</div>
+        </div>
+        <div class="panel"><h2>학생별 진도 ${isToday ? '<small class="live-note">5초마다 갱신</small>' : ''}</h2>
+          <div class="note">점수는 그날 마지막 제출이에요. 1단계 4개 이하는 주황색이고 피드백 문제 대상이에요. 피드백 칸의 작은 네모는 1단계 문제 번호이고, 아래 숫자는 맞히기까지 확인한 횟수예요(초록 = 한 번에 정답).</div>
+          <div class="scroll"><table class="ptable"><thead><tr><th>번호</th><th>1단계</th><th>2단계</th><th>피드백 문제</th></tr></thead>
+          <tbody>${rows.map((r) => `<tr${r.fbTarget ? ' class="target"' : ''}><td><b>${r.num}</b></td><td class="left">${stageCell(r, 1)}</td><td class="left">${stageCell(r, 2)}</td><td class="left">${fbCellP(r)}</td></tr>`).join('') || '<tr><td colspan="4">이날 이 반의 기록이 없습니다.</td></tr>'}</tbody></table></div>
+        </div>`);
+    }
+
+    async function showClass(date, cls) {
+      p.date = date; p.cls = cls;
+      paintClass();
+      stopLive();
+      if (p.data.date === p.data.today) {
+        p.timer = setInterval(async () => {
+          if (document.hidden || p.cls !== cls || p.date !== date) return;
+          try { await load(date); if (p.cls === cls && p.date === date) { const y = p.box.scrollTop; paintClass(); p.box.scrollTop = y; } } catch (e) { /* 다음 갱신에 다시 */ }
+        }, POLL_MS);
+      }
+    }
+
+    function stopLive() { if (p.timer) { clearInterval(p.timer); p.timer = null; } }
+
+    function close() {
+      stopLive();
+      p.box?.remove();
+      p.box = null;
+    }
+
+    return {
+      open() {
+        if (!p.box) {
+          p.box = document.createElement('div');
+          p.box.className = 'progress-screen';
+          document.body.appendChild(p.box);
+        }
+        showDates();
+      },
+    };
+  })();
 
   st.pw = savedPw();
   if (st.pw) start(); else showLogin();

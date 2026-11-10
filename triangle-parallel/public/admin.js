@@ -140,9 +140,28 @@
       const b = e.target.closest('[data-s]');
       if (b) { st.scope = b.dataset.s; paint(); }
     });
+    // 스위치: 눌러도, 옆으로 밀어도(오른쪽 = 열기, 왼쪽 = 잠그기) 바뀐다.
+    app.addEventListener('pointerdown', (e) => {
+      const t = e.target.closest('[data-cfg]');
+      st.drag = t && !t.disabled ? { t, x: e.clientX } : null;
+    });
+    app.addEventListener('pointerup', (e) => {
+      const d = st.drag;
+      st.drag = null;
+      if (!d) return;
+      const dx = e.clientX - d.x;
+      if (Math.abs(dx) < 16) return; // 짧은 움직임은 일반 클릭으로 처리
+      st.skipClick = Date.now();
+      setSwitch(d.t, dx > 0);
+    });
+    app.addEventListener('pointercancel', () => { st.drag = null; });
     app.addEventListener('click', (e) => {
       const t = e.target.closest('[data-cfg]');
-      if (t) { const [cls, keyName] = t.dataset.cfg.split('|'); act({ action: 'cfg', cls, key: keyName, value: t.dataset.on !== '1' }, t); return; }
+      if (t) {
+        if (Date.now() - (st.skipClick || 0) < 500) return;
+        setSwitch(t, t.dataset.on !== '1');
+        return;
+      }
       const r = e.target.closest('[data-retake]');
       if (r) { const [cls, num, stage] = r.dataset.retake.split('|'); act({ action: 'retake', cls, num: Number(num), stage: Number(stage) }, r); return; }
       const ra = e.target.closest('[data-retakeall]');
@@ -163,8 +182,21 @@
     m.querySelector('#yes').onclick = () => { m.remove(); act({ action: 'retakeAll', cls, stage: Number(stage) }, btn); };
   }
 
-  const sw = (cls, keyName, on, label) => `<button class="sw${on ? ' on' : ''}" data-cfg="${cls}|${keyName}" data-on="${on ? 1 : 0}" aria-pressed="${on}">
-    <span class="knob"></span><span>${on ? `${label} 열림` : '잠김'}</span></button>`;
+  const SW_LABEL = { open: '입장', s1: '1단계', s2: '2단계' };
+  const swText = (keyName, on) => `${SW_LABEL[keyName]} ${on ? '열림' : '잠김'}`;
+  const sw = (cls, keyName, on) => `<button class="sw${on ? ' on' : ''}" data-cfg="${cls}|${keyName}" data-on="${on ? 1 : 0}" aria-pressed="${on}">
+    <span class="knob"></span><span class="sw-t">${swText(keyName, on)}</span></button>`;
+
+  // 누르는 즉시 스위치 모양을 바꾸고 서버에 저장한다. 실패하면 서버 상태로 되돌아간다.
+  function setSwitch(t, want) {
+    if (t.disabled || (t.dataset.on === '1') === want) return;
+    const [cls, keyName] = t.dataset.cfg.split('|');
+    t.classList.toggle('on', want);
+    t.dataset.on = want ? '1' : '0';
+    t.setAttribute('aria-pressed', String(want));
+    t.querySelector('.sw-t').textContent = swText(keyName, want);
+    act({ action: 'cfg', cls, key: keyName, value: want }, t);
+  }
 
   function stageCell(a) {
     if (!a) return '<span class="tag">미응시</span>';
@@ -179,7 +211,7 @@
 
     app.querySelector('#ctl').innerHTML = CLASSES.map((c) => {
       const v = d.cfg[c];
-      return `<tr><td><b>${c}반</b></td><td>${sw(c, 'open', v.open, '입장')}</td><td>${sw(c, 's1', v.s1, '1단계')}</td><td>${sw(c, 's2', v.s2, '2단계')}</td></tr>`;
+      return `<tr><td><b>${c}반</b></td><td>${sw(c, 'open', v.open)}</td><td>${sw(c, 's1', v.s1)}</td><td>${sw(c, 's2', v.s2)}</td></tr>`;
     }).join('');
 
     app.querySelectorAll('[data-s]').forEach((b) => b.classList.toggle('on', b.dataset.s === st.scope));

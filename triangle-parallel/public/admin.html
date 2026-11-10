@@ -17,8 +17,8 @@
   .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
   .tab { min-height: 52px; padding: 0 20px; border-radius: 12px; background: var(--card); border: 2px solid var(--line); font-weight: 700; }
   .tab.on { background: var(--ink); border-color: var(--ink); color: #fff; }
-  .live { color: var(--muted); font-size: 17px; margin-left: auto; }
-  .live b { color: var(--brand-dark); }
+  #live { color: var(--muted); font-size: 17px; margin-left: auto; }
+  #live b { color: var(--brand-dark); }
   .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
   .tile { background: var(--card); border: 2px solid var(--line); border-radius: 16px; padding: 14px 18px; }
   .tile div { color: var(--muted); font-size: 17px; }
@@ -67,6 +67,11 @@
   .tag.ok { background: #fff3d6; color: #8a5a00; }
   tr.warned td { background: #fff5f3; }
   .wcount { color: #c0261d; }
+  .fbdots { display: flex; gap: 3px; justify-content: center; margin-top: 4px; }
+  .fbd { min-width: 26px; padding: 0 4px; border-radius: 7px; background: #eef0f2; color: var(--muted); font-size: 14px; font-weight: 800; text-align: center; }
+  .fbd.y { background: var(--brand-soft); color: var(--brand-dark); }
+  .fbd.n { background: var(--warn-soft); color: var(--warn); }
+  .fbd sub { font-size: 10px; margin-left: 1px; }
   .warn-log { max-height: 240px; overflow-y: auto; }
   .date-pick { display: flex; align-items: center; gap: 10px; font-weight: 700; }
   .bl { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 8px 54px; }
@@ -83,7 +88,7 @@
     .tiles { grid-template-columns: 1fr 1fr; }
     .rate { grid-template-columns: 34px 1fr 92px; }
     .rate .lab { display: none; }
-    .live { margin-left: 0; width: 100%; }
+    #live { margin-left: 0; width: 100%; }
   }
 </style>
 </head>

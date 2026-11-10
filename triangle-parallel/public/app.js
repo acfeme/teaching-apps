@@ -168,12 +168,12 @@
   function fbCardHtml(f) {
     if (!f || f.status === 'none') return '';
     let body;
-    if (f.status === 'locked') {
-      body = '<div class="st-note">🔒 선생님이 열어 주시면 시작할 수 있어요.</div><button class="st-btn" disabled>잠김</button>';
+    if (f.status === 'done') {
+      body = `<div class="st-score">완료 <small>(${f.done}번 끝냄)</small></div><div class="st-note">다시 풀려면 선생님께 재응시를 요청하세요.</div>`;
     } else if (f.status === 'active') {
       body = `<div class="st-note">${f.count}문제 중 ${f.solved}문제를 해결했어요.</div><button class="st-btn go" data-fb>이어서 풀기</button>`;
     } else if (f.status === 'again') {
-      body = `<div class="st-score">완료 <small>(${f.done}번 끝냄)</small></div><button class="st-btn go" data-fb>새 문제로 한 번 더 연습하기</button>`;
+      body = `<div class="st-note">선생님이 다시 열어 주셨어요. 새 문제가 나와요.</div><button class="st-btn go" data-fb>다시 풀기</button>`;
     } else {
       body = '<button class="st-btn go" data-fb>피드백 문제 풀기</button>';
     }
@@ -668,7 +668,7 @@
         <div class="tree-card"><div id="tree"></div><div class="tree-cap" id="treeCap"></div>
           <div class="grow-msg">${grown > 0 ? `🌱 ${grown}문제를 맞혀서 나무가 자랐어요!` : '다음 단계에서 나무를 키워 봐요.'}</div></div>
       </div>
-      ${R.stage === 1 && R.correct <= 4 ? `<div class="fb-banner">💡 <span>1단계 문제를 힌트와 함께 다시 공부할 수 있어요. 처음 화면의 <b>피드백 문제</b>를 눌러 보세요. (선생님이 열어 주셔야 시작돼요)</span><button class="st-btn go" id="toFb">피드백 문제로 가기</button></div>` : ''}
+      ${R.stage === 1 && R.correct <= 4 ? `<div class="fb-banner">💡 <span>1단계 문제를 힌트와 함께 다시 공부할 수 있어요. 처음 화면의 <b>피드백 문제</b>를 눌러 보세요.</span><button class="st-btn go" id="toFb">피드백 문제로 가기</button></div>` : ''}
       <h2 class="fb-title">문제별 피드백</h2>
       <div class="fb-list">${list.map((p, k) => feedbackHtml(p, k, R)).join('')}</div>
       <div class="rank-grid">

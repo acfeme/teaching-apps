@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       tree += att.last?.correct || 0;
     });
     const fbInfo = {
-      status: fbStatus(cfg, cls, normAtt(atts[0]), fb),
+      status: fbStatus(normAtt(atts[0]), fb),
       done: fb.done,
       solved: fb.active ? fb.active.solved.length : 0,
       count: fb.active ? fb.active.ids.length : FB_COUNT,

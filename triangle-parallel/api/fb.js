@@ -5,7 +5,8 @@ import {
 } from './_lib.js';
 import { ANSWERS } from './_answers.js';
 
-// 피드백(보충) 문제 — 1단계를 FB_MAX개 이하로 맞힌 학생이 1단계 문제 5개를 맞힐 때까지 푼다.
+// 피드백(보충) 문제 — 1단계를 FB_MAX개 이하로 맞힌 학생에게 자동으로 열리고, 1단계 문제 5개를 맞힐 때까지 푼다.
+// 한 번 끝내면 선생님이 관리자 화면에서 재응시를 열어야 다시 풀 수 있다.
 // POST /api/fb {action:'start', cls, num}            → 무작위 5문제(이미 풀던 것이 있으면 이어서)
 // POST /api/fb {action:'check', cls, num, id, answers} → 한 문제 채점과 단계별 도움
 //   틀린 횟수 1: 틀린 칸 표시(힌트 글은 화면에 있음) · 2: 풀이 요약 · 3 이상: 틀린 칸의 정답
@@ -39,7 +40,8 @@ async function start(res, s, cls, num, field) {
   const fb = normFb(vals[LOCK_FIELDS.length + 1]);
   if (fb.active) return res.status(200).json({ ok: true, resumed: true, ...publicActive(fb.active) });
   if (!fbEligible(att1)) return res.status(403).json({ code: 'FB_NOT_ELIGIBLE', error: '1단계 결과가 있어야 하고, 맞힌 문제가 4개 이하일 때만 풀 수 있어요.' });
-  if (!cfg[cls].open || !cfg[cls].fb) return res.status(403).json({ code: 'FB_LOCKED', error: '피드백 문제가 아직 잠겨 있어요. 선생님을 기다려 주세요.' });
+  if (!cfg[cls].open) return res.status(403).json({ code: 'CLASS_CLOSED', error: '아직 반이 열리지 않았어요. 선생님을 기다려 주세요.' });
+  if (fb.done >= fb.allowed) return res.status(409).json({ code: 'FB_DONE', error: '이미 피드백 문제를 끝냈어요. 다시 풀려면 선생님께 요청하세요.' });
 
   const pool = Object.keys(ANSWERS[1]);
   for (let i = pool.length - 1; i > 0; i--) {

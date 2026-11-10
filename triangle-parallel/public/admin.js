@@ -124,8 +124,8 @@
       <div class="head-row"><h1 class="title" style="font-size:30px">삼각형과 평행선 · 교사 관리자</h1>
       <button class="back" id="out">나가기</button></div>
       <div class="panel"><h2>수업 열기·잠그기</h2>
-        <div class="note">학생은 <b>입장</b>이 열린 반만 들어올 수 있고, 각 단계는 열린 동안에만 <b>시작</b>할 수 있어요. 이미 시작한 학생은 단계를 잠가도 제출할 수 있어요.<br><b>피드백 문제</b>는 1단계에서 4문제 이하로 맞힌 학생에게만 보여요. 1단계 중 무작위 5문제를 힌트를 보며 모두 맞힐 때까지 풀어요.</div>
-        <div class="scroll"><table class="ctl"><thead><tr><th>반</th><th>입장</th><th>1단계</th><th>2단계</th><th>피드백 문제</th></tr></thead><tbody id="ctl"></tbody></table></div>
+        <div class="note">학생은 <b>입장</b>이 열린 반만 들어올 수 있고, 각 단계는 열린 동안에만 <b>시작</b>할 수 있어요. 이미 시작한 학생은 단계를 잠가도 제출할 수 있어요.<br><b>피드백 문제</b>는 1단계에서 4문제 이하로 맞힌 학생에게 <b>자동으로</b> 열려요(스위치 없음). 1단계 중 무작위 5문제를 힌트를 보며 모두 맞힐 때까지 풀고, 한 번 끝내면 아래 학생 현황의 <b>피드백</b> 재응시 버튼을 눌러야 다시 풀 수 있어요.</div>
+        <div class="scroll"><table class="ctl"><thead><tr><th>반</th><th>입장</th><th>1단계</th><th>2단계</th></tr></thead><tbody id="ctl"></tbody></table></div>
       </div>
       <div class="toolbar">
         <div class="tabs" id="tabs">${['all', ...CLASSES].map((c) => `<button class="tab" data-s="${c}">${clsName(c)}</button>`).join('')}</div>
@@ -174,7 +174,7 @@
         return;
       }
       const r = e.target.closest('[data-retake]');
-      if (r) { const [cls, num, stage] = r.dataset.retake.split('|'); act({ action: 'retake', cls, num: Number(num), stage: Number(stage) }, r); return; }
+      if (r) { const [cls, num, stage] = r.dataset.retake.split('|'); act({ action: 'retake', cls, num: Number(num), stage: stage === 'fb' ? 'fb' : Number(stage) }, r); return; }
       const ra = e.target.closest('[data-retakeall]');
       if (ra) confirmRetakeAll(ra);
     });
@@ -186,11 +186,11 @@
     const [cls, stage] = btn.dataset.retakeall.split('|');
     const m = document.createElement('div');
     m.className = 'modal';
-    m.innerHTML = `<div class="modal-box"><p>${cls}반에서 ${stage}단계를 이미 푼 학생 모두에게 재응시를 허용할까요?<br><small>이전 기록은 지워지지 않아요.</small></p>
+    m.innerHTML = `<div class="modal-box"><p>${cls}반에서 ${stageName(stage)}를 이미 푼 학생 모두에게 재응시를 허용할까요?<br><small>이전 기록은 지워지지 않아요.</small></p>
       <div class="modal-acts"><button id="no">취소</button><button class="ok" id="yes">모두 허용</button></div></div>`;
     document.body.appendChild(m);
     m.querySelector('#no').onclick = () => m.remove();
-    m.querySelector('#yes').onclick = () => { m.remove(); act({ action: 'retakeAll', cls, stage: Number(stage) }, btn); };
+    m.querySelector('#yes').onclick = () => { m.remove(); act({ action: 'retakeAll', cls, stage: stage === 'fb' ? 'fb' : Number(stage) }, btn); };
   }
 
   const SW_LABEL = { open: '입장', s1: '1단계', s2: '2단계', fb: '피드백' };
@@ -216,11 +216,21 @@
     return `<span class="tag done">완료 ${a.last?.score ?? '-'}점</span> <small>${a.used}회</small>`;
   }
 
+  // 피드백 문제 진도: 푸는 중이면 문제마다 ●(해결)/○(아직)과 확인 횟수
   function fbCell(f) {
     if (!f || f.status === 'none') return '<span class="tag">-</span>';
-    if (f.status === 'active') return `<span class="tag live">푸는 중 ${f.active.solved}/${f.active.count}</span>`;
-    if (f.status === 'wait') return '<span class="tag ok">대상 · 안 함</span>';
-    return `<span class="tag done">완료 ${f.done}회</span>${f.last ? ` <small>확인 ${f.last.totalTries}번</small>` : ''}`;
+    if (f.status === 'active') {
+      const it = f.active.items;
+      const solved = it.filter((x) => x.solved).length;
+      const dots = it.map((x) => {
+        const no = ST[1].items.findIndex((p) => p.id === x.id) + 1;
+        return `<span class="fbd${x.solved ? ' y' : x.tries ? ' n' : ''}" title="1단계 ${no}번 · 확인 ${x.tries}번">${no}${x.tries ? `<sub>${x.tries}</sub>` : ''}</span>`;
+      }).join('');
+      return `<span class="tag live">푸는 중 ${solved}/${it.length}</span><div class="fbdots">${dots}</div>`;
+    }
+    if (f.status === 'ready') return '<span class="tag ok">대상 · 아직 안 함</span>';
+    if (f.status === 'again') return `<span class="tag ok">재응시 가능</span> <small>완료 ${f.done}회</small>`;
+    return `<span class="tag done">완료 ${f.done}회</span>${f.last ? ` <small>확인 ${f.last.totalTries}번 · 한 번에 ${f.last.firstTry}개</small>` : ''}`;
   }
 
   function paint() {
@@ -229,12 +239,12 @@
 
     app.querySelector('#ctl').innerHTML = CLASSES.map((c) => {
       const v = d.cfg[c];
-      return `<tr><td><b>${c}반</b></td><td>${sw(c, 'open', v.open)}</td><td>${sw(c, 's1', v.s1)}</td><td>${sw(c, 's2', v.s2)}</td><td>${sw(c, 'fb', v.fb)}</td></tr>`;
+      return `<tr><td><b>${c}반</b></td><td>${sw(c, 'open', v.open)}</td><td>${sw(c, 's1', v.s1)}</td><td>${sw(c, 's2', v.s2)}</td></tr>`;
     }).join('');
 
     app.querySelectorAll('[data-s]').forEach((b) => b.classList.toggle('on', b.dataset.s === st.scope));
     app.querySelector('#stuTitle').textContent = `${clsName(st.scope)} 학생 현황`;
-    app.querySelector('#bulk').innerHTML = st.scope === 'all' ? '' : [1, 2].map((s) => `<button class="mini" data-retakeall="${st.scope}|${s}">${st.scope}반 ${s}단계 모두 재응시 허용</button>`).join('');
+    app.querySelector('#bulk').innerHTML = st.scope === 'all' ? '' : [1, 2, 'fb'].map((s) => `<button class="mini" data-retakeall="${st.scope}|${s}">${st.scope}반 ${stageName(s)} 모두 재응시 허용</button>`).join('');
     const rows = d.students.filter((s) => st.scope === 'all' || s.cls === st.scope);
     app.querySelector('#stu').innerHTML = rows.map((s) => {
       const btn = (n) => {
@@ -242,8 +252,10 @@
         const can = a && !a.active && a.used >= a.allowed;
         return `<button class="mini" data-retake="${s.cls}|${s.num}|${n}"${can ? '' : ' disabled'}>${n}단계</button>`;
       };
+      const fbBtn = s.fb && s.fb.status === 'done'
+        ? `<button class="mini" data-retake="${s.cls}|${s.num}|fb">피드백</button>` : '';
       return `<tr class="${s.warnings ? 'warned' : ''}"><td>${s.cls}</td><td>${s.num}</td><td>${stageCell(s.stages[1])}</td><td>${stageCell(s.stages[2])}</td>
-        <td>${fbCell(s.fb)}</td><td>${s.warnings ? `<b class="wcount">⚠ ${s.warnings}</b>` : '0'}</td><td>${btn(1)} ${btn(2)}</td></tr>`;
+        <td>${fbCell(s.fb)}</td><td>${s.warnings ? `<b class="wcount">⚠ ${s.warnings}</b>` : '0'}</td><td>${btn(1)} ${btn(2)} ${fbBtn}</td></tr>`;
     }).join('') || '<tr><td colspan="7">아직 들어온 학생이 없습니다.</td></tr>';
 
     const wl = d.warnings.filter((w) => st.scope === 'all' || w.cls === st.scope);

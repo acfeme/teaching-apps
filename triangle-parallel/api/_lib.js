@@ -95,7 +95,7 @@ const parse = (raw) => {
 // ---- 반별 잠금 ----
 // 잠금 스위치는 하나씩 따로 저장한다(`lock:2-1:open` = '1' | '0').
 // 예전처럼 cfg 하나에 통째로 저장하면 스위치를 연달아 바꿀 때 앞의 변경이 덮어써져 사라진다.
-export const LOCK_KEYS = ['open', 's1', 's2', 'fb'];
+export const LOCK_KEYS = ['open', 's1', 's2'];
 export const lockField = (cls, key) => `lock:${cls}:${key}`;
 export const LOCK_FIELDS = CLASSES.flatMap((c) => LOCK_KEYS.map((k) => lockField(c, k)));
 
@@ -179,14 +179,20 @@ export const FB_COUNT = 5;
 export const fbField = (cls, num) => `${cls}:${num}:fb`;
 export function normFb(raw) {
   const v = parse(raw) || {};
-  return { active: v.active || null, done: Number.isInteger(v.done) ? v.done : 0, last: v.last || null };
+  return {
+    active: v.active || null,
+    done: Number.isInteger(v.done) ? v.done : 0,
+    allowed: Number.isInteger(v.allowed) ? v.allowed : 1, // 한 번 끝내면 선생님이 재응시를 열어야 다시 풀 수 있다
+    last: v.last || null,
+  };
 }
-// 1단계 응시 상태로 대상인지 판단(풀이 중이면 아직 대상 아님)
+// 1단계 응시 상태로 대상인지 판단(풀이 중이면 아직 대상 아님). 대상이면 선생님 스위치 없이 자동으로 열린다.
 export const fbEligible = (att1) => !att1.active && !!att1.last && att1.last.correct <= FB_MAX;
-export function fbStatus(cfg, cls, att1, fb) {
+// active | none(대상 아님) | done(끝냄, 재응시 필요) | ready(처음) | again(재응시 허용됨)
+export function fbStatus(att1, fb) {
   if (fb.active) return 'active';
   if (!fbEligible(att1)) return 'none';
-  if (!cfg[cls]?.open || !cfg[cls].fb) return 'locked';
+  if (fb.done >= fb.allowed) return 'done';
   return fb.done > 0 ? 'again' : 'ready';
 }
 

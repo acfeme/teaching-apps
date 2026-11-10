@@ -7,7 +7,7 @@
   const PAR = '<svg class="par" viewBox="0 0 14 20" aria-label="평행"><path d="M6 1 L1 19 M13 1 L8 19" stroke="currentColor" stroke-width="1.7" fill="none"/></svg>';
   window.mathHtml = function (s) {
     return s
-      .replace(/\[([A-Z]{2})\]/g, '<span class="seg">$1</span>')
+      .replace(/\[([A-Z]′?[A-Z]′?)\]/g, '<span class="seg">$1</span>')
       .replace(/\{([a-z])\}/g, '<i class="v">$1</i>')
       .replace(/(^|[^A-Za-z<>"/])([A-Z]{1,4})(?![A-Za-z<"])/g, '$1<span class="pt">$2</span>')
       .replace(/(\d+) cm/g, '<span class="pt">$1&nbsp;cm</span>')
@@ -36,9 +36,10 @@
       if (fill) parts.push(`<path d="M${fmt(c[0])} ${fmt(c[1])} L${fmt(x0)} ${fmt(y0)} A${r} ${r} 0 0 ${sweep} ${fmt(x1)} ${fmt(y1)} Z" fill="${fill}"/>`);
       parts.push(`<path d="M${fmt(x0)} ${fmt(y0)} A${r} ${r} 0 0 ${sweep} ${fmt(x1)} ${fmt(y1)}" fill="none" stroke="${ink}" stroke-width="${fmt(thin)}"/>`);
     });
-    (sp.lines || []).forEach(([a, b, w]) => {
+    // [a, b, 굵기(0 = 가는 선, 2 = 아주 굵은 선), 색]
+    (sp.lines || []).forEach(([a, b, w, color]) => {
       const p = P(a), q = P(b);
-      parts.push(`<line x1="${fmt(p[0])}" y1="${fmt(p[1])}" x2="${fmt(q[0])}" y2="${fmt(q[1])}" stroke="${ink}" stroke-width="${fmt(w === 0 ? thin : thick)}" stroke-linecap="round"/>`);
+      parts.push(`<line x1="${fmt(p[0])}" y1="${fmt(p[1])}" x2="${fmt(q[0])}" y2="${fmt(q[1])}" stroke="${color || ink}" stroke-width="${fmt(w === 0 ? thin : w === 2 ? thick * 1.5 : thick)}" stroke-linecap="round"/>`);
     });
 
     const labels = [];
@@ -94,6 +95,7 @@
       parts.push(`<path d="M${fmt(from[0])} ${fmt(from[1])} Q${fmt(c[0])} ${fmt(c[1])} ${fmt(to[0])} ${fmt(to[1])}" fill="none" stroke="${ink}" stroke-width="${fmt(dash)}"/>`);
       parts.push(head(to, [to[0] - c[0], to[1] - c[1]], fs * 0.26, ink));
     });
+    (sp.dots || []).forEach((d) => { const c = P(d); parts.push(`<circle cx="${fmt(c[0])}" cy="${fmt(c[1])}" r="${fmt(fs * 0.13)}" fill="${ink}"/>`); });
     Object.entries(sp.names || {}).forEach(([n, [x, y]]) => labels.push(`<text x="${fmt(x)}" y="${fmt(y)}" class="pl">${n}</text>`));
     Object.entries(sp.vars || {}).forEach(([n, [x, y]]) => labels.push(`<text x="${fmt(x)}" y="${fmt(y)}" class="pl" font-style="italic">${n}</text>`));
     (sp.texts || []).forEach(([x, y, t]) => labels.push(`<text x="${fmt(x)}" y="${fmt(y)}" class="dl">${t}</text>`));

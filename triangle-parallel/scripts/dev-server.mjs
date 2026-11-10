@@ -16,6 +16,8 @@ const handlers = {
   ranking: (await import('../api/ranking.js')).default,
   admin: (await import('../api/admin.js')).default,
   fb: (await import('../api/fb.js')).default,
+  garden: (await import('../api/garden.js')).default,
+  material: (await import('../api/material.js')).default,
 };
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
 
@@ -27,6 +29,7 @@ http.createServer(async (req, res) => {
     let raw = '';
     for await (const c of req) raw += c;
     req.query = Object.fromEntries(url.searchParams);
+    req.headers = req.headers || {};
     try { req.body = raw ? JSON.parse(raw) : undefined; } catch { req.body = undefined; }
     res.status = (c) => { res.statusCode = c; return res; };
     res.json = (o) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(o)); };
@@ -36,6 +39,7 @@ http.createServer(async (req, res) => {
   let p = url.pathname === '/' ? '/index.html' : url.pathname;
   if (/^\/u\/[a-z0-9-]+\/?$/.test(p)) p = '/unit.html';
   else if (/^\/admin\/[a-z0-9-]+\/?$/.test(p)) p = '/unit-admin.html';
+  if (p.endsWith('/')) p += 'index.html';
   if (!path.extname(p)) p += '.html';
   const file = path.join(root, 'public', path.normalize(p));
   if (!file.startsWith(path.join(root, 'public')) || !fs.existsSync(file)) { res.writeHead(404); return res.end('not found'); }

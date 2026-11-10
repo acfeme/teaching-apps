@@ -55,7 +55,7 @@
   // 피드백 문제는 비례식 단계만 보여 주고 채점한다(계산 단계는 숨김)
   const visSteps = (p) => (isFb() && p.fbSteps ? p.fbSteps.map((i) => p.steps[i]) : p.steps);
   const nBlanks = (p) => (p.steps ? visSteps(p).reduce((t, st) => t + st.eq.split('@').length - 1, 0) : window.blankCount(p));
-  const isPropFb = (p) => isFb() && visSteps(p).some((st) => st.eq.includes(':')); // 비례식 세우기 문제인지
+  const isPropFb = (p) => isFb() && !!p.fbSteps && visSteps(p).some((st) => st.eq.includes(':')); // 비례식 세우기 문제인지
   const isSolved = (p) => isFb() && S.fb.solved.includes(p.id);
   const isDone = (p) => {
     if (isFb()) return isSolved(p);
@@ -189,7 +189,7 @@
     }
     return `<div class="stage-card fb-card ${f.status}">
       <div class="st-head"><h2>💡 피드백 문제</h2><span class="st-count">${f.count}문제</span></div>
-      <div class="st-desc">1단계 문제 중 ${f.count}문제가 무작위로 나와요. <b>비례식 세우기 4문제</b>(계산은 안 해요)와 <b>중점 연결 1문제</b>예요. 힌트를 보면서 모두 맞힐 때까지 풀어요.</div>
+      <div class="st-desc">1단계 문제 중 ${f.count}문제가 무작위로 나와요. ${window.FB_DESC || ''}힌트를 보면서 모두 맞힐 때까지 풀어요. 끝내면 보너스 사과 🍎 1개!</div>
       ${body}<div class="msg hidden" data-err="fb"></div></div>`;
   }
 
@@ -624,11 +624,13 @@
         <h2>${sum ? sum.count : 5}문제를 모두 해결했어요!</h2>
         <p>${sum ? `모두 ${sum.totalTries}번 확인했고, 한 번에 맞힌 문제는 ${sum.firstTry}개예요.` : ''}<br>
         ${perfect ? '처음부터 다 맞혔어요. 이제 2단계도 자신 있게 도전해 봐요!' : '힌트를 보고 끝까지 해냈어요. 틀렸던 문제의 풀이 순서를 한 번 더 떠올려 보세요.'}</p>
+        <p class="apple-note">🍎 보너스 사과 1개가 열렸어요! 오른쪽 아래 <b>🧺 내 보관함</b>에서 수확하세요.</p>
         <button class="st-btn go" id="home">처음 화면으로</button>
       </div>
     </div>`;
     app.querySelector('#home').onclick = showHome;
     window.scrollTo(0, 0);
+    window.GARDEN_REFRESH?.();
   }
 
   // ---- 제출 ----
@@ -681,7 +683,8 @@
           <div class="ox-grid">${list.map((p, k) => `<a class="ox ${R.feedback[p.id].ok ? 'y' : 'n'}" href="#fb-${p.id}">${k + 1}<b>${R.feedback[p.id].ok ? 'O' : 'X'}</b></a>`).join('')}</div>
         </div>
         <div class="tree-card"><div id="tree"></div><div class="tree-cap" id="treeCap"></div>
-          <div class="grow-msg">${grown > 0 ? `🌱 ${grown}문제를 맞혀서 나무가 자랐어요!` : '다음 단계에서 나무를 키워 봐요.'}</div></div>
+          <div class="grow-msg">${grown > 0 ? `🌱 ${grown}문제를 맞혀서 나무가 자랐어요!` : '다음 단계에서 나무를 키워 봐요.'}</div>
+          ${window.treeApples(R.tree) > window.treeApples(R.prevTree) ? '<div class="apple-note">🍎 사과가 열렸어요! 오른쪽 아래 <b>🧺 내 보관함</b>에서 수확하세요.</div>' : ''}</div>
       </div>
       ${R.stage === 1 && R.correct <= 4 ? `<div class="fb-banner">💡 <span>1단계 문제를 힌트와 함께 다시 공부할 수 있어요. 처음 화면의 <b>피드백 문제</b>를 눌러 보세요.</span><button class="st-btn go" id="toFb">피드백 문제로 가기</button></div>` : ''}
       <h2 class="fb-title">문제별 피드백</h2>
@@ -696,6 +699,7 @@
     app.querySelector('#toFb')?.addEventListener('click', showHome);
     window.scrollTo(0, 0);
     growTree(R.prevTree, R.tree);
+    window.GARDEN_REFRESH?.();
     every(RANK_POLL_MS, loadRanks);
   }
 
@@ -753,6 +757,9 @@
       if (cr && cr.querySelector('.empty')) cr.innerHTML = '<div class="empty">순위를 불러오지 못했어요.</div>';
     }
   }
+
+  // 🧺 내 보관함 버튼은 처음 화면과 결과 화면에서만 보인다(engine/garden.js)
+  window.GARDEN_VISIBLE = () => S.screen === 'home' || S.screen === 'result';
 
   // 새로 고침해도 같은 학생 화면으로 돌아온다(브라우저 탭을 닫으면 처음부터)
   const me = ss.get('tp-me');

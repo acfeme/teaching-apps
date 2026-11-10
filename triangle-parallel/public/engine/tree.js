@@ -1,12 +1,19 @@
-// 맞힌 문제 수(0~20)에 따라 씨앗 → 새싹 → 모종 → 어린 나무 → 꽃 핀 나무 → 사과나무
+// 사과나무: 맞힌 문제 수에 따라 씨앗 → 새싹 → 모종 → 어린 나무 → 꽃 핀 나무 → 사과나무
+// 유닛마다 문제 수(max)가 달라서 20칸 기준으로 맞춰 그린다. 사과 수 규칙은 서버 api/_lib.js의 treeApples와 같다.
 (function () {
-  const MAX = 20;
+  const STEPS = 20;
   const CANOPY = [[0, 0, 1], [-0.55, 0.18, 0.78], [0.55, 0.18, 0.78], [-0.3, -0.42, 0.72], [0.3, -0.42, 0.72], [0, 0.4, 0.72]];
   const GREENS = ['#4f9a3c', '#5fae47', '#57a541', '#4a9137', '#66b34e', '#4f9a3c'];
   const SPOTS = [[-0.45, -0.1], [0.42, -0.22], [0.05, 0.22], [-0.2, -0.55], [0.62, 0.28], [-0.66, 0.32], [0.24, -0.62], [-0.05, -0.25],
     [0.3, 0.45], [-0.35, 0.5], [0.7, -0.05], [-0.72, -0.05]];
 
-  function name(n) {
+  // 지금 유닛의 전체 문제 수(유닛 페이지는 문제 파일의 STAGES로 센다)
+  const unitMax = () => (window.STAGES ? Object.values(window.STAGES).reduce((t, s) => t + s.items.length, 0) : STEPS);
+  const step = (n, max) => Math.round((Math.max(0, Math.min(max, n || 0)) * STEPS) / max);
+  const apples = (n, max) => { const t = step(n, max); return t >= 17 ? (t - 16) * 2 : 0; };
+
+  function name(nRaw, max = unitMax()) {
+    const n = step(nRaw, max);
     if (n <= 0) return '씨앗';
     if (n <= 2) return '새싹';
     if (n <= 5) return '모종';
@@ -16,8 +23,9 @@
     return '사과나무';
   }
 
-  function svg(nRaw) {
-    const n = Math.max(0, Math.min(MAX, Math.round(nRaw || 0)));
+  // shown: 나무에 그릴 사과 수(보관함에서 수확한 만큼 빼고 그릴 때). 없으면 열린 사과를 모두 그린다.
+  function svg(nRaw, max = unitMax(), shown) {
+    const n = step(nRaw, max);
     const p = [];
     p.push('<circle cx="100" cy="108" r="98" fill="#eef7e6"/>');
     p.push('<ellipse cx="100" cy="201" rx="80" ry="13" fill="#9b7448"/><ellipse cx="100" cy="196" rx="72" ry="8" fill="#80b865"/>');
@@ -53,17 +61,18 @@
         const x = 100 + dx * r * 0.95 + 4, y = cy + dy * r * 0.95 - 3;
         p.push(`<g class="pop"><circle cx="${x}" cy="${y}" r="3.6" fill="#ffd6e3"/><circle cx="${x}" cy="${y}" r="1.4" fill="#f6b73c"/></g>`);
       }
-      const apples = n >= 17 ? (n - 16) * 2 : 0;
-      for (let i = 0; i < apples; i++) {
+      const count = Math.max(0, Math.min(SPOTS.length, shown == null ? apples(nRaw, max) : shown));
+      for (let i = 0; i < count; i++) {
         const [dx, dy] = SPOTS[i];
         const x = 100 + dx * r, y = cy + dy * r;
-        p.push(`<g class="pop"><path d="M${x} ${y - 6} q1 -4 4 -5" stroke="#6b4a2b" stroke-width="1.4" fill="none"/><circle cx="${x}" cy="${y}" r="6.5" fill="#d83a2e"/><circle cx="${x - 2.2}" cy="${y - 2.2}" r="1.8" fill="#ff8a7a"/></g>`);
+        p.push(`<g class="pop"><path d="M${x} ${y - 7.5} q1 -4 4 -5" stroke="#6b4a2b" stroke-width="1.4" fill="none"/><circle cx="${x}" cy="${y}" r="8" fill="#d83a2e"/><circle cx="${x - 2.6}" cy="${y - 2.6}" r="2.2" fill="#ff8a7a"/></g>`);
       }
     }
-    return `<svg viewBox="0 0 200 214" class="tree-svg" role="img" aria-label="${name(n)}">${p.join('')}</svg>`;
+    return `<svg viewBox="0 0 200 214" class="tree-svg" role="img" aria-label="${name(nRaw, max)}">${p.join('')}</svg>`;
   }
 
-  window.TREE_MAX = MAX;
+  window.TREE_MAX = unitMax();
   window.treeSvg = svg;
   window.treeName = name;
+  window.treeApples = apples;
 })();

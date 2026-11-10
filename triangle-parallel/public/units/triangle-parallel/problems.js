@@ -129,6 +129,7 @@
     a10: '한 직선 위의 선분이 6과 ({x} − 6)이에요. 다른 직선에서 같은 자리(위쪽, 아래쪽)에 있는 선분의 길이를 같은 순서로 넣어요.',
   };
   STAGE1.forEach((p) => { p.hint = HINT[p.id]; p.fbSteps = FB_STEPS[p.id] || null; });
+  window.FB_DESC = '<b>비례식 세우기 4문제</b>(계산은 안 해요)와 <b>중점 연결 1문제</b>예요. ';
 
   window.STAGES = {
     1: { no: 1, title: '1단계 · 차근차근 단계형', desc: '풀이 순서대로 빈칸을 채워요', items: STAGE1 },

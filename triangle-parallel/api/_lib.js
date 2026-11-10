@@ -315,3 +315,23 @@ export function readBody(req) {
 }
 
 export function noStore(res) { res.setHeader('Cache-Control', 'no-store'); }
+
+// ---- 사과나무와 보관함 ----
+// 나무 크기 = 1·2단계에서 맞힌 문제 수(마지막 응시 기준). 유닛마다 문제 수가 달라 20칸 기준으로 맞춰 그린다.
+// 다 자란 나무(20칸 중 17칸 이상)에 사과가 열리고(최대 8개), 피드백 문제를 한 번 끝낼 때마다 보너스 사과 1개.
+// 열린 사과는 학생이 보관함에서 수확한다(수확한 수는 `${반}:${번호}:garden`에 저장, 줄어들지 않는다).
+export const gardenField = (cls, num) => `${cls}:${num}:garden`;
+export const treeStep = (n, max) => Math.round((Math.max(0, Math.min(max, n)) * 20) / max);
+export const treeApples = (n, max) => { const t = treeStep(n, max); return t >= 17 ? (t - 16) * 2 : 0; };
+export function normGarden(raw) {
+  const v = parse(raw) || {};
+  return { harvested: Number.isInteger(v.harvested) ? v.harvested : 0, at: v.at || null };
+}
+// 한 유닛의 학생 나무 상태
+export function gardenOf(U, attRaws, fbRaw, gardenRaw) {
+  const n = U.STAGES.reduce((t, st, i) => t + (normAtt(attRaws[i]).last?.correct || 0), 0);
+  const fbDone = normFb(fbRaw).done;
+  const g = normGarden(gardenRaw);
+  const ripe = treeApples(n, U.MAX) + fbDone;
+  return { n, max: U.MAX, ripe, fbDone, harvested: g.harvested, ready: Math.max(0, ripe - g.harvested), at: g.at };
+}

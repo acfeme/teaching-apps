@@ -20,4 +20,6 @@
 
 `triangle-parallel/`: **이송원 선생님의 중학교 2학년 닮음 탐구 교실** — 허브(`/`, 교사 `/admin`)와 문제풀이 유닛 엔진. Vercel 프로젝트 triangle-parallel, Upstash Redis.
   - 유닛 `삼각형과 평행선`: 학생 `/u/triangle-parallel`, 교사 `/admin/triangle-parallel` (단계형·단답형·피드백 문제·잠금·진도현황·CSV)
-  - 새 유닛 추가: `api/_unit-<id>.js`(정답) + `public/units/<id>/problems.js`(문제·그림) + `api/_units.js`·`public/engine/units.js` 목록에 한 줄씩. 검산은 `scripts/verify.mjs`.
+  - 새 유닛 추가: `api/_unit-<id>.js`(정답) + `public/units/<id>/problems.js`(문제·그림) + `api/_units.js`·`public/engine/units.js` 목록에 한 줄씩. 검산은 `scripts/verify.mjs`(삼각형과 평행선), `scripts/verify-centroid.mjs`(무게중심).
+  - 수업 자료(`public/m/lesson/`, `public/m/right-triangle/`)는 `engine/gate.js`로 잠겨 있어 선생님이 관리자 허브(/admin)에서 반별로 열어야 보인다. 예전 폴더 `닮음/`, `right-triangle/`은 새 주소로 보내기만 한다.
+  - 🧺 내 보관함(`engine/garden.js`, `api/garden.js`): 유닛별 사과나무와 수확한 사과. 교사는 /admin의 "학생 보관함 현황"에서 본다.

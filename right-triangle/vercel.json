@@ -1,1 +1,5 @@
-{"cleanUrls":true}
+{
+  "redirects": [
+    { "source": "/(.*)", "destination": "https://triangle-parallel.vercel.app/m/right-triangle/", "permanent": false }
+  ]
+}

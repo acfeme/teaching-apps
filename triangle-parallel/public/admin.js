@@ -57,13 +57,13 @@
   }
 
   async function refresh() {
-    if (document.hidden || st.pending) return;
+    if (document.hidden || st.pending || st.drag) return; // 스위치를 만지는 중에는 다시 그리지 않음
     try {
       st.tick++;
       const ver = st.ver;
       const d = await call('GET', null, st.tick % DATES_EVERY === 0);
       if (d.dates) st.dates = d.dates;
-      if (st.pending || ver !== st.ver) return; // 그 사이 스위치를 바꿨으면 예전 상태로 덮지 않음
+      if (st.pending || st.drag || ver !== st.ver) return; // 그 사이 스위치를 바꿨으면 예전 상태로 덮지 않음
       st.data = d;
       paint();
       setLive(true);
@@ -109,6 +109,7 @@
     el.innerHTML = `<span>${text}</span><button aria-label="닫기">확인</button>`;
     el.querySelector('button').onclick = () => el.remove();
     box.prepend(el);
+    if (!isWarn) setTimeout(() => el.remove(), 2500); // 안내 알림은 잠깐만, 경고는 확인을 누를 때까지
     while (box.children.length > 6) box.lastChild.remove();
   }
 
@@ -128,17 +129,17 @@
         <div class="note">학생은 <b>입장</b>이 열린 반만 들어올 수 있고, 각 단계는 열린 동안에만 <b>시작</b>할 수 있어요. 이미 시작한 학생은 단계를 잠가도 제출할 수 있어요.<br><b>피드백 문제</b>는 1단계에서 4문제 이하로 맞힌 학생에게 <b>자동으로</b> 열려요(스위치 없음). 1단계 중 무작위 5문제를 힌트를 보며 모두 맞힐 때까지 풀고, 한 번 끝내면 아래 학생 현황의 <b>피드백</b> 재응시 버튼을 눌러야 다시 풀 수 있어요.</div>
         <div class="scroll"><table class="ctl"><thead><tr><th>반</th><th>입장</th><th>1단계</th><th>2단계</th></tr></thead><tbody id="ctl"></tbody></table></div>
       </div>
-      <div class="toolbar">
-        <div class="tabs" id="tabs">${['all', ...CLASSES].map((c) => `<button class="tab" data-s="${c}">${clsName(c)}</button>`).join('')}</div>
-        <div class="live" id="live"></div>
+      <div class="panel view-pick">
+        <div class="vp-row"><span class="vp-step">① 날짜</span><select id="date" aria-label="날짜"></select><div id="live"></div></div>
+        <div class="vp-row"><span class="vp-step">② 반</span><div class="tabs" id="tabs">${['all', ...CLASSES].map((c) => `<button class="tab" data-s="${c}">${clsName(c)}</button>`).join('')}</div></div>
+        <div class="note" style="margin:6px 0 0">고른 날짜와 반으로 아래 학생 현황, 다른 창 경고 기록, 문항별 정답률, 제출 기록이 모두 바뀌어요.</div>
       </div>
       <div class="panel"><h2 id="stuTitle">학생 현황</h2>
-        <div class="note">지금 상태입니다. 다시 풀게 하려면 <b>재응시 허용</b>을 누르세요. 이전 기록은 날짜별로 그대로 남아요. 경고 수는 오늘 기준이에요.</div>
+        <div class="note" id="stuNote"></div>
         <div class="bulk" id="bulk"></div>
-        <div class="scroll"><table><thead><tr><th>반</th><th>번호</th><th>1단계</th><th>2단계</th><th>피드백 문제</th><th>경고</th><th>재응시</th></tr></thead><tbody id="stu"></tbody></table></div>
+        <div class="scroll"><table><thead id="stuHead"></thead><tbody id="stu"></tbody></table></div>
       </div>
-      <div class="panel"><h2>오늘 다른 창 경고 기록</h2><div class="scroll warn-log" id="wlog"></div></div>
-      <div class="toolbar"><label class="date-pick">기록 날짜 <select id="date" aria-label="날짜"></select></label></div>
+      <div class="panel"><h2 id="wTitle">다른 창 경고 기록</h2><div class="scroll warn-log" id="wlog"></div></div>
       <div id="body"></div>
     </div>`;
     app.querySelector('#out').onclick = () => { setPw(''); st.pw = ''; st.date = ''; showLogin(); };
@@ -151,28 +152,42 @@
       const b = e.target.closest('[data-s]');
       if (b) { st.scope = b.dataset.s; paint(); }
     });
-    // 스위치: 눌러도, 옆으로 밀어도(오른쪽 = 열기, 왼쪽 = 잠그기) 바뀐다.
+    bindOnce();
+    paint();
+    setLive(true);
+  }
+
+  // 화면 전체에 거는 처리기는 처음 한 번만 연결한다(다시 로그인해도 겹치지 않게).
+  // 스위치는 "손을 댄 그 스위치에서 손을 뗐을 때" 정확히 한 번만 바뀐다.
+  //   - 짧게 누름: 열림↔잠김
+  //   - 확실한 가로 밀기(30px 이상, 세로보다 2배 이상): 오른쪽 = 열기, 왼쪽 = 잠그기
+  //   - 스크롤하려고 움직였거나 다른 곳에서 뗐으면 아무것도 바뀌지 않음
+  // 마우스·터치가 만든 클릭은 버리고, 키보드(Enter/Space)로 누른 클릭만 받는다.
+  function bindOnce() {
+    if (st.bound) return;
+    st.bound = true;
     app.addEventListener('pointerdown', (e) => {
       const t = e.target.closest('[data-cfg]');
-      st.drag = t && !t.disabled ? { t, x: e.clientX } : null;
+      st.drag = t && !t.disabled && e.isPrimary ? { t, id: e.pointerId, x: e.clientX, y: e.clientY } : null;
     });
     app.addEventListener('pointerup', (e) => {
       const d = st.drag;
       st.drag = null;
-      if (!d) return;
+      if (!d || e.pointerId !== d.id) return;
+      const up = document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-cfg]');
       const dx = e.clientX - d.x;
-      if (Math.abs(dx) < 16) return; // 짧은 움직임은 일반 클릭으로 처리
-      st.skipClick = { t: d.t, at: Date.now() }; // 밀고 난 뒤 같은 스위치에 따라오는 클릭만 무시
-      setSwitch(d.t, dx > 0);
+      const dy = e.clientY - d.y;
+      const swipe = Math.abs(dx) >= 30 && Math.abs(dx) > 2 * Math.abs(dy);
+      if (swipe) { setSwitch(d.t, dx > 0); return; }
+      if (Math.abs(dx) > 12 || Math.abs(dy) > 12) return; // 스크롤 등으로 움직임
+      if (up !== d.t || !d.t.isConnected) return; // 다른 스위치에서 뗐거나 그 사이 표가 바뀜
+      setSwitch(d.t, d.t.dataset.on !== '1');
     });
     app.addEventListener('pointercancel', () => { st.drag = null; });
     app.addEventListener('click', (e) => {
       const t = e.target.closest('[data-cfg]');
       if (t) {
-        const sk = st.skipClick;
-        st.skipClick = null;
-        if (sk && sk.t === t && Date.now() - sk.at < 500) return;
-        setSwitch(t, t.dataset.on !== '1');
+        if (e.detail === 0) setSwitch(t, t.dataset.on !== '1'); // 키보드로 누른 경우만
         return;
       }
       const r = e.target.closest('[data-retake]');
@@ -180,8 +195,6 @@
       const ra = e.target.closest('[data-retakeall]');
       if (ra) confirmRetakeAll(ra);
     });
-    paint();
-    setLive(true);
   }
 
   function confirmRetakeAll(btn) {
@@ -208,6 +221,7 @@
     t.dataset.on = want ? '1' : '0';
     t.setAttribute('aria-pressed', String(want));
     t.querySelector('.sw-t').textContent = swText(keyName, want);
+    toast(`${want ? '🔓' : '🔒'} <b>${cls}반 ${SW_LABEL[keyName]}</b>${keyName === 'open' ? '을' : '를'} ${want ? '열었어요' : '잠갔어요'}`);
     act({ action: 'cfg', cls, key: keyName, value: want }, t);
   }
 
@@ -245,7 +259,15 @@
     }).join('');
 
     app.querySelectorAll('[data-s]').forEach((b) => b.classList.toggle('on', b.dataset.s === st.scope));
-    app.querySelector('#stuTitle').textContent = `${clsName(st.scope)} 학생 현황`;
+    const isToday = d.date === d.today;
+    const dayName = isToday ? `오늘(${d.date})` : d.date;
+    app.querySelector('#stuTitle').textContent = `${dayName} · ${clsName(st.scope)} 학생 현황`;
+    app.querySelector('#wTitle').textContent = `${dayName} · ${clsName(st.scope)} 다른 창 경고 기록`;
+    if (!isToday) {
+      paintPastStudents(d);
+    } else {
+    app.querySelector('#stuNote').innerHTML = '지금 상태입니다. 다시 풀게 하려면 <b>재응시 허용</b>을 누르세요. 이전 기록은 날짜별로 그대로 남아요. 경고 수는 오늘 기준이에요.';
+    app.querySelector('#stuHead').innerHTML = '<tr><th>반</th><th>번호</th><th>1단계</th><th>2단계</th><th>피드백 문제</th><th>경고</th><th>재응시</th></tr>';
     app.querySelector('#bulk').innerHTML = st.scope === 'all' ? '' : [1, 2, 'fb'].map((s) => `<button class="mini" data-retakeall="${st.scope}|${s}">${st.scope}반 ${stageName(s)} 모두 재응시 허용</button>`).join('');
     const rows = d.students.filter((s) => st.scope === 'all' || s.cls === st.scope);
     app.querySelector('#stu').innerHTML = rows.map((s) => {
@@ -259,11 +281,12 @@
       return `<tr class="${s.warnings ? 'warned' : ''}"><td>${s.cls}</td><td>${s.num}</td><td>${stageCell(s.stages[1])}</td><td>${stageCell(s.stages[2])}</td>
         <td>${fbCell(s.fb)}</td><td>${s.warnings ? `<b class="wcount">⚠ ${s.warnings}</b>` : '0'}</td><td>${btn(1)} ${btn(2)} ${fbBtn}</td></tr>`;
     }).join('') || '<tr><td colspan="7">아직 들어온 학생이 없습니다.</td></tr>';
+    }
 
     const wl = d.warnings.filter((w) => st.scope === 'all' || w.cls === st.scope);
     app.querySelector('#wlog').innerHTML = wl.length
       ? `<table><thead><tr><th>시각</th><th>반</th><th>번호</th><th>단계</th><th>내용</th></tr></thead><tbody>${wl.map((w) => `<tr><td>${fmtTime(w.at)}</td><td>${w.cls}</td><td>${w.num}</td><td>${stageName(w.stage)}</td><td>${esc(w.label || '')}</td></tr>`).join('')}</tbody></table>`
-      : '<div class="empty">경고가 없습니다.</div>';
+      : `<div class="empty">${dayName} ${clsName(st.scope)}에는 경고가 없습니다.</div>`;
 
     const sel = app.querySelector('#date');
     sel.innerHTML = (st.dates || [d.date]).map((x) => `<option value="${x}"${x === d.date ? ' selected' : ''}>${x}${x === d.today ? ' (오늘)' : ''}</option>`).join('');
@@ -271,6 +294,30 @@
     const keep = window.scrollY;
     app.querySelector('#body').innerHTML = recordsHtml(d);
     window.scrollTo(0, keep);
+  }
+
+  // 지난 날짜: 지금 상태가 아니라 그날 남은 제출·피드백 완료·경고 기록으로 학생 현황을 만든다(재응시 버튼 없음).
+  function paintPastStudents(d) {
+    app.querySelector('#stuNote').innerHTML = '그날 기록입니다. 점수는 그날 마지막 제출이고, 재응시는 오늘 화면에서만 할 수 있어요.';
+    app.querySelector('#stuHead').innerHTML = '<tr><th>반</th><th>번호</th><th>1단계</th><th>2단계</th><th>피드백 문제</th><th>경고</th></tr>';
+    app.querySelector('#bulk').innerHTML = '';
+    const warnBy = {};
+    d.warnings.forEach((w) => { warnBy[`${w.cls}#${w.num}`] = (warnBy[`${w.cls}#${w.num}`] || 0) + 1; });
+    const classes = st.scope === 'all' ? CLASSES : [st.scope];
+    const html = classes.flatMap((c) => {
+      const rows = progress.build(d, c);
+      const seen = new Set(rows.map((r) => r.num));
+      Object.keys(warnBy).filter((k) => k.startsWith(`${c}#`)).forEach((k) => {
+        const n = Number(k.split('#')[1]);
+        if (!seen.has(n)) rows.push({ num: n, s: { 1: [], 2: [] }, fbDone: [], fbLive: null, fbTarget: false });
+      });
+      return rows.sort((a, b) => a.num - b.num).map((r) => {
+        const w = warnBy[`${c}#${r.num}`] || 0;
+        return `<tr class="${w ? 'warned' : ''}"><td>${c}</td><td>${r.num}</td><td class="left">${progress.stageCell(r, 1)}</td><td class="left">${progress.stageCell(r, 2)}</td>
+          <td class="left">${progress.fbCell(r)}</td><td>${w ? `<b class="wcount">⚠ ${w}</b>` : '0'}</td></tr>`;
+      });
+    }).join('');
+    app.querySelector('#stu').innerHTML = html || '<tr><td colspan="6">이 날짜에는 기록이 없습니다.</td></tr>';
   }
 
   function recordsHtml(d) {
@@ -468,6 +515,7 @@
     }
 
     return {
+      build, stageCell, fbCell: fbCellP,
       open() {
         if (!p.box) {
           p.box = document.createElement('div');

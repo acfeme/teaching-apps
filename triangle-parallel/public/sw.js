@@ -7,7 +7,7 @@ self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   e.waitUntil((async () => {
     const list = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-    const win = list.find((c) => new URL(c.url).pathname === '/') || list[0];
+    const win = list.find((c) => new URL(c.url).pathname.startsWith('/u/')) || list[0];
     if (win) return win.focus();
     return self.clients.openWindow('/');
   })());

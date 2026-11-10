@@ -1,6 +1,7 @@
 import {
   CLASSES, latestPerStudent, noStore, rank, readList, requireStore, todayKST,
 } from './_lib.js';
+import { unitFrom } from './_units.js';
 
 const CLASS_LIMIT = 5;
 const OVERALL_LIMIT = 10;
@@ -8,10 +9,12 @@ const OVERALL_LIMIT = 10;
 // GET /api/ranking?cls= → 오늘 우리 반 상위 5명, 전체 상위 10명 (1·2단계 점수 합)
 export default async function handler(req, res) {
   noStore(res);
+  const U = unitFrom(req, res);
+  if (!U) return undefined;
   if (req.method !== 'GET') return res.status(405).json({ error: 'GET만 가능합니다.' });
   const cls = req.query?.cls;
   if (!CLASSES.includes(cls)) return res.status(400).json({ error: '반이 올바르지 않습니다.' });
-  const s = requireStore(res);
+  const s = requireStore(res, U);
   if (!s) return undefined;
 
   const date = todayKST();

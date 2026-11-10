@@ -2,6 +2,7 @@ import {
   CLASSES, LOCK_KEYS, adminView, fbField, fbStatus, lockField, normFb, attField, checkAdmin, noStore, normAtt, normCfg, readBody, readList,
   requireStore, todayKST, validStage, validStudent,
 } from './_lib.js';
+import { unitFrom } from './_units.js';
 
 // 배포 버전(새 버전이 올라오면 관리자 화면에 새로고침 안내)
 const BUILD = (process.env.VERCEL_DEPLOYMENT_ID || process.env.VERCEL_GIT_COMMIT_SHA || 'local').slice(-8);
@@ -12,13 +13,15 @@ const BUILD = (process.env.VERCEL_DEPLOYMENT_ID || process.env.VERCEL_GIT_COMMIT
 //                 {action:'retakeAll', cls, stage}
 export default async function handler(req, res) {
   noStore(res);
-  const s = requireStore(res);
+  const U = unitFrom(req, res);
+  if (!U) return undefined;
+  const s = requireStore(res, U);
   if (!s) return undefined;
   if (!(await checkAdmin(req, res, s))) return undefined;
 
   try {
-    if (req.method === 'GET') return await view(req, res, s);
-    if (req.method === 'POST') return await act(req, res, s);
+    if (req.method === 'GET') return await view(req, res, s, U);
+    if (req.method === 'POST') return await act(req, res, s, U);
     return res.status(405).json({ error: '지원하지 않는 요청입니다.' });
   } catch (e) {
     console.error('admin failed', e);
@@ -26,7 +29,7 @@ export default async function handler(req, res) {
   }
 }
 
-async function view(req, res, s) {
+async function view(req, res, s, U) {
   const today = todayKST();
   const asked = String(req.query?.date || today);
   const date = /^\d{4}-\d{2}-\d{2}$/.test(asked) ? asked : today;
@@ -57,7 +60,7 @@ async function view(req, res, s) {
     delete st.fbRaw;
     const a = f.active;
     st.fb = {
-      status: fbStatus(st.stages[1] || normAtt(null), f),
+      status: U.FB_BLANKS ? fbStatus(st.stages[1] || normAtt(null), f) : 'none',
       done: f.done, allowed: f.allowed, last: f.last,
       active: a && {
         startedAt: a.startedAt,
@@ -87,11 +90,11 @@ async function view(req, res, s) {
     today, date, dates, cfg, lockVer: Number(state.lockver || 0), build: BUILD,
     students: list, warnings: [...warnings].reverse(), log,
     fbLog: [...fbRecs].sort((a, b) => b.finishedAt - a.finishedAt),
-    scopes: adminView(records),
+    scopes: adminView(U, records),
   });
 }
 
-async function act(req, res, s) {
+async function act(req, res, s, U) {
   const body = readBody(req) || {};
   if (body.action === 'cfg') {
     if (!CLASSES.includes(body.cls) || !LOCK_KEYS.includes(body.key) || typeof body.value !== 'boolean') {
@@ -134,7 +137,7 @@ async function act(req, res, s) {
 
   if (body.action === 'retake') {
     const num = validStudent(body.cls, body.num);
-    const stage = validStage(body.stage);
+    const stage = validStage(body.stage, U);
     if (!num || !stage) return res.status(400).json({ error: '학생 정보가 올바르지 않습니다.' });
     const field = attField(body.cls, num, stage);
     const att = normAtt(await s.hget('state', field));
@@ -145,7 +148,7 @@ async function act(req, res, s) {
   }
 
   if (body.action === 'retakeAll') {
-    const stage = validStage(body.stage);
+    const stage = validStage(body.stage, U);
     if (!CLASSES.includes(body.cls) || !stage) return res.status(400).json({ error: '반 또는 단계가 올바르지 않습니다.' });
     const state = await s.hgetall('state');
     const updates = {};

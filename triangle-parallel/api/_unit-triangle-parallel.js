@@ -75,3 +75,6 @@ export const EXPLAIN = {
   b09: '[BE] : [ED] = 14 : 35 = 2 : 5이므로 [EF] : [DC] = [BE] : [BD] = 2 : 7, [EF] = 35 × 2/7 = 10 cm예요.',
   b10: '△ABC에서 [EG] = 20 × 6/15 = 8, △ACD에서 [GF] = 10 × 9/15 = 6이므로 [EF] = 14 cm예요.',
 };
+
+// 유닛 정보: 저장 공간 앞머리(prefix)는 바꾸면 지금까지의 기록을 못 읽으니 그대로 둔다.
+export const UNIT = { id: 'triangle-parallel', title: '삼각형과 평행선', prefix: 'tp:' };

@@ -1,11 +1,11 @@
-// 교과서·학습지 원문의 수치만으로 정답을 다시 계산해 api/_answers.js와 대조하고,
+// 교과서·학습지 원문의 수치만으로 정답을 다시 계산해 api/_unit-triangle-parallel.js와 대조하고,
 // 학생 화면 문제 파일(public/problems.js)의 문항·빈칸 수가 정답과 맞는지 확인한다.
 // 실행: node scripts/verify.mjs
 import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ANSWERS, EXPLAIN, FB_BLANKS, FB_MID, FB_MID_COUNT } from '../api/_answers.js';
+import { ANSWERS, EXPLAIN, FB_BLANKS, FB_MID, FB_MID_COUNT } from '../api/_unit-triangle-parallel.js';
 import { parseNumber, sameValue } from '../api/_grade.js';
 
 const gcd = (a, b) => (b === 0n ? (a < 0n ? -a : a) : gcd(b, a % b));
@@ -91,7 +91,11 @@ for (const st of [1, 2]) {
 // 학생 화면 문제 파일과 대조
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const ctx = { window: {} };
-vm.runInNewContext(fs.readFileSync(path.join(root, 'public/problems.js'), 'utf8'), ctx);
+vm.createContext(ctx);
+// 공통 그리기 엔진 + 유닛 데이터(문제·그림)를 화면과 같은 순서로 불러온다
+for (const file of ['public/engine/render.js', 'public/units/triangle-parallel/problems.js']) {
+  vm.runInContext(fs.readFileSync(path.join(root, file), 'utf8'), ctx);
+}
 const W = ctx.window;
 for (const st of [1, 2]) {
   const items = W.STAGES[st].items;

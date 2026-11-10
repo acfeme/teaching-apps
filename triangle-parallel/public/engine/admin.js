@@ -3,6 +3,8 @@
   const DATES_EVERY = 12; // 12번 갱신마다 날짜 목록도 새로
   const CLASSES = ['2-1', '2-2', '2-3', '2-4'];
   const ST = window.STAGES;
+  const UNIT = window.UNIT; // 지금 유닛
+  const fileTitle = UNIT.title.replace(/\s+/g, '');
   const app = document.getElementById('app');
   const KEY = 'tp-admin';
   const st = { pw: '', date: '', scope: 'all', data: null, dates: [], timer: null, tick: 0, seen: null, busy: false };
@@ -29,7 +31,7 @@
 
   async function call(method, body, withDates, date) {
     const q = method === 'GET' ? `?date=${encodeURIComponent(date || st.date || '')}${withDates ? '&dates=1' : ''}` : '';
-    const r = await fetch(`/api/admin${q}`, {
+    const r = await fetch(`/api/admin${q}${q ? '&' : '?'}unit=${encodeURIComponent(UNIT.id)}`, {
       method, cache: 'no-store',
       headers: { 'x-admin-password': st.pw, ...(body ? { 'Content-Type': 'application/json' } : {}) },
       body: body ? JSON.stringify(body) : undefined,
@@ -147,7 +149,7 @@
   // ---- 화면 ----
   function render() {
     app.innerHTML = `<div id="alerts" class="alerts"></div><div class="wrap">
-      <div class="head-row"><h1 class="title" style="font-size:30px">삼각형과 평행선 · 교사 관리자</h1>
+      <div class="head-row"><div><a class="hub-link" href="/admin">← 전체 유닛</a><h1 class="title" style="font-size:30px">${UNIT.title} · 교사 관리자</h1></div>
       <div class="head-acts"><button class="back prog-open" id="progOpen">📊 진도현황</button><button class="back" id="out">나가기</button></div></div>
       <div class="panel"><h2>수업 열기·잠그기</h2>
         <div class="note">학생은 <b>입장</b>이 열린 반만 들어올 수 있고, 각 단계는 열린 동안에만 <b>시작</b>할 수 있어요. 이미 시작한 학생은 단계를 잠가도 제출할 수 있어요.<br><b>피드백 문제</b>는 1단계에서 4문제 이하로 맞힌 학생에게 <b>자동으로</b> 열려요(스위치 없음). 1단계 중 무작위 5문제를 힌트를 보며 모두 맞힐 때까지 풀고, 한 번 끝내면 아래 학생 현황의 <b>피드백</b> 재응시 버튼을 눌러야 다시 풀 수 있어요.</div>
@@ -449,7 +451,7 @@
         });
       });
       if (rows.length === 1) { toast(`${d.date} ${scopeName()}에는 내려받을 기록이 없어요.`); return; }
-      save(`삼각형과평행선_${d.date}_${scopeName()}_학생별요약.csv`, rows);
+      save(`${fileTitle}_${d.date}_${scopeName()}_학생별요약.csv`, rows);
     }
 
     function log() {
@@ -469,7 +471,7 @@
       });
       if (rows.length === 1) { toast(`${d.date} ${scopeName()}에는 내려받을 기록이 없어요.`); return; }
       const body = rows.slice(1).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
-      save(`삼각형과평행선_${d.date}_${scopeName()}_제출기록.csv`, [rows[0], ...body]);
+      save(`${fileTitle}_${d.date}_${scopeName()}_제출기록.csv`, [rows[0], ...body]);
     }
     return { summary, log };
   })();

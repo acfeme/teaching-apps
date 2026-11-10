@@ -1,14 +1,16 @@
 import {
   FB_COUNT, LOCK_FIELDS, attField, fbField, fbStatus, normFb, noStore, normAtt, normCfg, requireStore, stageStatus, validStudent,
 } from './_lib.js';
-import { STAGES } from './_answers.js';
+import { unitFrom } from './_units.js';
 
 // GET /api/state            → 반별 입장 가능 여부
 // GET /api/state?cls=&num=  → 그 학생의 단계별 상태와 사과나무 크기
 export default async function handler(req, res) {
   noStore(res);
+  const U = unitFrom(req, res);
+  if (!U) return undefined;
   if (req.method !== 'GET') return res.status(405).json({ error: 'GET만 가능합니다.' });
-  const s = requireStore(res);
+  const s = requireStore(res, U);
   if (!s) return undefined;
 
   try {
@@ -20,19 +22,19 @@ export default async function handler(req, res) {
     const num = validStudent(cls, req.query.num);
     if (!num) return res.status(400).json({ error: '반 또는 번호가 올바르지 않습니다.' });
 
-    const vals = await s.hmget('state', ...LOCK_FIELDS, ...STAGES.map((st) => attField(cls, num, st)), fbField(cls, num));
+    const vals = await s.hmget('state', ...LOCK_FIELDS, ...U.STAGES.map((st) => attField(cls, num, st)), fbField(cls, num));
     const cfg = normCfg(vals.slice(0, LOCK_FIELDS.length));
-    const atts = vals.slice(LOCK_FIELDS.length, LOCK_FIELDS.length + STAGES.length);
-    const fb = normFb(vals[LOCK_FIELDS.length + STAGES.length]);
+    const atts = vals.slice(LOCK_FIELDS.length, LOCK_FIELDS.length + U.STAGES.length);
+    const fb = normFb(vals[LOCK_FIELDS.length + U.STAGES.length]);
     const stages = {};
     let tree = 0;
-    STAGES.forEach((st, i) => {
+    U.STAGES.forEach((st, i) => {
       const att = normAtt(atts[i]);
       stages[st] = { status: stageStatus(cfg, cls, att, st), last: att.last, attempt: att.used, active: att.active };
       tree += att.last?.correct || 0;
     });
     const fbInfo = {
-      status: fbStatus(normAtt(atts[0]), fb),
+      status: U.FB_BLANKS ? fbStatus(normAtt(atts[0]), fb) : 'none',
       done: fb.done,
       solved: fb.active ? fb.active.solved.length : 0,
       count: fb.active ? fb.active.ids.length : FB_COUNT,

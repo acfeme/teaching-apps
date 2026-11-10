@@ -5,6 +5,8 @@
   const RANK_POLL_MS = 15000;
   const WARN_GAP_MS = 3000;
   const ST = window.STAGES;
+  const UNIT = window.UNIT; // 지금 유닛(engine/units.js의 UNIT_LIST 항목)
+  const KEY = UNIT.key || UNIT.id; // 브라우저 저장 이름 앞머리
   const app = document.getElementById('app');
 
   const S = {
@@ -31,9 +33,11 @@
     set: (k, v) => { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 저장 불가 기기 */ } },
     del: (k) => { try { sessionStorage.removeItem(k); } catch (e) { /* 저장 불가 기기 */ } },
   };
+  // 모든 서버 요청에 지금 유닛을 붙인다
+  const withUnit = (path) => `${path}${path.includes('?') ? '&' : '?'}unit=${encodeURIComponent(UNIT.id)}`;
   async function api(path, opts) {
     let r;
-    try { r = await fetch(path, { cache: 'no-store', ...opts }); } catch (e) {
+    try { r = await fetch(withUnit(path), { cache: 'no-store', ...opts }); } catch (e) {
       throw new Error('인터넷 연결을 확인하고 다시 눌러 주세요.');
     }
     const d = await r.json().catch(() => ({}));
@@ -44,9 +48,9 @@
 
   const isFb = () => S.mode === 'fb';
   const draftKey = () => (isFb()
-    ? `tp-fbdraft:${S.cls}:${S.num}:${S.startedAt}`
-    : `tp-draft:${S.cls}:${S.num}:${S.stage}:${S.startedAt}`);
-  const resultKey = (stage) => `tp-result:${S.cls}:${S.num}:${stage}`;
+    ? `${KEY}-fbdraft:${S.cls}:${S.num}:${S.startedAt}`
+    : `${KEY}-draft:${S.cls}:${S.num}:${S.stage}:${S.startedAt}`);
+  const resultKey = (stage) => `${KEY}-result:${S.cls}:${S.num}:${stage}`;
   const items = () => (isFb() ? ST[1].items.filter((p) => S.fb.ids.includes(p.id)) : ST[S.stage].items);
   // 피드백 문제는 비례식 단계만 보여 주고 채점한다(계산 단계는 숨김)
   const visSteps = (p) => (isFb() && p.fbSteps ? p.fbSteps.map((i) => p.steps[i]) : p.steps);
@@ -65,7 +69,8 @@
     S.screen = 'classes';
     ss.del('tp-me');
     app.innerHTML = `<div class="wrap">
-      <h1 class="title">삼각형과 평행선</h1>
+      <a class="hub-link" href="/">← ${window.SITE.short}</a>
+      <h1 class="title">${UNIT.title}</h1>
       <div class="sub">우리 반을 눌러 주세요. 선생님이 열어 준 반만 들어갈 수 있어요.</div>
       <div class="class-grid">${CLASSES.map((c) => `<button class="class-btn" data-c="${c}" disabled>${c}반<span class="lock">확인 중…</span></button>`).join('')}</div>
       <div class="msg hidden" id="msg"></div>
@@ -111,7 +116,8 @@
   function showHome() {
     S.screen = 'home';
     app.innerHTML = `<div class="wrap">
-      <div class="head-row"><h1 class="title">${S.cls}반 ${S.num}번</h1>
+      <a class="hub-link" href="/">← ${window.SITE.short}</a>
+      <div class="head-row"><div><div class="unit-name">${UNIT.icon || ''} ${UNIT.title}</div><h1 class="title">${S.cls}반 ${S.num}번</h1></div>
         <button class="back" id="back">내 번호가 아니에요</button></div>
       <div class="home-grid">
         <div class="tree-card"><div id="tree"></div><div class="tree-cap" id="treeCap"></div></div>
@@ -412,7 +418,7 @@
     S.warns++;
     saveDraft();
     try {
-      fetch('/api/warn', {
+      fetch(withUnit('/api/warn'), {
         method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cls: S.cls, num: S.num, stage: isFb() ? 'fb' : S.stage, kind }),
       }).catch(() => {});

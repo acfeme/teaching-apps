@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>닮음 탐구 교실</title>
+<link rel="stylesheet" href="/engine/style.css">
+</head>
+<body>
+<div id="app"></div>
+<script src="/engine/units.js"></script>
+<script>
+  // /u/<유닛> 주소에서 유닛을 찾아 그 유닛의 문제 데이터와 학생 엔진을 불러온다
+  (function () {
+    var U = window.unitFromPath();
+    if (!U) { location.replace('/'); return; }
+    window.UNIT = U;
+    document.title = U.title + ' · ' + window.SITE.short;
+    window.loadScripts(['/engine/render.js', '/units/' + U.id + '/problems.js', '/engine/tree.js', '/engine/app.js'])
+      .catch(function (e) { document.getElementById('app').textContent = '화면을 불러오지 못했어요: ' + e.message; });
+  })();
+</script>
+</body>
+</html>

@@ -1,9 +1,13 @@
 {
   "cleanUrls": true,
   "regions": ["icn1"],
+  "rewrites": [
+    { "source": "/u/:unit", "destination": "/unit" },
+    { "source": "/admin/:unit", "destination": "/unit-admin" }
+  ],
   "headers": [
     {
-      "source": "/(.*)\\.(js|css|html)",
+      "source": "/(.*)\.(js|css|html)",
       "headers": [{ "key": "Cache-Control", "value": "public, max-age=0, must-revalidate" }]
     }
   ]

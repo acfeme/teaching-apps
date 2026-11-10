@@ -241,3 +241,28 @@ a.ox { text-decoration: none; }
 .fb-done h2 { margin-top: 10px; font-size: 32px; color: var(--brand-dark); }
 .fb-done p { margin-top: 10px; font-size: 21px; line-height: 1.6; }
 .fb-done .st-btn { max-width: 420px; }
+
+/* ---- 닮음 탐구 교실 허브 ---- */
+.hub-link { display: inline-block; margin-bottom: 8px; color: var(--brand-dark); font-weight: 700; font-size: 18px; text-decoration: none; }
+.hub-link:hover { text-decoration: underline; }
+.unit-name { color: var(--brand-dark); font-weight: 800; font-size: 18px; }
+.hub-head { padding: 18px 0 8px; }
+.hub-kicker { display: inline-block; padding: 4px 12px; border-radius: 999px; background: var(--brand-soft); color: var(--brand-dark); font-weight: 800; font-size: 16px; }
+.hub-title { margin: 12px 0 0; font-size: clamp(28px, 5vw, 42px); font-weight: 800; line-height: 1.25; word-break: keep-all; }
+.hub-sub { margin: 10px 0 0; color: var(--muted); font-size: 19px; line-height: 1.6; word-break: keep-all; }
+.hub-h2 { margin: 28px 0 12px; font-size: 22px; }
+.unit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.unit-card { display: flex; align-items: center; gap: 14px; padding: 18px; border-radius: 20px; background: var(--card); border: 2px solid var(--line); color: inherit; text-decoration: none; min-height: 96px; }
+.unit-card.is-quiz { border-color: var(--brand); box-shadow: 0 0 0 3px var(--brand-soft); }
+.unit-card.is-quiz:hover, .unit-card.is-link:hover { transform: translateY(-1px); }
+.unit-card.is-soon { opacity: .6; border-style: dashed; }
+.u-icon { font-size: 40px; line-height: 1; flex: none; }
+.u-body { flex: 1; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.u-body b { font-size: 22px; }
+.u-body span { color: var(--muted); font-size: 16px; word-break: keep-all; }
+.u-body .u-open { color: var(--muted); font-weight: 700; }
+.u-body .u-open.on { color: var(--brand-dark); }
+.u-tag { flex: none; padding: 6px 12px; border-radius: 10px; background: #eef0f2; color: var(--muted); font-weight: 800; font-size: 15px; }
+.u-tag.go { background: var(--brand); color: #fff; }
+.hub-foot { margin-top: 28px; color: var(--muted); }
+@media (max-width: 560px) { .unit-grid { grid-template-columns: 1fr; } .u-tag { display: none; } }

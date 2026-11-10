@@ -1,13 +1,11 @@
 import crypto from 'node:crypto';
 import { Redis } from '@upstash/redis';
-import { ANSWERS, EXPLAIN, FB_BLANKS, STAGES } from './_answers.js';
 import { sameValue } from './_grade.js';
 
 export const CLASSES = ['2-1', '2-2', '2-3', '2-4'];
 export const MAX_NUMBER = 35;
-const PREFIX = 'tp:';
 
-// Redis 키
+// Redis 키 (앞에 유닛 prefix가 붙는다. 삼각형과 평행선 = 'tp:')
 //   state (hash)       `lock:${반}:${open|s1|s2}` → 잠금 스위치('1' 열림), `${반}:${번호}:${단계}` → 응시 상태
 //   subs:{날짜} (list) 제출 기록
 //   warn:{날짜} (list) 다른 창 경고 기록
@@ -20,12 +18,12 @@ export function todayKST(now = new Date()) {
 }
 
 // ---- 저장소 ----
-function createStore() {
+function createStore(prefix) {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
   if (url && token) {
     const r = new Redis({ url, token, automaticDeserialization: false });
-    const k = (x) => PREFIX + x;
+    const k = (x) => prefix + x;
     return {
       hget: (key, field) => r.hget(k(key), field),
       hmget: async (key, ...fields) => {
@@ -73,14 +71,15 @@ function memoryStore() {
   };
 }
 
-let cached;
-export function store() {
-  if (cached === undefined) cached = createStore();
-  return cached;
+// 유닛마다 저장 공간이 따로다(로컬 시험용 메모리 저장소도 유닛별로 따로 만든다).
+const cached = new Map();
+export function store(prefix) {
+  if (!cached.has(prefix)) cached.set(prefix, createStore(prefix));
+  return cached.get(prefix);
 }
 
-export function requireStore(res) {
-  const s = store();
+export function requireStore(res, U) {
+  const s = store(U.prefix);
   if (!s) {
     res.status(503).json({ error: '저장소가 아직 연결되지 않았습니다.' });
     return null;
@@ -138,7 +137,7 @@ export function validStudent(cls, num) {
   const n = Number(num);
   return CLASSES.includes(cls) && Number.isInteger(n) && n >= 1 && n <= MAX_NUMBER ? n : null;
 }
-export const validStage = (stage) => (STAGES.includes(Number(stage)) ? Number(stage) : null);
+export const validStage = (stage, U) => (U.STAGES.includes(Number(stage)) ? Number(stage) : null);
 
 // ---- 채점 ----
 function matchBlank(input, answer) {
@@ -147,8 +146,8 @@ function matchBlank(input, answer) {
   return sameValue(s, answer);
 }
 
-export function gradeStage(stage, submitted) {
-  const key = ANSWERS[stage];
+export function gradeStage(U, stage, submitted) {
+  const key = U.ANSWERS[stage];
   const results = {};
   const answers = {};
   let correct = 0;
@@ -166,14 +165,14 @@ export function gradeStage(stage, submitted) {
 }
 
 // 한 문제만 채점(피드백 문제용 — 비례식 칸만)
-export function gradeFb(id, submitted) {
-  const idx = FB_BLANKS[id];
+export function gradeFb(U, id, submitted) {
+  const idx = U.FB_BLANKS?.[id];
   if (!idx) return null;
-  const want = idx.map((i) => ANSWERS[1][id][i]);
+  const want = idx.map((i) => U.ANSWERS[1][id][i]);
   const got = Array.isArray(submitted) ? submitted : [];
   const given = want.map((_, i) => String(got[i] ?? '').trim().slice(0, 16));
   const blanks = want.map((a, i) => (matchBlank(given[i], a) ? 1 : 0));
-  return { ok: blanks.every(Boolean), blanks, given, want, explain: EXPLAIN[id] };
+  return { ok: blanks.every(Boolean), blanks, given, want, explain: U.EXPLAIN[id] };
 }
 
 // ---- 피드백(보충) 문제: 1단계에서 맞힌 문제가 FB_MAX개 이하인 학생이 1단계 문제 FB_COUNT개를 완전학습 ----
@@ -199,10 +198,10 @@ export function fbStatus(att1, fb) {
   return fb.done > 0 ? 'again' : 'ready';
 }
 
-export function feedbackFor(stage, results) {
+export function feedbackFor(U, stage, results) {
   const out = {};
-  for (const [id, want] of Object.entries(ANSWERS[stage])) {
-    out[id] = { ok: results[id].ok, blanks: results[id].blanks, answer: want, explain: EXPLAIN[id] };
+  for (const [id, want] of Object.entries(U.ANSWERS[stage])) {
+    out[id] = { ok: results[id].ok, blanks: results[id].blanks, answer: want, explain: U.EXPLAIN[id] };
   }
   return out;
 }
@@ -250,17 +249,17 @@ function firstPerStudentStage(records) {
   return [...map.values()];
 }
 
-export function adminView(records) {
+export function adminView(U, records) {
   const firsts = firstPerStudentStage(records);
   const latest = latestPerStudent(records);
   const scopes = {};
   for (const c of ['all', ...CLASSES]) {
     const inScope = (x) => c === 'all' || x.cls === c;
     const stages = {};
-    for (const st of STAGES) {
+    for (const st of U.STAGES) {
       const rs = firsts.filter((r) => r.stage === st && inScope(r));
       const rates = {};
-      for (const [id, want] of Object.entries(ANSWERS[st])) {
+      for (const [id, want] of Object.entries(U.ANSWERS[st])) {
         const n = rs.length;
         const ok = rs.filter((r) => r.results?.[id]?.ok).length;
         rates[id] = {

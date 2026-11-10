@@ -32,7 +32,10 @@ http.createServer(async (req, res) => {
     res.json = (o) => { res.setHeader('Content-Type', 'application/json'); res.end(JSON.stringify(o)); };
     return fn(req, res);
   }
+  // vercel.json의 rewrites와 같게: /u/<유닛> → unit.html, /admin/<유닛> → unit-admin.html
   let p = url.pathname === '/' ? '/index.html' : url.pathname;
+  if (/^\/u\/[a-z0-9-]+\/?$/.test(p)) p = '/unit.html';
+  else if (/^\/admin\/[a-z0-9-]+\/?$/.test(p)) p = '/unit-admin.html';
   if (!path.extname(p)) p += '.html';
   const file = path.join(root, 'public', path.normalize(p));
   if (!file.startsWith(path.join(root, 'public')) || !fs.existsSync(file)) { res.writeHead(404); return res.end('not found'); }

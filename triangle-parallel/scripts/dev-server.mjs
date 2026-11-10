@@ -9,6 +9,9 @@ process.env.LOCAL_DEV = '1';
 process.env.ADMIN_PASSWORD ||= 'local-test-only';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const handlers = {
+  state: (await import('../api/state.js')).default,
+  start: (await import('../api/start.js')).default,
+  warn: (await import('../api/warn.js')).default,
   submit: (await import('../api/submit.js')).default,
   ranking: (await import('../api/ranking.js')).default,
   admin: (await import('../api/admin.js')).default,

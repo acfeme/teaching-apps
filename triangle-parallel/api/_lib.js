@@ -1,11 +1,17 @@
+import crypto from 'node:crypto';
 import { Redis } from '@upstash/redis';
-import { ANSWERS, IDS } from './_answers.js';
+import { ANSWERS, EXPLAIN, STAGES } from './_answers.js';
 import { sameValue } from './_grade.js';
 
 export const CLASSES = ['2-1', '2-2', '2-3', '2-4'];
 export const MAX_NUMBER = 35;
-
 const PREFIX = 'tp:';
+
+// Redis 키
+//   state (hash)       cfg → 반별 입장·단계 잠금, `${반}:${번호}:${단계}` → 응시 상태
+//   subs:{날짜} (list) 제출 기록
+//   warn:{날짜} (list) 다른 창 경고 기록
+//   dates (set)        기록이 있는 날짜
 
 export function todayKST(now = new Date()) {
   return new Intl.DateTimeFormat('en-CA', {
@@ -19,18 +25,28 @@ function createStore() {
   const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
   if (url && token) {
     const r = new Redis({ url, token, automaticDeserialization: false });
+    const k = (x) => PREFIX + x;
     return {
-      push: (k, v) => r.rpush(PREFIX + k, v),
-      list: async (k) => (await r.lrange(PREFIX + k, 0, -1)) || [],
-      sadd: (k, v) => r.sadd(PREFIX + k, v),
-      smembers: async (k) => (await r.smembers(PREFIX + k)) || [],
-      incrWithExpire: async (k, sec) => {
-        const n = await r.incr(PREFIX + k);
-        if (Number(n) === 1) await r.expire(PREFIX + k, sec);
+      hget: (key, field) => r.hget(k(key), field),
+      hmget: async (key, ...fields) => {
+        const res = await r.hmget(k(key), ...fields);
+        if (!res) return fields.map(() => null);
+        if (Array.isArray(res)) return res;
+        return fields.map((x) => res[x] ?? null);
+      },
+      hgetall: async (key) => (await r.hgetall(k(key))) || {},
+      hset: (key, obj) => r.hset(k(key), obj),
+      push: (key, v) => r.rpush(k(key), v),
+      list: async (key) => (await r.lrange(k(key), 0, -1)) || [],
+      sadd: (key, v) => r.sadd(k(key), v),
+      smembers: async (key) => (await r.smembers(k(key))) || [],
+      incrWithExpire: async (key, sec) => {
+        const n = await r.incr(k(key));
+        if (Number(n) === 1) await r.expire(k(key), sec);
         return Number(n);
       },
-      get: async (k) => r.get(PREFIX + k),
-      del: (k) => r.del(PREFIX + k),
+      get: (key) => r.get(k(key)),
+      del: (key) => r.del(k(key)),
     };
   }
   if (process.env.LOCAL_DEV === '1') return memoryStore();
@@ -38,15 +54,20 @@ function createStore() {
 }
 
 function memoryStore() {
-  const lists = new Map(); const sets = new Map(); const nums = new Map();
+  const hashes = new Map(); const lists = new Map(); const sets = new Map(); const nums = new Map();
+  const h = (key) => { if (!hashes.has(key)) hashes.set(key, {}); return hashes.get(key); };
   return {
-    push: async (k, v) => { if (!lists.has(k)) lists.set(k, []); lists.get(k).push(v); },
-    list: async (k) => lists.get(k) || [],
-    sadd: async (k, v) => { if (!sets.has(k)) sets.set(k, new Set()); sets.get(k).add(v); },
-    smembers: async (k) => [...(sets.get(k) || [])],
-    incrWithExpire: async (k) => { const n = (nums.get(k) || 0) + 1; nums.set(k, n); return n; },
-    get: async (k) => nums.get(k) ?? null,
-    del: async (k) => { nums.delete(k); },
+    hget: async (key, f) => h(key)[f] ?? null,
+    hmget: async (key, ...fs) => fs.map((f) => h(key)[f] ?? null),
+    hgetall: async (key) => ({ ...h(key) }),
+    hset: async (key, obj) => { Object.assign(h(key), obj); },
+    push: async (key, v) => { if (!lists.has(key)) lists.set(key, []); lists.get(key).push(v); },
+    list: async (key) => lists.get(key) || [],
+    sadd: async (key, v) => { if (!sets.has(key)) sets.set(key, new Set()); sets.get(key).add(v); },
+    smembers: async (key) => [...(sets.get(key) || [])],
+    incrWithExpire: async (key) => { const n = (nums.get(key) || 0) + 1; nums.set(key, n); return n; },
+    get: async (key) => nums.get(key) ?? null,
+    del: async (key) => { nums.delete(key); },
   };
 }
 
@@ -65,92 +86,180 @@ export function requireStore(res) {
   return s;
 }
 
+const parse = (raw) => {
+  if (raw == null) return null;
+  if (typeof raw !== 'string') return raw;
+  try { return JSON.parse(raw); } catch { return null; }
+};
+
+// ---- 반별 잠금 ----
+export function normCfg(raw) {
+  const v = parse(raw) || {};
+  const out = {};
+  for (const c of CLASSES) {
+    const x = v[c] || {};
+    out[c] = { open: !!x.open, s1: !!x.s1, s2: !!x.s2 };
+  }
+  return out;
+}
+
+// ---- 학생별 응시 상태 ----
+export const attField = (cls, num, stage) => `${cls}:${num}:${stage}`;
+export function normAtt(raw) {
+  const v = parse(raw) || {};
+  return {
+    allowed: Number.isInteger(v.allowed) ? v.allowed : 1,
+    used: Number.isInteger(v.used) ? v.used : 0,
+    active: v.active || null,
+    last: v.last || null,
+  };
+}
+
+// 학생 화면에 보여 줄 단계 상태
+export function stageStatus(cfg, cls, att, stage) {
+  if (att.active) return 'active';
+  if (att.used >= att.allowed) return 'done';
+  if (!cfg[cls]?.open || !cfg[cls][`s${stage}`]) return 'locked';
+  return 'ready';
+}
+
+export function validStudent(cls, num) {
+  const n = Number(num);
+  return CLASSES.includes(cls) && Number.isInteger(n) && n >= 1 && n <= MAX_NUMBER ? n : null;
+}
+export const validStage = (stage) => (STAGES.includes(Number(stage)) ? Number(stage) : null);
+
 // ---- 채점 ----
-export function grade(submitted) {
+function matchBlank(input, answer) {
+  const s = String(input ?? '').trim().slice(0, 16);
+  if (/^[a-z]$/.test(answer)) return s.toLowerCase() === answer;
+  return sameValue(s, answer);
+}
+
+export function gradeStage(stage, submitted) {
+  const key = ANSWERS[stage];
   const results = {};
+  const answers = {};
   let correct = 0;
-  for (const id of IDS) {
-    const want = ANSWERS[id];
+  for (const [id, want] of Object.entries(key)) {
     const got = Array.isArray(submitted?.[id]) ? submitted[id] : [];
-    const ok = want.every((a, i) => sameValue(String(got[i] ?? '').slice(0, 16), a));
-    results[id] = ok ? 1 : 0;
+    const given = want.map((_, i) => String(got[i] ?? '').trim().slice(0, 16));
+    const blanks = want.map((a, i) => (matchBlank(given[i], a) ? 1 : 0));
+    const ok = blanks.every(Boolean) ? 1 : 0;
+    results[id] = { ok, blanks };
+    answers[id] = given;
     if (ok) correct++;
   }
-  const total = IDS.length;
-  return { results, correct, total, score: Math.round((correct / total) * 100) };
+  const total = Object.keys(key).length;
+  return { results, answers, correct, total, score: Math.round((correct / total) * 100) };
 }
 
-export async function readRecords(s, date) {
-  const raw = await s.list(`subs:${date}`);
-  return raw.map((v) => (typeof v === 'string' ? JSON.parse(v) : v));
+export function feedbackFor(stage, results) {
+  const out = {};
+  for (const [id, want] of Object.entries(ANSWERS[stage])) {
+    out[id] = { ok: results[id].ok, blanks: results[id].blanks, answer: want, explain: EXPLAIN[id] };
+  }
+  return out;
 }
 
-// ---- 순위: 학생별 그날 최고 점수, 동점이면 그 점수를 먼저 낸 학생이 앞 ----
-export function summarizeStudents(records) {
+export async function readList(s, key) {
+  return (await s.list(key)).map(parse).filter(Boolean);
+}
+
+// ---- 순위: 그날 단계별 마지막 제출 점수의 합, 동점이면 먼저 도달한 학생이 앞 ----
+export function latestPerStudent(records) {
   const map = new Map();
   for (const r of records) {
     const key = `${r.cls}#${r.num}`;
-    let st = map.get(key);
-    if (!st) {
-      st = { cls: r.cls, num: r.num, attempts: 0, first: r, best: r };
-      map.set(key, st);
-    }
-    st.attempts++;
-    if (r.submittedAt < st.first.submittedAt) st.first = r;
-    if (r.score > st.best.score || (r.score === st.best.score && r.submittedAt < st.best.submittedAt)) st.best = r;
+    if (!map.has(key)) map.set(key, { cls: r.cls, num: r.num, stages: {} });
+    const st = map.get(key);
+    const prev = st.stages[r.stage];
+    if (!prev || r.submittedAt > prev.submittedAt) st.stages[r.stage] = r;
+  }
+  return [...map.values()].map((st) => {
+    const recs = Object.values(st.stages);
+    return {
+      cls: st.cls, num: st.num,
+      total: recs.reduce((t, r) => t + r.score, 0),
+      s1: st.stages[1]?.score ?? null,
+      s2: st.stages[2]?.score ?? null,
+      reachedAt: Math.max(...recs.map((r) => r.submittedAt)),
+    };
+  });
+}
+
+export function rank(list) {
+  return [...list]
+    .sort((a, b) => b.total - a.total || a.reachedAt - b.reachedAt || a.cls.localeCompare(b.cls) || a.num - b.num)
+    .map((x, i) => ({ rank: i + 1, ...x }));
+}
+
+// 문항별 정답률: 그날 학생별·단계별 첫 제출 기준(재응시 효과 제외)
+function firstPerStudentStage(records) {
+  const map = new Map();
+  for (const r of records) {
+    const key = `${r.cls}#${r.num}#${r.stage}`;
+    const prev = map.get(key);
+    if (!prev || r.submittedAt < prev.submittedAt) map.set(key, r);
   }
   return [...map.values()];
 }
 
-export function rank(students) {
-  return [...students]
-    .sort((a, b) => b.best.score - a.best.score
-      || a.best.submittedAt - b.best.submittedAt
-      || a.cls.localeCompare(b.cls) || a.num - b.num)
-    .map((s, i) => ({
-      rank: i + 1, cls: s.cls, num: s.num, score: s.best.score, correct: s.best.correct,
-      total: s.best.total, attempts: s.attempts, submittedAt: s.best.submittedAt,
-    }));
-}
-
-// 문항별 정답률은 재도전 효과를 빼기 위해 학생별 첫 제출을 기준으로 한다.
-export function itemRates(students) {
-  const rates = {};
-  for (const id of IDS) {
-    let correct = 0;
-    for (const s of students) if (s.first.results?.[id]) correct++;
-    rates[id] = { correct, n: students.length, rate: students.length ? Math.round((correct / students.length) * 100) : 0 };
-  }
-  return rates;
-}
-
 export function adminView(records) {
-  const students = summarizeStudents(records);
+  const firsts = firstPerStudentStage(records);
+  const latest = latestPerStudent(records);
   const scopes = {};
   for (const c of ['all', ...CLASSES]) {
-    const inScope = c === 'all' ? students : students.filter((s) => s.cls === c);
-    const avg = inScope.length
-      ? Math.round(inScope.reduce((t, s) => t + s.first.score, 0) / inScope.length * 10) / 10 : 0;
-    scopes[c] = {
-      students: inScope.length,
-      submissions: inScope.reduce((t, s) => t + s.attempts, 0),
-      avgFirst: avg,
-      rates: itemRates(inScope),
-      ranking: rank(inScope),
-    };
+    const inScope = (x) => c === 'all' || x.cls === c;
+    const stages = {};
+    for (const st of STAGES) {
+      const rs = firsts.filter((r) => r.stage === st && inScope(r));
+      const rates = {};
+      for (const [id, want] of Object.entries(ANSWERS[st])) {
+        const n = rs.length;
+        const ok = rs.filter((r) => r.results?.[id]?.ok).length;
+        rates[id] = {
+          correct: ok, n, rate: n ? Math.round((ok / n) * 100) : 0,
+          blanks: want.map((_, i) => {
+            const b = rs.filter((r) => r.results?.[id]?.blanks?.[i]).length;
+            return n ? Math.round((b / n) * 100) : 0;
+          }),
+        };
+      }
+      stages[st] = {
+        students: rs.length,
+        avg: rs.length ? Math.round((rs.reduce((t, r) => t + r.score, 0) / rs.length) * 10) / 10 : 0,
+        rates,
+      };
+    }
+    scopes[c] = { stages, ranking: rank(latest.filter(inScope)) };
   }
-  const detail = students
-    .sort((a, b) => a.cls.localeCompare(b.cls) || a.num - b.num)
-    .map((s) => ({
-      cls: s.cls, num: s.num, attempts: s.attempts,
-      firstScore: s.first.score, bestScore: s.best.score,
-      firstAt: s.first.submittedAt, bestAt: s.best.submittedAt,
-      first: s.first.results, best: s.best.results,
-    }));
-  const log = [...records]
-    .sort((a, b) => b.submittedAt - a.submittedAt)
-    .map((r) => ({ cls: r.cls, num: r.num, score: r.score, correct: r.correct, total: r.total, submittedAt: r.submittedAt }));
-  return { scopes, detail, log };
+  return scopes;
+}
+
+// ---- 관리자 인증 ----
+const MAX_FAILS = 10;
+const FAIL_WINDOW_SEC = 600;
+
+export async function checkAdmin(req, res, s) {
+  const expected = process.env.ADMIN_PASSWORD;
+  if (!expected) { res.status(503).json({ error: '관리자 비밀번호가 설정되지 않았습니다.' }); return false; }
+  const ip = String(req.headers['x-forwarded-for'] || 'local').split(',')[0].trim();
+  const failKey = `adminfail:${ip}`;
+  const fails = Number(await s.get(failKey)) || 0;
+  if (fails >= MAX_FAILS) {
+    res.status(429).json({ error: '시도가 너무 많습니다. 10분 뒤 다시 입력해 주세요.' });
+    return false;
+  }
+  const a = crypto.createHash('sha256').update(String(req.headers['x-admin-password'] ?? '')).digest();
+  const b = crypto.createHash('sha256').update(String(expected)).digest();
+  if (!crypto.timingSafeEqual(a, b)) {
+    await s.incrWithExpire(failKey, FAIL_WINDOW_SEC);
+    res.status(401).json({ error: '비밀번호가 맞지 않습니다.' });
+    return false;
+  }
+  if (fails > 0) await s.del(failKey);
+  return true;
 }
 
 export function readBody(req) {
@@ -160,3 +269,5 @@ export function readBody(req) {
   }
   return null;
 }
+
+export function noStore(res) { res.setHeader('Cache-Control', 'no-store'); }

@@ -10,7 +10,8 @@
   const S2 = '삼각형의 두 변의 중점을 연결한 선분의 성질';
   const S3 = '평행선 사이에 있는 선분의 길이의 비';
 
-  window.PROBLEMS = [
+  // 교과서·학습지 원문 (id는 그림 이름과 같다)
+  const LIST = [
     { id: 'p01', sec: S1, src: '교과서 213쪽 예제 1 (1)', text: BC_DE, blanks: XY, fig: 'p01' },
     { id: 'p02', sec: S1, src: '교과서 213쪽 예제 1 (2)', text: BC_DE, blanks: XY, fig: 'p02' },
     { id: 'p03', sec: S1, src: '교과서 214쪽 문제 1 (1)', text: BC_DE, blanks: XY, fig: 'p03' },
@@ -39,6 +40,80 @@
     { id: 'p24', sec: S3, src: '교과서 230쪽 단원 마무리 09', text: '오른쪽 사다리꼴 ABCD에서 [AD]||[EF]이고, 점 G는 [AC]와 [EF]의 교점이다. [EF]의 길이를 구하시오.', blanks: [{ label: '[EF]', unit: 'cm' }], fig: 'p24' },
     { id: 'p25', sec: S3, src: '학습지 9쪽 2', text: '오른쪽 그림에서 {l}||{m}||{n}일 때, {x}{y}의 값은?', blanks: [{ label: '{x}{y}', unit: '' }], fig: 'p25' },
   ];
+  const SRC = Object.fromEntries(LIST.map((p) => [p.id, p]));
+  window.ALL_PROBLEMS = LIST;
+
+  // 1단계: 원문 문제 + 풀이 단계. @ 자리가 빈칸이고, 빈칸에는 수나 문자(x, y)를 넣는다.
+  const step = (src, id, steps) => ({ ...SRC[src], id, steps, blanks: null });
+  const PR = (a) => `${a} 이므로`;
+  const STAGE1 = [
+    step('p01', 'a01', [
+      { guide: PR('[AD] : [AB] = [DE] : [BC]'), eq: '8 : 12 = @ : @' },
+      { eq: '{x} = @' },
+      { guide: PR('[AD] : [AB] = [AE] : [AC]'), eq: '8 : 12 = @ : @' },
+      { eq: '{y} = @' },
+    ]),
+    step('p02', 'a02', [
+      { guide: '[AB] : [AD]를 가장 간단한 자연수의 비로 나타내면', eq: '4 : 8 = @ : @' },
+      { guide: '[AC] : [AE]도 이 비와 같고 [AC] + [AE] = 9 이므로', eq: '{x} = [AE] = @' },
+      { guide: PR('[AB] : [AD] = [BC] : [DE]'), eq: '4 : 8 = @ : @' },
+      { eq: '{y} = @' },
+    ]),
+    step('p03', 'a03', [
+      { guide: PR('[AC] : [AE] = [BC] : [DE]'), eq: '8 : 6 = @ : @' },
+      { eq: '{x} = @' },
+      { guide: PR('[AC] : [AE] = [AB] : [AD]'), eq: '8 : 6 = @ : @' },
+      { eq: '{y} = @' },
+    ]),
+    step('p04', 'a04', [
+      { guide: PR('[AE] : [AC] = [DE] : [BC]'), eq: '9 : @ = @ : 12' },
+      { eq: '{x} = @' },
+      { guide: PR('[AE] : [AC] = [AD] : [AB]'), eq: '9 : 12 = [AD] : 8,  [AD] = @ cm' },
+      { eq: '{y} = 8 − [AD] = @' },
+    ]),
+    step('p05', 'a05', [
+      { guide: '먼저 [AE]의 길이를 구하면', eq: '[AE] = 21 − 7 = @ cm' },
+      { guide: PR('[AB] : [AD] = [AC] : [AE]'), eq: '12 : {x} = @ : @' },
+      { eq: '{x} = @' },
+      { guide: PR('[AC] : [AE] = [BC] : [DE]'), eq: '21 : 14 = @ : @' },
+      { eq: '{y} = @' },
+    ]),
+    step('p08', 'a06', [
+      { guide: '먼저 [AD]의 길이를 구하면', eq: '[AD] = 4 + 6 = @ cm' },
+      { guide: PR('[AB] : [AD] = [BC] : [DE]'), eq: '4 : @ = @ : 9' },
+      { eq: '{x} = @' },
+    ]),
+    step('p10', 'a07', [
+      { guide: '삼각형의 두 변의 중점을 연결한 선분의 성질에 의해 [MN] = ½[BC] 이므로', eq: '[BC] = 2 × @ = @ cm' },
+    ]),
+    step('p13', 'a08', [
+      { guide: PR('△ACD에서 [PN] = ½[AD]'), eq: '{x} = 2 × @ = @' },
+      { guide: PR('△ABC에서 [MP] = ½[BC]'), eq: '{y} = ½ × @ = @' },
+    ]),
+    step('p17', 'a09', [
+      { guide: '평행선 사이에 있는 선분의 길이의 비는 같으므로', eq: '10 : 4 = @ : @' },
+      { eq: '{x} = @' },
+    ]),
+    step('p18', 'a10', [
+      { guide: '평행선 사이에 있는 선분의 길이의 비는 같으므로', eq: '6 : ({x} − 6) = @ : @' },
+      { eq: '{x} = @' },
+    ]),
+  ];
+
+  // 2단계: 단답형
+  const short = (src, id) => ({ ...SRC[src], id });
+  const STAGE2 = [
+    short('p06', 'b01'), short('p09', 'b02'),
+    short('p11', 'b03'), short('p12', 'b04'), short('p14', 'b05'), short('p16', 'b06'),
+    short('p19', 'b07'), short('p21', 'b08'), short('p23', 'b09'), short('p24', 'b10'),
+  ];
+
+  window.STAGES = {
+    1: { no: 1, title: '1단계 · 차근차근 단계형', desc: '풀이 순서대로 빈칸을 채워요', items: STAGE1 },
+    2: { no: 2, title: '2단계 · 단답형', desc: '답만 입력해요', items: STAGE2 },
+  };
+  // 빈칸 목록(문제마다 입력 칸 순서)
+  window.blankCount = (p) => (p.steps ? p.steps.reduce((t, s) => t + s.eq.split('@').length - 1, 0) : p.blanks.length);
 
   // ---- 수식 표기 ----
   const PAR = '<svg class="par" viewBox="0 0 14 20" aria-label="평행"><path d="M6 1 L1 19 M13 1 L8 19" stroke="currentColor" stroke-width="1.7" fill="none"/></svg>';

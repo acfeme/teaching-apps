@@ -38,7 +38,7 @@ async function start(res, s, cls, num, field) {
   const att1 = normAtt(vals[LOCK_FIELDS.length]);
   const fb = normFb(vals[LOCK_FIELDS.length + 1]);
   if (fb.active) return res.status(200).json({ ok: true, resumed: true, ...publicActive(fb.active) });
-  if (!fbEligible(att1)) return res.status(403).json({ code: 'FB_NOT_ELIGIBLE', error: '1단계 결과가 있어야 하고, 맞힌 문제가 5개 이하일 때만 풀 수 있어요.' });
+  if (!fbEligible(att1)) return res.status(403).json({ code: 'FB_NOT_ELIGIBLE', error: '1단계 결과가 있어야 하고, 맞힌 문제가 4개 이하일 때만 풀 수 있어요.' });
   if (!cfg[cls].open || !cfg[cls].fb) return res.status(403).json({ code: 'FB_LOCKED', error: '피드백 문제가 아직 잠겨 있어요. 선생님을 기다려 주세요.' });
 
   const pool = Object.keys(ANSWERS[1]);

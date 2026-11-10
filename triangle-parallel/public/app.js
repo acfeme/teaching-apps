@@ -164,7 +164,7 @@
     });
   }
 
-  // 피드백(보충) 문제 카드: 1단계에서 맞힌 문제가 5개 이하인 학생에게만 보인다.
+  // 피드백(보충) 문제 카드: 1단계에서 맞힌 문제가 4개 이하인 학생에게만 보인다.
   function fbCardHtml(f) {
     if (!f || f.status === 'none') return '';
     let body;
@@ -668,7 +668,7 @@
         <div class="tree-card"><div id="tree"></div><div class="tree-cap" id="treeCap"></div>
           <div class="grow-msg">${grown > 0 ? `🌱 ${grown}문제를 맞혀서 나무가 자랐어요!` : '다음 단계에서 나무를 키워 봐요.'}</div></div>
       </div>
-      ${R.stage === 1 && R.correct <= 5 ? `<div class="fb-banner">💡 <span>1단계 문제를 힌트와 함께 다시 공부할 수 있어요. 처음 화면의 <b>피드백 문제</b>를 눌러 보세요. (선생님이 열어 주셔야 시작돼요)</span><button class="st-btn go" id="toFb">피드백 문제로 가기</button></div>` : ''}
+      ${R.stage === 1 && R.correct <= 4 ? `<div class="fb-banner">💡 <span>1단계 문제를 힌트와 함께 다시 공부할 수 있어요. 처음 화면의 <b>피드백 문제</b>를 눌러 보세요. (선생님이 열어 주셔야 시작돼요)</span><button class="st-btn go" id="toFb">피드백 문제로 가기</button></div>` : ''}
       <h2 class="fb-title">문제별 피드백</h2>
       <div class="fb-list">${list.map((p, k) => feedbackHtml(p, k, R)).join('')}</div>
       <div class="rank-grid">

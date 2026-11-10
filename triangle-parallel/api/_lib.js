@@ -174,7 +174,7 @@ export function gradeOne(stage, id, submitted) {
 }
 
 // ---- 피드백(보충) 문제: 1단계에서 맞힌 문제가 FB_MAX개 이하인 학생이 1단계 문제 FB_COUNT개를 완전학습 ----
-export const FB_MAX = 5;
+export const FB_MAX = 4;
 export const FB_COUNT = 5;
 export const fbField = (cls, num) => `${cls}:${num}:fb`;
 export function normFb(raw) {

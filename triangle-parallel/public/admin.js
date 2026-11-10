@@ -124,7 +124,7 @@
       <div class="head-row"><h1 class="title" style="font-size:30px">삼각형과 평행선 · 교사 관리자</h1>
       <button class="back" id="out">나가기</button></div>
       <div class="panel"><h2>수업 열기·잠그기</h2>
-        <div class="note">학생은 <b>입장</b>이 열린 반만 들어올 수 있고, 각 단계는 열린 동안에만 <b>시작</b>할 수 있어요. 이미 시작한 학생은 단계를 잠가도 제출할 수 있어요.<br><b>피드백 문제</b>는 1단계에서 5문제 이하로 맞힌 학생에게만 보여요. 1단계 중 무작위 5문제를 힌트를 보며 모두 맞힐 때까지 풀어요.</div>
+        <div class="note">학생은 <b>입장</b>이 열린 반만 들어올 수 있고, 각 단계는 열린 동안에만 <b>시작</b>할 수 있어요. 이미 시작한 학생은 단계를 잠가도 제출할 수 있어요.<br><b>피드백 문제</b>는 1단계에서 4문제 이하로 맞힌 학생에게만 보여요. 1단계 중 무작위 5문제를 힌트를 보며 모두 맞힐 때까지 풀어요.</div>
         <div class="scroll"><table class="ctl"><thead><tr><th>반</th><th>입장</th><th>1단계</th><th>2단계</th><th>피드백 문제</th></tr></thead><tbody id="ctl"></tbody></table></div>
       </div>
       <div class="toolbar">
@@ -297,7 +297,7 @@
     const list = (d.fbLog || []).filter((r) => st.scope === 'all' || r.cls === st.scope);
     const no = Object.fromEntries(ST[1].items.map((p, k) => [p.id, k + 1]));
     return `<div class="panel"><h2>피드백 문제 완료 기록</h2>
-      <div class="note">1단계에서 5문제 이하로 맞힌 학생이 1단계 문제 중 무작위 5문제를 모두 맞힐 때까지 푼 기록이에요. 괄호 안은 맞히기까지 확인한 횟수예요(1이면 한 번에 정답).</div>
+      <div class="note">1단계에서 4문제 이하로 맞힌 학생이 1단계 문제 중 무작위 5문제를 모두 맞힐 때까지 푼 기록이에요. 괄호 안은 맞히기까지 확인한 횟수예요(1이면 한 번에 정답).</div>
       <div class="scroll" style="max-height:360px;overflow-y:auto"><table><thead><tr><th>끝낸 시각</th><th>반</th><th>번호</th><th>회차</th><th>한 번에 맞힘</th><th>총 확인</th><th>경고</th><th>문제별 (1단계 번호: 확인 횟수)</th></tr></thead>
       <tbody>${list.map((r) => `<tr><td>${fmtTime(r.finishedAt)}</td><td>${r.cls}</td><td>${r.num}</td><td>${r.round}</td><td>${r.firstTry}/${r.ids.length}</td><td>${r.totalTries}</td>
         <td>${r.warnings ? `<b class="wcount">${r.warnings}</b>` : 0}</td>

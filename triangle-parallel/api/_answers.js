@@ -31,6 +31,20 @@ const STAGE2 = {
 };
 
 export const ANSWERS = { 1: STAGE1, 2: STAGE2 };
+
+// 피드백 문제는 비례식만 세운다(계산해서 x, y를 구하는 칸은 없음).
+// 문제마다 1단계 정답 배열에서 쓰는 칸의 위치. public/problems.js의 fbSteps와 칸 수가 같아야 한다(verify.mjs가 대조).
+// 비례식이 없는 중점 연결 문제(a07, a08)는 피드백 문제에서 뺀다.
+export const FB_BLANKS = {
+  a01: [0, 1, 3, 4], // 8 : 12 = DE : BC, 8 : 12 = AE : AC
+  a02: [0, 1, 3, 4], // 4 : 8 = 1 : 2, 4 : 8 = BC : DE
+  a03: [0, 1, 3, 4],
+  a04: [0, 1], // 9 : AC = DE : 12
+  a05: [0, 1, 2, 4, 5], // AE = 21 − 7, 12 : x = AC : AE, 21 : 14 = BC : DE
+  a06: [0, 1, 2], // AD = 4 + 6, 4 : AD = BC : DE
+  a09: [0, 1],
+  a10: [0, 1],
+};
 export const STAGES = [1, 2];
 
 // 틀린 문항에 보여 줄 풀이 요약. [AB]는 선분, {x}는 문자로 화면에서 바뀐다.

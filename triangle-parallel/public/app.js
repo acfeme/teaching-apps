@@ -48,11 +48,14 @@
     : `tp-draft:${S.cls}:${S.num}:${S.stage}:${S.startedAt}`);
   const resultKey = (stage) => `tp-result:${S.cls}:${S.num}:${stage}`;
   const items = () => (isFb() ? ST[1].items.filter((p) => S.fb.ids.includes(p.id)) : ST[S.stage].items);
+  // 피드백 문제는 비례식 단계만 보여 주고 채점한다(계산 단계는 숨김)
+  const visSteps = (p) => (isFb() && p.fbSteps ? p.fbSteps.map((i) => p.steps[i]) : p.steps);
+  const nBlanks = (p) => (p.steps ? visSteps(p).reduce((t, st) => t + st.eq.split('@').length - 1, 0) : window.blankCount(p));
   const isSolved = (p) => isFb() && S.fb.solved.includes(p.id);
   const isDone = (p) => {
     if (isFb()) return isSolved(p);
     const a = S.answers[p.id] || [];
-    for (let k = 0; k < window.blankCount(p); k++) if (!a[k]) return false;
+    for (let k = 0; k < nBlanks(p); k++) if (!a[k]) return false;
     return true;
   };
 
@@ -179,7 +182,7 @@
     }
     return `<div class="stage-card fb-card ${f.status}">
       <div class="st-head"><h2>💡 피드백 문제</h2><span class="st-count">${f.count}문제</span></div>
-      <div class="st-desc">1단계 문제 중 ${f.count}문제가 무작위로 나와요. 힌트를 보면서 모두 맞힐 때까지 풀어요.</div>
+      <div class="st-desc">1단계 문제 중 ${f.count}문제가 무작위로 나와요. 계산은 하지 않고 <b>비례식만</b> 세워요. 힌트를 보면서 모두 맞힐 때까지 풀어요.</div>
       ${body}<div class="msg hidden" data-err="fb"></div></div>`;
   }
 
@@ -195,6 +198,7 @@
       S.warns = draft.warns || 0;
       if (draft.help) S.fb.help = draft.help;
       if (draft.marks) S.fb.marks = draft.marks;
+      if (draft.done) S.fb.done = draft.done;
       const first = items().findIndex((p) => !isSolved(p));
       S.i = first < 0 ? 0 : first; S.blank = 0;
       showQuiz();
@@ -279,7 +283,10 @@
 
   function helpHtml(p) {
     if (!isFb()) return '';
-    if (isSolved(p)) return '<div class="help solved">🎉 해결했어요! 다른 문제로 넘어가세요.</div>';
+    if (isSolved(p)) {
+      const ex = S.fb.done?.[p.id];
+      return `<div class="help solved">🎉 비례식을 바르게 세웠어요!${ex ? `<div class="help-row"><b>풀이 요약</b> ${M(ex)}</div>` : ''}</div>`;
+    }
     const h = S.fb.help[p.id];
     if (!h) return '<div class="help idle">빈칸을 모두 채우고 <b>확인하기</b>를 누르세요. 틀리면 힌트가 나와요.</div>';
     const reveal = h.reveal ? Object.entries(h.reveal) : [];
@@ -293,7 +300,7 @@
 
   function stepsHtml(p, cell) {
     let k = 0;
-    return `<ol class="steps">${p.steps.map((s) => {
+    return `<ol class="steps">${visSteps(p).map((s) => {
       const parts = s.eq.split('@');
       const eq = parts.map((t, i) => M(t) + (i < parts.length - 1 ? cell(k++) : '')).join('');
       return `<li>${s.guide ? `<div class="guide">${M(s.guide)}</div>` : ''}<div class="eq">${eq}</div></li>`;
@@ -303,7 +310,7 @@
   function renderProblem() {
     const p = items()[S.i];
     const body = p.steps
-      ? `<div class="step-title">풀이 순서대로 빈칸을 채워 보세요</div>${stepsHtml(p, (k) => boxHtml(p, k))}`
+      ? `<div class="step-title">${isFb() ? '비례식의 빈칸을 채워 보세요 <small>(계산은 하지 않아요)</small>' : '풀이 순서대로 빈칸을 채워 보세요'}</div>${stepsHtml(p, (k) => boxHtml(p, k))}`
       : `<div class="blanks">${p.blanks.map((b, k) => `<div class="blank"><span>${M(b.label)}</span><span>=</span>${boxHtml(p, k)}${b.unit ? `<span class="unit">${b.unit}</span>` : ''}</div>`).join('')}</div>`;
     app.querySelector('#card').innerHTML = `
       <div class="sec">${esc(p.sec)}</div>
@@ -355,13 +362,13 @@
 
   function saveDraft() {
     ls.set(draftKey(), isFb()
-      ? { answers: S.answers, warns: S.warns, help: S.fb.help, marks: S.fb.marks }
+      ? { answers: S.answers, warns: S.warns, help: S.fb.help, marks: S.fb.marks, done: S.fb.done }
       : { answers: S.answers, warns: S.warns });
   }
 
   function press(k) {
     const p = items()[S.i];
-    const n = window.blankCount(p);
+    const n = nBlanks(p);
     if (k === 'next') {
       if (S.blank < n - 1) { S.blank++; paintBoxes(); } else if (S.i < items().length - 1) go(S.i + 1);
       return;
@@ -552,6 +559,7 @@
       if (d.ok || d.already) {
         S.fb.marks[p.id] = (S.answers[p.id] || []).map(() => 1);
         delete S.fb.help[p.id];
+        if (d.explain) { S.fb.done = S.fb.done || {}; S.fb.done[p.id] = d.explain; }
       } else {
         S.fb.marks[p.id] = d.blanks;
         S.fb.help[p.id] = { wrong: d.wrong, explain: d.explain, reveal: d.reveal };
@@ -584,7 +592,7 @@
   }
   const isDoneBlanks = (p) => {
     const a = S.answers[p.id] || [];
-    for (let k = 0; k < window.blankCount(p); k++) if (!a[k]) return false;
+    for (let k = 0; k < nBlanks(p); k++) if (!a[k]) return false;
     return true;
   };
   function flashHelp(text) {

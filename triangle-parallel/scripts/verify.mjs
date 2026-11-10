@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import vm from 'node:vm';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ANSWERS, EXPLAIN } from '../api/_answers.js';
+import { ANSWERS, EXPLAIN, FB_BLANKS } from '../api/_answers.js';
 import { parseNumber, sameValue } from '../api/_grade.js';
 
 const gcd = (a, b) => (b === 0n ? (a < 0n ? -a : a) : gcd(b, a % b));
@@ -104,6 +104,23 @@ for (const st of [1, 2]) {
     if (!W.figureSvg(p.fig).startsWith('<svg')) fail(`${p.id} 그림 없음`);
   }
 }
+
+// 피드백 문제(비례식만): 화면의 fbSteps 칸 위치 = 서버 FB_BLANKS, 숨긴 단계는 계산 칸뿐인지
+for (const p of W.STAGES[1].items) {
+  const idx = FB_BLANKS[p.id];
+  if (!p.fbSteps !== !idx) { fail(`${p.id} 피드백 문제 설정이 화면·서버 중 한쪽에만 있음`); continue; }
+  if (!idx) continue;
+  const starts = [];
+  let k = 0;
+  p.steps.forEach((step) => { starts.push(k); k += step.eq.split('@').length - 1; });
+  const expect = p.fbSteps.flatMap((i) => {
+    const cnt = p.steps[i].eq.split('@').length - 1;
+    return Array.from({ length: cnt }, (_, j) => starts[i] + j);
+  });
+  if (expect.join() !== idx.join()) fail(`${p.id} 피드백 칸 위치 화면 ${expect} / 서버 ${idx}`);
+  if (!p.fbSteps.some((i) => p.steps[i].eq.includes(':'))) fail(`${p.id} 피드백 문제에 비례식이 없음`);
+}
+console.log('피드백 문제(비례식만):', Object.entries(FB_BLANKS).map(([id, ix]) => `${id} ${ix.map((i) => ANSWERS[1][id][i]).join(',')}`).join(' | '));
 
 // 답 입력 형식 시험
 const cases = [

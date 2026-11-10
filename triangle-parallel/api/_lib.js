@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { Redis } from '@upstash/redis';
-import { ANSWERS, EXPLAIN, STAGES } from './_answers.js';
+import { ANSWERS, EXPLAIN, FB_BLANKS, STAGES } from './_answers.js';
 import { sameValue } from './_grade.js';
 
 export const CLASSES = ['2-1', '2-2', '2-3', '2-4'];
@@ -163,10 +163,11 @@ export function gradeStage(stage, submitted) {
   return { results, answers, correct, total, score: Math.round((correct / total) * 100) };
 }
 
-// 한 문제만 채점(피드백 문제용)
-export function gradeOne(stage, id, submitted) {
-  const want = ANSWERS[stage]?.[id];
-  if (!want) return null;
+// 한 문제만 채점(피드백 문제용 — 비례식 칸만)
+export function gradeFb(id, submitted) {
+  const idx = FB_BLANKS[id];
+  if (!idx) return null;
+  const want = idx.map((i) => ANSWERS[1][id][i]);
   const got = Array.isArray(submitted) ? submitted : [];
   const given = want.map((_, i) => String(got[i] ?? '').trim().slice(0, 16));
   const blanks = want.map((a, i) => (matchBlank(given[i], a) ? 1 : 0));

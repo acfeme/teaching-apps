@@ -3,6 +3,9 @@ import {
   requireStore, todayKST, validStage, validStudent,
 } from './_lib.js';
 
+// 배포 버전(새 버전이 올라오면 관리자 화면에 새로고침 안내)
+const BUILD = (process.env.VERCEL_DEPLOYMENT_ID || process.env.VERCEL_GIT_COMMIT_SHA || 'local').slice(-8);
+
 // GET  /api/admin?date=&dates=1 → 잠금 상태, 학생별 응시 상태, 경고, 날짜별 기록
 // POST /api/admin {action:'cfg', cls, key:'open'|'s1'|'s2', value}
 //                 {action:'retake', cls, num, stage}     stage: 1 | 2 | 'fb'
@@ -81,7 +84,8 @@ async function view(req, res, s) {
     }));
 
   return res.status(200).json({
-    today, date, dates, cfg, students: list, warnings: [...warnings].reverse(), log,
+    today, date, dates, cfg, lockVer: Number(state.lockver || 0), build: BUILD,
+    students: list, warnings: [...warnings].reverse(), log,
     fbLog: [...fbRecs].sort((a, b) => b.finishedAt - a.finishedAt),
     scopes: adminView(records),
   });
@@ -95,7 +99,9 @@ async function act(req, res, s) {
     }
     // 스위치 하나만 바로 덮어쓴다(다른 스위치는 건드리지 않음).
     await s.hset('state', { [lockField(body.cls, body.key)]: body.value ? '1' : '0' });
-    return res.status(200).json({ ok: true, cls: body.cls, key: body.key, value: body.value });
+    // 잠금 변경 번호: 화면이 이보다 오래된 상태를 받으면(저장 직후 예전 값을 읽는 경우) 무시한다
+    const lockVer = await s.hincr('state', 'lockver');
+    return res.status(200).json({ ok: true, cls: body.cls, key: body.key, value: body.value, lockVer, build: BUILD });
   }
 
   // 피드백 문제 재응시: 끝낸 횟수만큼 다 쓴 학생에게 한 번 더

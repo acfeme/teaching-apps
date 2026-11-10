@@ -40,10 +40,33 @@
     return d;
   }
 
+  // 서버에서 받은 관리자 데이터를 화면에 쓰기 전에 정리한다.
+  // - 잠금 변경 번호(lockVer)가 내가 아는 것보다 낮으면 저장 직후 예전 값을 읽은 것이므로 잠금 상태는 무시
+  // - 배포 버전(build)이 처음 들어왔을 때와 다르면 새로고침 안내
+  function accept(d) {
+    if ((d.lockVer ?? 0) < (st.lockVer || 0) && st.data?.cfg) d.cfg = st.data.cfg;
+    else st.lockVer = d.lockVer ?? st.lockVer;
+    if (d.build) {
+      if (!st.build) st.build = d.build;
+      else if (d.build !== st.build) showUpdate();
+    }
+    return d;
+  }
+  function showUpdate() {
+    if (document.querySelector('#upd')) return;
+    const el = document.createElement('div');
+    el.id = 'upd';
+    el.className = 'upd';
+    el.innerHTML = '<span>🔄 관리자 화면이 새 버전으로 바뀌었어요. 새로고침해 주세요.</span><button>지금 새로고침</button>';
+    el.querySelector('button').onclick = () => location.reload();
+    document.body.appendChild(el);
+  }
+
   async function start() {
     try {
       const d = await call('GET', null, true);
       setPw(st.pw);
+      accept(d);
       st.date = d.date;
       st.dates = d.dates;
       st.seen = new Set(d.warnings.map(wKey)); // 들어오기 전 경고는 알림으로 띄우지 않음
@@ -64,7 +87,7 @@
       const d = await call('GET', null, st.tick % DATES_EVERY === 0);
       if (d.dates) st.dates = d.dates;
       if (st.pending || st.drag || ver !== st.ver) return; // 그 사이 스위치를 바꿨으면 예전 상태로 덮지 않음
-      st.data = d;
+      st.data = accept(d);
       paint();
       setLive(true);
     } catch (e) {
@@ -77,13 +100,14 @@
     st.pending = (st.pending || 0) + 1;
     st.ver = (st.ver || 0) + 1;
     try {
-      await call('POST', body);
+      const r = await call('POST', body);
+      if (r && r.lockVer) st.lockVer = Math.max(st.lockVer || 0, r.lockVer);
       st.pending--;
       if (st.pending) return; // 다른 변경이 저장 중이면 마지막 것이 끝난 뒤 한 번에 새로 그림
       const ver = st.ver;
       const d = await call('GET');
       if (st.pending || ver !== st.ver) return;
-      st.data = d;
+      st.data = accept(d);
       paint();
     } catch (e) {
       st.pending = Math.max(0, st.pending - 1);
@@ -130,7 +154,8 @@
         <div class="scroll"><table class="ctl"><thead><tr><th>반</th><th>입장</th><th>1단계</th><th>2단계</th></tr></thead><tbody id="ctl"></tbody></table></div>
       </div>
       <div class="panel view-pick">
-        <div class="vp-row"><span class="vp-step">① 날짜</span><select id="date" aria-label="날짜"></select><div id="live"></div></div>
+        <div class="vp-row"><span class="vp-step">① 날짜</span><select id="date" aria-label="날짜"></select>
+          <button class="mini dl" id="csvSum">📥 학생별 요약 CSV</button><button class="mini dl" id="csvLog">📥 제출 기록 CSV</button><div id="live"></div></div>
         <div class="vp-row"><span class="vp-step">② 반</span><div class="tabs" id="tabs">${['all', ...CLASSES].map((c) => `<button class="tab" data-s="${c}">${clsName(c)}</button>`).join('')}</div></div>
         <div class="note" style="margin:6px 0 0">고른 날짜와 반으로 아래 학생 현황, 다른 창 경고 기록, 문항별 정답률, 제출 기록이 모두 바뀌어요.</div>
       </div>
@@ -144,9 +169,11 @@
     </div>`;
     app.querySelector('#out').onclick = () => { setPw(''); st.pw = ''; st.date = ''; showLogin(); };
     app.querySelector('#progOpen').onclick = () => progress.open();
+    app.querySelector('#csvSum').onclick = () => csv.summary();
+    app.querySelector('#csvLog').onclick = () => csv.log();
     app.querySelector('#date').onchange = async (e) => {
       st.date = e.target.value;
-      try { st.data = await call('GET'); paint(); } catch (err) { setLive(false); }
+      try { st.data = accept(await call('GET')); paint(); } catch (err) { setLive(false); }
     };
     app.querySelector('#tabs').addEventListener('click', (e) => {
       const b = e.target.closest('[data-s]');
@@ -221,6 +248,7 @@
     t.dataset.on = want ? '1' : '0';
     t.setAttribute('aria-pressed', String(want));
     t.querySelector('.sw-t').textContent = swText(keyName, want);
+    if (st.data?.cfg?.[cls]) st.data.cfg[cls][keyName] = want; // 화면이 다시 그려져도 방금 바꾼 값 유지
     toast(`${want ? '🔓' : '🔒'} <b>${cls}반 ${SW_LABEL[keyName]}</b>${keyName === 'open' ? '을' : '를'} ${want ? '열었어요' : '잠갔어요'}`);
     act({ action: 'cfg', cls, key: keyName, value: want }, t);
   }
@@ -365,6 +393,86 @@
         <td class="left">${r.ids.map((id) => `${no[id]}번(${r.tries[id]})`).join(', ')}</td></tr>`).join('') || '<tr><td colspan="8">이 날짜에는 완료 기록이 없습니다.</td></tr>'}</tbody></table></div>
     </div>`;
   }
+
+  // ---- CSV 내려받기: 고른 날짜·반의 기록을 엑셀·구글 시트에서 바로 열 수 있게 ----
+  const csv = (() => {
+    const cell = (v) => {
+      const t = v === null || v === undefined ? '' : String(v);
+      return /[",\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+    };
+    function save(name, rows) {
+      // 엑셀에서 한글이 깨지지 않도록 BOM을 붙인다
+      const text = '\ufeff' + rows.map((r) => r.map(cell).join(',')).join('\r\n');
+      const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+    }
+    const scopeName = () => (st.scope === 'all' ? '전체' : `${st.scope}반`);
+    const wrongList = (r, n) => (r ? ST[n].items.map((p, k) => (r.results?.[p.id]?.ok ? null : k + 1)).filter(Boolean).join(' ') : '');
+    const no1 = (id) => ST[1].items.findIndex((p) => p.id === id) + 1;
+
+    function summary() {
+      const d = st.data;
+      if (!d) return;
+      const warnBy = {};
+      d.warnings.forEach((w) => { warnBy[`${w.cls}#${w.num}`] = (warnBy[`${w.cls}#${w.num}`] || 0) + 1; });
+      const head = ['날짜', '반', '번호',
+        '1단계 점수(마지막)', '1단계 맞힌 수', '1단계 응시 횟수', '1단계 첫 점수', '1단계 틀린 문제',
+        '2단계 점수(마지막)', '2단계 맞힌 수', '2단계 응시 횟수', '2단계 첫 점수', '2단계 틀린 문제',
+        '합계(1+2단계)', '피드백 대상', '피드백 완료 횟수', '피드백 총 확인 횟수', '피드백 한 번에 맞힘', '피드백 문제별(1단계 번호:확인 횟수)', '다른 창 경고'];
+      const rows = [head];
+      const classes = st.scope === 'all' ? CLASSES : [st.scope];
+      classes.forEach((c) => {
+        const list = progress.build(d, c);
+        const seen = new Set(list.map((r) => r.num));
+        Object.keys(warnBy).filter((k) => k.startsWith(`${c}#`)).forEach((k) => {
+          const n = Number(k.split('#')[1]);
+          if (!seen.has(n)) list.push({ num: n, s: { 1: [], 2: [] }, fbDone: [], fbTarget: false });
+        });
+        list.sort((a, b) => a.num - b.num).forEach((r) => {
+          const st1 = r.s[1], st2 = r.s[2];
+          const l1 = st1[st1.length - 1], l2 = st2[st2.length - 1];
+          const fbLast = r.fbDone[r.fbDone.length - 1];
+          rows.push([d.date, c, r.num,
+            l1?.score ?? '', l1 ? `${l1.correct}/${l1.total}` : '', st1.length || '', st1[0]?.score ?? '', wrongList(l1, 1),
+            l2?.score ?? '', l2 ? `${l2.correct}/${l2.total}` : '', st2.length || '', st2[0]?.score ?? '', wrongList(l2, 2),
+            l1 || l2 ? (l1?.score || 0) + (l2?.score || 0) : '',
+            r.fbTarget ? 'O' : '', r.fbDone.length || '', r.fbDone.reduce((t, f) => t + f.totalTries, 0) || '',
+            fbLast ? `${fbLast.firstTry}/${fbLast.ids.length}` : '',
+            r.fbDone.map((f) => f.ids.map((id) => `${no1(id)}:${f.tries[id]}`).join(' ')).join(' / '),
+            warnBy[`${c}#${r.num}`] || 0]);
+        });
+      });
+      if (rows.length === 1) { toast(`${d.date} ${scopeName()}에는 내려받을 기록이 없어요.`); return; }
+      save(`삼각형과평행선_${d.date}_${scopeName()}_학생별요약.csv`, rows);
+    }
+
+    function log() {
+      const d = st.data;
+      if (!d) return;
+      const rows = [['날짜', '시각', '반', '번호', '종류', '회차', '점수', '맞힌 수', '틀린 문제', '다른 창 경고', '응답(문제별)']];
+      d.log.filter((r) => st.scope === 'all' || r.cls === st.scope).sort((a, b) => a.submittedAt - b.submittedAt).forEach((r) => {
+        const ans = ST[r.stage].items.map((p, k) => `${k + 1}:${(r.answers?.[p.id] || []).join('|')}`).join(' ');
+        rows.push([d.date, fmtTime(r.submittedAt), r.cls, r.num, `${r.stage}단계`, r.attempt, r.score, `${r.correct}/${r.total}`, wrongList(r, r.stage), r.warnings || 0, ans]);
+      });
+      (d.fbLog || []).filter((r) => st.scope === 'all' || r.cls === st.scope).forEach((r) => {
+        rows.push([d.date, fmtTime(r.finishedAt), r.cls, r.num, '피드백 문제', r.round, '', `한 번에 ${r.firstTry}/${r.ids.length}`, '', r.warnings || 0,
+          r.ids.map((id) => `${no1(id)}번:${r.tries[id]}번 확인`).join(' ')]);
+      });
+      d.warnings.filter((w) => st.scope === 'all' || w.cls === st.scope).forEach((w) => {
+        rows.push([d.date, fmtTime(w.at), w.cls, w.num, `경고(${stageName(w.stage)})`, '', '', '', '', w.label || '', '']);
+      });
+      if (rows.length === 1) { toast(`${d.date} ${scopeName()}에는 내려받을 기록이 없어요.`); return; }
+      const body = rows.slice(1).sort((a, b) => String(a[1]).localeCompare(String(b[1])));
+      save(`삼각형과평행선_${d.date}_${scopeName()}_제출기록.csv`, [rows[0], ...body]);
+    }
+    return { summary, log };
+  })();
 
   // ---- 진도현황: 날짜 → 그날 활동한 반 → 반의 1·2단계·피드백 문제 진도 ----
   // 지난 날짜는 그날의 제출·완료 기록으로, 오늘은 지금 푸는 중인 상태까지 함께 보여 준다.

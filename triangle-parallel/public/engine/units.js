@@ -17,7 +17,6 @@ window.UNIT_LIST = [
   { id: 'centroid', kind: 'soon', icon: '⚖️', title: '삼각형의 무게중심', desc: '준비 중이에요' },
   { id: 'games', kind: 'soon', icon: '🎮', title: '닮음 게임', desc: '짝맞추기 · 버블 게임 — 준비 중이에요' },
   { id: 'lesson', kind: 'link', icon: '🔍', title: '도형의 닮음 (수업 화면)', desc: '닮음이란? · 닮음비 · 넓이비 · 부피비 · 짝맞추기', url: 'https://similar-lesson.vercel.app' },
-  { id: 'find-similar', kind: 'link', icon: '🔺', title: '닮은 삼각형 찾기', desc: '삼각형을 포개 보며 닮음 조건 알아보기', url: 'https://similar-triangles.vercel.app' },
   { id: 'right-triangle', kind: 'link', icon: '📏', title: '직각삼각형의 닮음', desc: '수선의 발 문제', url: 'https://right-triangle-similarity.vercel.app' },
 ];
 

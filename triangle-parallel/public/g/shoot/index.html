@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>닮음 조건 쏘기 · 닮음 탐구 교실</title>
+<link rel="stylesheet" href="/g/game.css">
+<style>
+  .stage { display: grid; gap: 12px; margin-top: 12px; }
+  @media (min-width: 700px) { .stage { grid-template-columns: 1.15fr 1fr; align-items: start; } }
+  .fig { background: #fff; border: 2px solid var(--line); border-radius: 20px; padding: 10px 12px; }
+  .fig .q { font-weight: 900; font-size: 19px; word-break: keep-all; }
+  .fig .unit { color: var(--muted); font-size: 15px; }
+  .fig svg { width: 100%; height: auto; max-height: 34vh; display: block; margin: 0 auto; }
+  @media (min-width: 700px) { .fig svg { max-height: none; } }
+  .fig svg text { font-family: var(--math); }
+  .arena { position: relative; border-radius: 20px; overflow: hidden; border: 2px solid var(--line); background: linear-gradient(#bfe6ff, #eaf7ff 70%, #d9f0c9 70%); touch-action: none; }
+  .arena canvas { display: block; width: 100%; cursor: crosshair; }
+  .lives { letter-spacing: 2px; }
+  .legend { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 12px 0; }
+  .legend div { background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 10px; font-size: 16px; text-align: center; word-break: keep-all; }
+  .legend b { display: block; font-size: 22px; }
+  .levels { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 0 0 12px; }
+  .levels div { background: #fff7e8; border: 2px dashed var(--line); border-radius: 14px; padding: 10px 12px; font-size: 16px; word-break: keep-all; }
+  .levels b { display: block; font-size: 19px; color: var(--brand-dark); }
+  .tri1, .tri2 { padding: 0 6px; border-radius: 8px; white-space: nowrap; }
+  .tri1 { background: #cfe0ff; color: #1d4fb8; }
+  .tri2 { background: #ffc48a; color: #8a3c00; }
+  .explain { margin-top: 8px; padding: 10px 12px; border-radius: 14px; font-size: 17px; line-height: 1.5; }
+  .explain.good { background: #e7f6ee; color: #0f5c40; }
+  .explain.bad { background: #fde9e3; color: #8d2f17; }
+  .explain:empty { display: none; }
+  .stage-tag { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .stage-tag b { color: #fff; }
+  .clear { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center; padding: 16px; background: rgba(255, 248, 236, .94); }
+  .clear .big { font-size: 40px; line-height: 1; }
+  .clear h2 { margin: 0; font-size: 24px; }
+  .clear p { margin: 0; color: var(--muted); word-break: keep-all; font-size: 16px; line-height: 1.45; }
+  .clear { overflow-y: auto; gap: 8px; }
+  .clear .g-btn { min-height: 52px; font-size: 20px; }
+  .start-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .teacher { margin-top: 16px; padding: 14px; border-radius: 16px; background: #eef4ff; border: 2px dashed #9db8ef; font-size: 17px; word-break: keep-all; }
+  .teacher b:first-child { display: block; font-size: 19px; color: #1d4fb8; }
+  @media (max-width: 560px) { .legend, .levels { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="g-wrap">
+  <div class="g-top"><a class="g-back" href="/">← 닮음 탐구 교실</a><span class="start-row"><button class="g-sound" id="rankTop">🏆 랭킹</button><button class="g-sound" id="snd"></button></span></div>
+  <h1 class="g-title">🎯 닮음 조건 쏘기</h1>
+  <p class="g-sub">두 삼각형에 주어진 조건을 보고, 닮음이 되는 조건이 적힌 공을 대포로 쏘아 맞혀요.</p>
+
+  <div id="start" class="g-panel">
+    <div class="legend">
+      <div><b style="color:#7a3fc4">SSS 닮음</b>세 쌍의 대응변의 길이의 비가 같다</div>
+      <div><b style="color:#0e8a7d">SAS 닮음</b>두 쌍의 대응변의 길이의 비가 같고, 그 끼인각의 크기가 같다</div>
+      <div><b style="color:#d5651a">AA 닮음</b>두 쌍의 대응각의 크기가 각각 같다</div>
+    </div>
+    <div class="levels">
+      <div><b>1단계 · 두 삼각형</b>따로 떨어진 두 삼각형을 보고 닮음 조건을 찾아요. (10문제)</div>
+      <div><b>2단계 · 도형 속 도형</b>한 도형 안에 숨어 있는 닮은 삼각형의 닮음 조건을 찾아요. (10문제)</div>
+    </div>
+    <p class="g-sub">마우스나 손가락으로 겨누고 눌러서 쏴요. 키보드는 ← → 로 겨누고 스페이스로 쏴요.<br>단계마다 하트는 3개예요. 1단계를 끝내면 2단계로 가요. 중간에 공이 <b>와르르</b> 쏟아질 수 있어요!</p>
+    <div class="start-row"><button class="g-btn" id="go">시작하기 ▶</button><button class="g-btn ghost" id="rankStart">🏆 랭킹 보기</button></div>
+    <div class="teacher hidden" id="teacherBox">
+      <b>👩‍🏫 선생님 체험 모드</b> 원하는 단계로 바로 들어가 문제를 살펴봐요. 하트가 줄지 않고, <b>다음 문제 ▶</b>로 넘길 수 있고, 기록은 랭킹에 남지 않아요.
+      <div class="start-row" style="margin-top:10px"><button class="g-btn" id="try1">1단계 체험 ▶</button><button class="g-btn" id="try2">2단계 체험 ▶</button></div>
+    </div>
+  </div>
+
+  <div id="play" class="hidden">
+    <div class="g-stats">
+      <span class="g-stat stage-tag" id="stageTag"><b>1단계</b></span>
+      <span class="g-stat">문제 <b id="qno">1</b> / 10</span>
+      <span class="g-stat">점수 <b id="score">0</b></span>
+      <span class="g-stat lives" id="lives">❤️❤️❤️</span>
+      <button class="g-stat hidden" id="skip">다음 문제 ▶</button>
+      <span class="g-stat hidden" id="trialTag">👩‍🏫 체험 모드</span>
+      <button class="g-stat" id="quit">그만하기</button>
+    </div>
+    <div class="stage">
+      <div class="fig">
+        <div class="q" id="question">△ABC와 △DEF가 닮음이 되는 조건은? <span class="unit">(길이 단위: cm)</span></div>
+        <div id="figure"></div>
+        <div class="explain" id="explain"></div>
+      </div>
+      <div class="arena" id="arena"><canvas id="cv"></canvas><div class="clear hidden" id="clear"></div></div>
+    </div>
+  </div>
+
+  <div id="end" class="g-panel g-end hidden"></div>
+</div>
+<div class="g-toast" id="toast"></div>
+<script src="/g/sound.js"></script>
+<script src="/g/rank.js"></script>
+<script>
+(function () {
+  const $ = (s) => document.querySelector(s);
+  const TOTAL = 10;
+  const COLORS = { AA: ['#ffb36b', '#d5651a'], SAS: ['#6fd8cb', '#0e8a7d'], SSS: ['#c7a5f5', '#7a3fc4'] };
+  SFX.bindToggle($('#snd'));
+  $('#rankTop').onclick = () => RANK.open('shoot');
+  $('#rankStart').onclick = () => RANK.open('shoot');
+
+  const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+  const gcd = (a, b) => (b ? gcd(b, a % b) : a);
+  const simple = (a, b) => { const g = gcd(a, b); return `${a / g} : ${b / g}`; };
+
+  // ========== 1단계: 떨어진 두 삼각형 ==========
+  // 정수 세 변(삼각형이 되는 것)과 닮음비 k
+  const BASES = [[4, 5, 6], [5, 6, 7], [4, 6, 7], [5, 7, 8], [6, 7, 8], [3, 5, 6], [4, 7, 8], [5, 6, 8], [3, 4, 5], [4, 5, 7]];
+  const deg = (r) => (r * 180) / Math.PI;
+  const NAMES1 = ['A', 'B', 'C'], NAMES2 = ['D', 'E', 'F'];
+
+  function makeProblem(type) {
+    const [a, b, c] = shuffle(BASES.slice())[0].slice(); // a = BC, b = CA, c = AB
+    const k = pick([2, 3]);
+    const firstBig = Math.random() < 0.4;
+    const s1 = firstBig ? [a * k, b * k, c * k] : [a, b, c];
+    const s2 = firstBig ? [a, b, c] : [a * k, b * k, c * k];
+    const angA = deg(Math.acos((b * b + c * c - a * a) / (2 * b * c)));
+    const angB = deg(Math.acos((a * a + c * c - b * b) / (2 * a * c)));
+    const ang = [Math.round(angA), Math.round(angB)];
+    ang.push(180 - ang[0] - ang[1]); // A, B, C(합이 180°가 되게)
+    const p = { type, s1, s2, ang, show1: { sides: [], angles: [] }, show2: { sides: [], angles: [] }, ratio: firstBig ? `${k} : 1` : `1 : ${k}` };
+    // 변 번호 0 = BC(EF), 1 = CA(FD), 2 = AB(DE) / 각 번호 0 = A(D), 1 = B(E), 2 = C(F)
+    if (type === 'SSS') {
+      p.show1.sides = p.show2.sides = [0, 1, 2];
+    } else if (type === 'SAS') {
+      const v = Math.floor(Math.random() * 3); // 끼인각 꼭짓점
+      const adj = [[1, 2], [0, 2], [0, 1]][v]; // 꼭짓점 v에 붙은 두 변
+      p.show1 = { sides: adj, angles: [v] };
+      p.show2 = { sides: adj, angles: [v] };
+      p.v = v;
+    } else {
+      const two = shuffle([0, 1, 2]).slice(0, 2).sort();
+      p.show1 = { sides: [], angles: two };
+      // 절반은 두 번째 삼각형에 다른 두 각을 보여 줘서 나머지 한 각을 계산하게 한다
+      const other = [0, 1, 2].find((i) => !two.includes(i));
+      p.show2 = { sides: [], angles: Math.random() < 0.5 ? two : [pick(two), other].sort() };
+    }
+    return p;
+  }
+
+  // 세 변 → 꼭짓점 좌표(B 원점, C 오른쪽, A 위쪽)
+  function verts(s) {
+    const [a, b, c] = s;
+    const x = (c * c + a * a - b * b) / (2 * a);
+    const y = Math.sqrt(Math.max(0, c * c - x * x));
+    return [[x, -y], [0, 0], [a, 0]]; // A, B, C
+  }
+  function place(pts, unit, rot, cx, cy) {
+    const r = (rot * Math.PI) / 180;
+    const t = pts.map(([x, y]) => [x * unit * Math.cos(r) - y * unit * Math.sin(r), x * unit * Math.sin(r) + y * unit * Math.cos(r)]);
+    const xs = t.map((q) => q[0]), ys = t.map((q) => q[1]);
+    const mx = (Math.min(...xs) + Math.max(...xs)) / 2, my = (Math.min(...ys) + Math.max(...ys)) / 2;
+    return t.map(([x, y]) => [x - mx + cx, y - my + cy]);
+  }
+
+  function figureSvg(p) {
+    // 큰 삼각형은 가장 긴 변이 175px, 작은 삼각형은 115px로 그린다(너무 작으면 글자가 겹친다)
+    const big1 = Math.max(...p.s1) > Math.max(...p.s2);
+    const u1 = (big1 ? 205 : 140) / Math.max(...p.s1);
+    const u2 = (big1 ? 140 : 205) / Math.max(...p.s2);
+    const P1 = place(verts(p.s1), u1, pick([0, 0, -12, 10]), 128, 135);
+    const P2 = place(verts(p.s2), u2, pick([0, 15, -20, 180, 160]), 392, 135);
+    return `<svg viewBox="0 0 520 270" role="img" aria-label="두 삼각형">${tri(P1, NAMES1, p.s1, p.show1, p)}${tri(P2, NAMES2, p.s2, p.show2, p)}</svg>`;
+  }
+  function tri(P, names, s, show, p) {
+    const g = [];
+    const cen = [(P[0][0] + P[1][0] + P[2][0]) / 3, (P[0][1] + P[1][1] + P[2][1]) / 3];
+    const out = (q, d) => { const dx = q[0] - cen[0], dy = q[1] - cen[1], l = Math.hypot(dx, dy) || 1; return [q[0] + (dx / l) * d, q[1] + (dy / l) * d]; };
+    g.push(`<polygon points="${P.map((q) => q.join(',')).join(' ')}" fill="#fff6e6" stroke="#1c2230" stroke-width="2.6" stroke-linejoin="round"/>`);
+    // 각: 호와 크기
+    show.angles.forEach((i) => {
+      const v = P[i], u = P[(i + 1) % 3], w = P[(i + 2) % 3];
+      const unitV = (q) => { const dx = q[0] - v[0], dy = q[1] - v[1], l = Math.hypot(dx, dy); return [dx / l, dy / l]; };
+      const e1 = unitV(u), e2 = unitV(w), r = 24;
+      const sweep = e1[0] * e2[1] - e1[1] * e2[0] > 0 ? 1 : 0;
+      g.push(`<path d="M${v[0] + e1[0] * r} ${v[1] + e1[1] * r} A${r} ${r} 0 0 ${sweep} ${v[0] + e2[0] * r} ${v[1] + e2[1] * r}" fill="none" stroke="#d5651a" stroke-width="2.4"/>`);
+      const bis = [e1[0] + e2[0], e1[1] + e2[1]], bl = Math.hypot(bis[0], bis[1]) || 1;
+      g.push(`<text x="${v[0] + (bis[0] / bl) * 52}" y="${v[1] + (bis[1] / bl) * 52 + 7}" font-size="21" fill="#b4500e" text-anchor="middle">${p.ang[i]}°</text>`);
+    });
+    // 변의 길이: 변 0 = 꼭짓점 1-2, 변 1 = 2-0, 변 2 = 0-1
+    show.sides.forEach((j) => {
+      const q1 = P[(j + 1) % 3], q2 = P[(j + 2) % 3];
+      const m = [(q1[0] + q2[0]) / 2, (q1[1] + q2[1]) / 2];
+      const o = out(m, 19);
+      g.push(`<text x="${o[0]}" y="${o[1] + 7}" font-size="25" fill="#1c4fa8" text-anchor="middle" font-weight="700">${s[j]}</text>`);
+    });
+    names.forEach((n, i) => { const o = out(P[i], 20); g.push(`<text x="${o[0]}" y="${o[1] + 7}" font-size="25" text-anchor="middle">${n}</text>`); });
+    return g.join('');
+  }
+
+  const SIDE1 = ['BC', 'CA', 'AB'], SIDE2 = ['EF', 'FD', 'DE'];
+  function explain(p) {
+    const r = p.ratio;
+    if (p.type === 'SSS') {
+      return `${[2, 0, 1].map((j) => `${SIDE1[j]} : ${SIDE2[j]} = ${p.s1[j]} : ${p.s2[j]}`).join(', ')}<br>세 쌍의 대응변의 길이의 비가 모두 <b>${r}</b>로 같아요 → <b>SSS 닮음</b>`;
+    }
+    if (p.type === 'SAS') {
+      const [j1, j2] = p.show1.sides;
+      return `${SIDE1[j1]} : ${SIDE2[j1]} = ${SIDE1[j2]} : ${SIDE2[j2]} = <b>${r}</b>이고, 그 끼인각 ∠${NAMES1[p.v]} = ∠${NAMES2[p.v]} = ${p.ang[p.v]}° → <b>SAS 닮음</b>`;
+    }
+    const all = [0, 1, 2];
+    const extra2 = all.find((i) => !p.show2.angles.includes(i));
+    const extra1 = all.find((i) => !p.show1.angles.includes(i));
+    const notes = [];
+    if (p.show1.angles.join() !== p.show2.angles.join()) {
+      const known = p.show2.angles.map((i) => `${p.ang[i]}°`).join(' − ');
+      notes.push(`∠${NAMES2[extra2]} = 180° − ${known} = ${p.ang[extra2]}°`);
+      const shared = p.show1.angles.filter((i) => p.show2.angles.includes(i) || i === extra2);
+      return `${notes[0]}<br>${shared.map((i) => `∠${NAMES1[i]} = ∠${NAMES2[i]} = ${p.ang[i]}°`).join(', ')} → 두 쌍의 대응각이 같아요 → <b>AA 닮음</b>`;
+    }
+    void extra1;
+    return `${p.show1.angles.map((i) => `∠${NAMES1[i]} = ∠${NAMES2[i]} = ${p.ang[i]}°`).join(', ')}<br>두 쌍의 대응각의 크기가 같아요 → <b>AA 닮음</b>`;
+  }
+  const WHY_NOT = {
+    SSS: '세 쌍의 대응변의 길이의 비가 모두 같아야 SSS 닮음이에요.',
+    SAS: '두 쌍의 대응변의 길이의 비가 같고 그 끼인각의 크기가 같아야 SAS 닮음이에요.',
+    AA: '두 쌍의 대응각의 크기가 각각 같아야 AA 닮음이에요.',
+  };
+  const Q1 = '△ABC와 △DEF가 닮음이 되는 조건은? <span class="unit">(길이 단위: cm)</span>';
+  function stage1Problem(type) {
+    const p = makeProblem(type);
+    return { type, q: Q1, svg: figureSvg(p), explain: explain(p) };
+  }
+
+  // ========== 2단계: 도형 속 도형 ==========
+  const rad = (d) => (d * Math.PI) / 180;
+  const dirPt = (len, ang) => [len * Math.cos(rad(ang)), len * Math.sin(rad(ang))];
+  const along = (p, q, t) => [p[0] + (q[0] - p[0]) * t, p[1] + (q[1] - p[1]) * t];
+  const angleAt = (v, p, q) => { const a = [p[0] - v[0], p[1] - v[1]], b = [q[0] - v[0], q[1] - v[1]]; return Math.round((Math.acos((a[0] * b[0] + a[1] * b[1]) / (Math.hypot(...a) * Math.hypot(...b))) * 180) / Math.PI); };
+  // 꼭짓점 A가 위, B 왼쪽 아래, C 오른쪽 아래인 삼각형(A에서 두 변이 벌어짐)
+  const fan = (AB, AC) => ({ A: [0, 0], B: dirPt(AB, 116), C: dirPt(AC, 62) });
+
+  // 그림 그리기: pts(좌표), segs(선분), lens([p, q, 글자]), angles([꼭짓점, p, q, 글자]), rights([꼭짓점, p, q]), arrows([p, q])
+  function drawFig(f) {
+    const names = Object.keys(f.pts);
+    const xs = names.map((n) => f.pts[n][0]), ys = names.map((n) => f.pts[n][1]);
+    const w = Math.max(...xs) - Math.min(...xs) || 1, h = Math.max(...ys) - Math.min(...ys) || 1;
+    const sc = Math.min(430 / w, 200 / h);
+    const mx = (Math.max(...xs) + Math.min(...xs)) / 2, my = (Math.max(...ys) + Math.min(...ys)) / 2;
+    const P = Object.fromEntries(names.map((n) => [n, [260 + (f.pts[n][0] - mx) * sc, 138 + (f.pts[n][1] - my) * sc]]));
+    const cen = names.reduce((c, n) => [c[0] + P[n][0] / names.length, c[1] + P[n][1] / names.length], [0, 0]);
+    const g = [];
+    // 닮은 두 삼각형을 색으로 구분(첫째 파랑, 둘째 주황). 문제 글자의 색과 같다.
+    if (curPair) {
+      g.push(`<polygon points="${curPair[0].map((n) => P[n].join(',')).join(' ')}" fill="${TRI_COLOR[0]}"/>`);
+      g.push(`<polygon points="${curPair[1].map((n) => P[n].join(',')).join(' ')}" fill="${TRI_COLOR[1]}" fill-opacity=".85"/>`);
+    } else if (f.fill) g.push(`<polygon points="${f.fill.map((n) => P[n].join(',')).join(' ')}" fill="#fff6e6"/>`);
+    f.segs.forEach(([a, b]) => g.push(`<line x1="${P[a][0]}" y1="${P[a][1]}" x2="${P[b][0]}" y2="${P[b][1]}" stroke="#1c2230" stroke-width="2.6" stroke-linecap="round"/>`));
+    (f.rights || []).forEach(([v, a, b]) => {
+      const u = (q) => { const dx = P[q][0] - P[v][0], dy = P[q][1] - P[v][1], l = Math.hypot(dx, dy); return [dx / l * 14, dy / l * 14]; };
+      const e1 = u(a), e2 = u(b), o = P[v];
+      g.push(`<path d="M${o[0] + e1[0]} ${o[1] + e1[1]} L${o[0] + e1[0] + e2[0]} ${o[1] + e1[1] + e2[1]} L${o[0] + e2[0]} ${o[1] + e2[1]}" fill="none" stroke="#d5651a" stroke-width="2.2"/>`);
+    });
+    (f.angles || []).forEach(([v, a, b, text]) => {
+      const o = P[v];
+      const u = (q) => { const dx = P[q][0] - o[0], dy = P[q][1] - o[1], l = Math.hypot(dx, dy); return [dx / l, dy / l]; };
+      const e1 = u(a), e2 = u(b), r = 22;
+      const sweep = e1[0] * e2[1] - e1[1] * e2[0] > 0 ? 1 : 0;
+      g.push(`<path d="M${o[0] + e1[0] * r} ${o[1] + e1[1] * r} A${r} ${r} 0 0 ${sweep} ${o[0] + e2[0] * r} ${o[1] + e2[1] * r}" fill="none" stroke="#d5651a" stroke-width="2.4"/>`);
+      const bis = [e1[0] + e2[0], e1[1] + e2[1]], bl = Math.hypot(bis[0], bis[1]) || 1;
+      g.push(`<text x="${o[0] + (bis[0] / bl) * 46}" y="${o[1] + (bis[1] / bl) * 46 + 7}" font-size="20" fill="#b4500e" text-anchor="middle">${text}</text>`);
+    });
+    (f.arrows || []).forEach(([a, b]) => {
+      const m = along(P[a], P[b], 0.5), dx = P[b][0] - P[a][0], dy = P[b][1] - P[a][1], l = Math.hypot(dx, dy), ux = dx / l, uy = dy / l;
+      g.push(`<path d="M${m[0] + ux * 7} ${m[1] + uy * 7} L${m[0] - ux * 7 - uy * 7} ${m[1] - uy * 7 + ux * 7} L${m[0] - ux * 7 + uy * 7} ${m[1] - uy * 7 - ux * 7} Z" fill="#1c2230"/>`);
+    });
+    (f.lens || []).forEach(([a, b, text, t = 0.5]) => {
+      const m = along(P[a], P[b], t), dx = P[b][0] - P[a][0], dy = P[b][1] - P[a][1], l = Math.hypot(dx, dy);
+      let nx = -dy / l, ny = dx / l;
+      if ((m[0] - cen[0]) * nx + (m[1] - cen[1]) * ny < 0) { nx = -nx; ny = -ny; }
+      g.push(`<text x="${m[0] + nx * 18}" y="${m[1] + ny * 18 + 8}" font-size="23" fill="#1c4fa8" text-anchor="middle" font-weight="700">${text}</text>`);
+    });
+    names.forEach((n) => {
+      const q = P[n], dx = q[0] - cen[0], dy = q[1] - cen[1], l = Math.hypot(dx, dy) || 1;
+      const o = f.nameAt?.[n] || [q[0] + (dx / l) * 20, q[1] + (dy / l) * 20];
+      g.push(`<text x="${o[0]}" y="${o[1] + 8}" font-size="24" text-anchor="middle">${n}</text>`);
+    });
+    return `<svg viewBox="0 0 520 275" role="img" aria-label="문제 그림">${g.join('')}</svg>`;
+  }
+
+  // Q2('△ABC ∽ △AED'): 문제 글자를 만들고, 바로 뒤에 그리는 그림이 두 삼각형을 같은 색으로 칠하게 기억해 둔다
+  // (문제 객체에서 q가 svg보다 먼저 계산된다)
+  const TRI_COLOR = ['#cfe0ff', '#ffc48a'];
+  let curPair = null;
+  const Q2 = (pair) => {
+    const [t1, t2] = pair.split('∽').map((s) => s.trim().replace('△', ''));
+    curPair = [t1.split(''), t2.split('')];
+    return `<span class="tri1">△${t1}</span> ∽ <span class="tri2">△${t2}</span>가 되는 닮음 조건은? <span class="unit">(길이 단위: cm)</span>`;
+  };
+  const T2 = {
+    // 공통인 각 A + 두 변의 비(엇갈린 대응) → SAS
+    sasCross() {
+      const [AB, AC, k] = pick([[9, 12, 3], [10, 8, 2], [12, 15, 3], [8, 12, 2], [15, 12, 3], [12, 10, 2]]);
+      const AD = AC / k, AE = AB / k;
+      const { A, B, C } = fan(AB, AC);
+      const D = along(A, B, AD / AB), E = along(A, C, AE / AC);
+      return {
+        type: 'SAS', q: Q2('△ABC ∽ △AED'),
+        svg: drawFig({ pts: { A, B, C, D, E }, fill: ['A', 'B', 'C'], segs: [['A', 'B'], ['A', 'C'], ['B', 'C'], ['D', 'E']], lens: [['A', 'D', AD], ['D', 'B', AB - AD], ['A', 'E', AE], ['E', 'C', AC - AE]] }),
+        explain: `AB : AE = ${AB} : ${AE} = ${simple(AB, AE)}, AC : AD = ${AC} : ${AD} = ${simple(AC, AD)}<br>∠A는 공통인 끼인각 → <b>SAS 닮음</b>`,
+      };
+    },
+    // 점 D가 BC 위: AB : DB = BC : BA, ∠B 공통 → SAS
+    sasSide() {
+      const [AB, BD, BC] = pick([[6, 4, 9], [4, 2, 8], [6, 3, 12], [8, 4, 16], [12, 8, 18], [10, 5, 20]]);
+      const B = [0, 0], C = [BC, 0], A = dirPt(AB, -58), D = [BD, 0];
+      return {
+        type: 'SAS', q: Q2('△ABC ∽ △DBA'),
+        svg: drawFig({ pts: { A, B, C, D }, fill: ['A', 'B', 'C'], segs: [['A', 'B'], ['A', 'C'], ['B', 'C'], ['A', 'D']], lens: [['A', 'B', AB], ['B', 'D', BD], ['D', 'C', BC - BD]] }),
+        explain: `AB : DB = ${AB} : ${BD} = ${simple(AB, BD)}, BC : BA = ${BC} : ${AB} = ${simple(BC, AB)}<br>∠B는 공통인 끼인각 → <b>SAS 닮음</b>`,
+      };
+    },
+    // ∠A 공통 + ∠ABC = ∠AED → AA
+    aaAnti() {
+      const AB = pick([9, 10, 11, 12]), AC = pick([7, 8, 9]);
+      const { A, B, C } = fan(AB, AC);
+      const t = Math.min(0.5, (0.75 * AC) / AB);
+      const E = along(A, C, (t * AB) / AC), D = along(A, B, (t * AC) / AB);
+      const x = angleAt(B, A, C);
+      return {
+        type: 'AA', q: Q2('△ABC ∽ △AED'),
+        svg: drawFig({ pts: { A, B, C, D, E }, fill: ['A', 'B', 'C'], segs: [['A', 'B'], ['A', 'C'], ['B', 'C'], ['D', 'E']], angles: [['B', 'A', 'C', `${x}°`], ['E', 'A', 'D', `${x}°`]] }),
+        explain: `∠A는 공통이고 ∠ABC = ∠AED = ${x}° → 두 쌍의 대응각이 같아요 → <b>AA 닮음</b>`,
+      };
+    },
+    // 직각삼각형에서 빗변에 수선 → AA
+    aaRight() {
+      const [p, q] = pick([[2, 8], [3, 12], [4, 9], [9, 16], [1, 4], [4, 16]]);
+      const h = Math.sqrt(p * q);
+      const B = [0, 0], C = [p + q, 0], D = [p, 0], A = [p, -h];
+      const useB = Math.random() < 0.5;
+      return {
+        type: 'AA', q: Q2(useB ? '△ABC ∽ △DBA' : '△ABC ∽ △DAC'),
+        svg: drawFig({ pts: { A, B, C, D }, fill: ['A', 'B', 'C'], segs: [['A', 'B'], ['A', 'C'], ['B', 'C'], ['A', 'D']], rights: [['A', 'B', 'C'], ['D', 'A', useB ? 'B' : 'C']] }),
+        explain: useB ? '∠BAC = ∠BDA = 90°이고 ∠B는 공통 → <b>AA 닮음</b>' : '∠BAC = ∠ADC = 90°이고 ∠C는 공통 → <b>AA 닮음</b>',
+      };
+    },
+    // DE ∥ BC → 동위각 → AA
+    aaParallel() {
+      const AB = pick([9, 10, 12]), AC = pick([8, 9, 11]), t = pick([0.4, 0.5, 0.6]);
+      const { A, B, C } = fan(AB, AC);
+      const D = along(A, B, t), E = along(A, C, t);
+      return {
+        type: 'AA', q: Q2('△ABC ∽ △ADE'),
+        svg: drawFig({ pts: { A, B, C, D, E }, fill: ['A', 'B', 'C'], segs: [['A', 'B'], ['A', 'C'], ['B', 'C'], ['D', 'E']], arrows: [['D', 'E'], ['B', 'C']] }),
+        explain: '[DE]∥[BC]이므로 ∠ADE = ∠ABC (동위각)이고 ∠A는 공통 → <b>AA 닮음</b>'.replace(/\[|\]/g, ''),
+      };
+    },
+    // 사각형을 대각선으로 나눈 두 삼각형 → SSS
+    sssQuad() {
+      const [AB, BC, CA, CD, DA] = pick([[4, 6, 8, 12, 16], [3, 4, 6, 8, 12], [4, 5, 8, 10, 16], [4, 6, 6, 9, 9], [6, 9, 12, 18, 24]]);
+      const xb = (AB * AB - BC * BC + CA * CA) / (2 * CA), xd = (DA * DA - CD * CD + CA * CA) / (2 * CA);
+      const A = [0, 0], C = [CA, 0], B = [xb, Math.sqrt(AB * AB - xb * xb)], D = [xd, -Math.sqrt(DA * DA - xd * xd)];
+      return {
+        type: 'SSS', q: Q2('△ABC ∽ △ACD'),
+        svg: drawFig({ pts: { A, B, C, D }, fill: ['A', 'B', 'C', 'D'], segs: [['A', 'B'], ['B', 'C'], ['C', 'D'], ['D', 'A'], ['A', 'C']], lens: [['A', 'B', AB], ['B', 'C', BC], ['C', 'D', CD], ['D', 'A', DA], ['A', 'C', CA, 0.4]] }),
+        explain: `AB : AC = ${AB} : ${CA}, BC : CD = ${BC} : ${CD}, CA : DA = ${CA} : ${DA}<br>세 쌍의 대응변의 길이의 비가 모두 ${simple(AB, CA)}로 같아요 → <b>SSS 닮음</b>`,
+      };
+    },
+    // 세 변의 중점을 이은 삼각형 → SSS
+    sssMid() {
+      const [BC, CA, AB] = pick([[10, 12, 8], [12, 14, 10], [8, 10, 6], [14, 16, 12], [10, 8, 12]]);
+      const x = (AB * AB + BC * BC - CA * CA) / (2 * BC);
+      const B = [0, 0], C = [BC, 0], A = [x, -Math.sqrt(AB * AB - x * x)];
+      const D = along(B, C, 0.5), E = along(C, A, 0.5), F = along(A, B, 0.5);
+      return {
+        type: 'SSS', q: Q2('△ABC ∽ △DEF'),
+        svg: drawFig({ pts: { A, B, C, D, E, F }, fill: ['A', 'B', 'C'], segs: [['A', 'B'], ['B', 'C'], ['C', 'A'], ['D', 'E'], ['E', 'F'], ['F', 'D']],
+          lens: [['B', 'C', BC, 0.25], ['C', 'A', CA, 0.25], ['A', 'B', AB, 0.25], ['E', 'F', BC / 2], ['F', 'D', CA / 2], ['D', 'E', AB / 2]] }),
+        explain: `BC : EF = ${BC} : ${BC / 2}, CA : FD = ${CA} : ${CA / 2}, AB : DE = ${AB} : ${AB / 2}<br>세 쌍의 대응변의 길이의 비가 모두 2 : 1로 같아요 → <b>SSS 닮음</b>`,
+      };
+    },
+  };
+  function stage2Set() {
+    const list = [T2.sssQuad, T2.sssMid, pick([T2.sssQuad, T2.sssMid]), T2.sasCross, T2.sasSide, pick([T2.sasCross, T2.sasSide]),
+      T2.aaAnti, T2.aaRight, T2.aaParallel, pick([T2.sasCross, T2.sssQuad, T2.aaAnti])];
+    return shuffle(list).map((fn) => fn());
+  }
+  function stage1Set() {
+    return shuffle(['SSS', 'SSS', 'SSS', 'SAS', 'SAS', 'SAS', 'AA', 'AA', 'AA', pick(['SSS', 'SAS', 'AA'])]).map(stage1Problem);
+  }
+
+  // ========== 게임 ==========
+  const cv = $('#cv'), cx2 = cv.getContext('2d');
+  let W = 600, H = 400, R = 38;
+  let balls = [], bullet = null, parts = [], aim = -Math.PI / 2, keys = {};
+  let stage = 1, problems = [], qi = 0, score = 0, lives = 3, firstTry = 0, wrongNow = 0, qStart = 0, busy = false, running = false, paused = false, last = 0;
+  let surgeAt = null, surged = false;
+  // 공이 와르르 쏟아지는 문제(0부터 센 번호)
+  const SURGE_Q = { 1: [3, 6, 8], 2: [1, 3, 5, 7, 9] };
+
+  function resize() {
+    const box = $('#arena').getBoundingClientRect();
+    W = Math.max(280, box.width);
+    H = Math.round(Math.min(460, window.innerHeight * 0.62, Math.max(300, W * 0.8)));
+    const dpr = window.devicePixelRatio || 1;
+    cv.width = W * dpr; cv.height = H * dpr; cv.style.height = `${H}px`;
+    cx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+    R = Math.max(30, Math.min(46, W * 0.08));
+  }
+  window.addEventListener('resize', () => { if (running) resize(); });
+
+  const speedUp = () => 1 + qi * 0.05 + (stage - 1) * 0.35;
+  function newBall(label, x, y, vx, vy) { return { label, x, y, vx, vy, flash: 0, ph: Math.random() * 6 }; }
+  function spawnBalls() {
+    const labels = shuffle(['AA', 'SAS', 'SSS', 'AA', 'SAS', 'SSS']);
+    balls = [];
+    labels.forEach((label) => {
+      let x, y, tries = 0;
+      do { x = R + Math.random() * (W - 2 * R); y = R + Math.random() * (H * 0.55 - R); tries++; }
+      while (tries < 60 && balls.some((b) => Math.hypot(b.x - x, b.y - y) < 2.3 * R));
+      const sp = (40 + Math.random() * 45) * speedUp(), a = Math.random() * Math.PI * 2;
+      balls.push(newBall(label, x, y, Math.cos(a) * sp, Math.sin(a) * sp));
+    });
+  }
+  // 와르르: 하늘에서 공이 한꺼번에 쏟아진다
+  function surge() {
+    surged = true;
+    const n = stage === 1 ? 6 : 9;
+    const labels = shuffle(Array.from({ length: n }, (_, i) => ['AA', 'SAS', 'SSS'][i % 3]));
+    labels.forEach((label, i) => {
+      if (balls.length >= 20) return;
+      const x = R + ((i + 0.5) / n) * (W - 2 * R);
+      balls.push(newBall(label, x, R, (Math.random() - 0.5) * 160 * speedUp(), (160 + Math.random() * 120) * speedUp()));
+    });
+    toast('⚠️ 공이 와르르 쏟아져요!', 'bad');
+    [0, 90, 180, 270].forEach((ms) => setTimeout(() => SFX.play.pop(), ms));
+  }
+
+  function setStageTag() { $('#stageTag').innerHTML = `<b>${stage}단계</b> ${stage === 1 ? '두 삼각형' : '도형 속 도형'}`; }
+
+  // 선생님 체험 모드: 관리자 화면에서 비밀번호를 넣은 탭에서만(서버에서 비밀번호 확인)
+  let teacherOk = false, trial = false;
+  (async () => {
+    let pw = '';
+    try { pw = sessionStorage.getItem('tp-admin') || ''; } catch (e) { /* 저장 불가 */ }
+    if (!pw) return;
+    try {
+      const r = await fetch('/api/material?check=1', { cache: 'no-store', headers: { 'x-admin-password': pw } });
+      if (!r.ok) return;
+      teacherOk = true;
+      $('#teacherBox').classList.remove('hidden');
+      const want = Number(new URLSearchParams(location.search).get('stage'));
+      if (want === 1 || want === 2) start(want, true);
+    } catch (e) { /* 학생 모드 그대로 */ }
+  })();
+
+  function start(fromStage, asTrial) {
+    SFX.unlock();
+    trial = !!(asTrial && teacherOk);
+    $('#start').classList.add('hidden'); $('#end').classList.add('hidden'); $('#play').classList.remove('hidden'); document.body.classList.add('playing');
+    $('#clear').classList.add('hidden');
+    $('#skip').classList.toggle('hidden', !trial); $('#trialTag').classList.toggle('hidden', !trial);
+    resize();
+    stage = trial && fromStage === 2 ? 2 : 1;
+    problems = stage === 2 ? stage2Set() : stage1Set();
+    qi = 0; score = 0; lives = 3; firstTry = 0; paused = false;
+    $('#score').textContent = '0'; paintLives(); setStageTag();
+    loadQ();
+    if (!running) { running = true; last = performance.now(); requestAnimationFrame(loop); }
+    SFX.bgm(true);
+  }
+  $('#go').onclick = () => start(1, false);
+  $('#try1').onclick = () => start(1, true);
+  $('#try2').onclick = () => start(2, true);
+  $('#skip').onclick = () => { if (running && !paused && !busy) next(); };
+  $('#quit').onclick = () => { running = false; SFX.bgm(false); $('#play').classList.add('hidden'); document.body.classList.remove('playing'); $('#start').classList.remove('hidden'); };
+
+  function loadQ() {
+    const p = problems[qi];
+    $('#qno').textContent = qi + 1;
+    $('#question').innerHTML = p.q;
+    $('#figure').innerHTML = p.svg;
+    $('#explain').textContent = ''; $('#explain').className = 'explain';
+    wrongNow = 0; busy = false; qStart = performance.now(); bullet = null;
+    surged = false;
+    surgeAt = SURGE_Q[stage].includes(qi) ? 2200 + Math.random() * 2500 : null;
+    spawnBalls();
+  }
+  function paintLives() { $('#lives').textContent = '❤️'.repeat(lives) + '🤍'.repeat(3 - lives); }
+
+  // 조준·발사
+  function aimAt(e) {
+    const r = cv.getBoundingClientRect();
+    const x = e.clientX - r.left, y = e.clientY - r.top;
+    aim = Math.atan2(y - (H - 18), x - W / 2);
+    aim = Math.max(-Math.PI + 0.15, Math.min(-0.15, aim));
+  }
+  cv.addEventListener('pointermove', aimAt);
+  cv.addEventListener('pointerdown', (e) => { aimAt(e); fire(); });
+  window.addEventListener('keydown', (e) => {
+    if (!running) return;
+    if (e.code === 'Space') { e.preventDefault(); fire(); }
+    if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') { keys[e.code] = true; e.preventDefault(); }
+  });
+  window.addEventListener('keyup', (e) => { keys[e.code] = false; });
+
+  function fire() {
+    if (!running || paused || busy || bullet) return;
+    const len = 62;
+    bullet = { x: W / 2 + Math.cos(aim) * len, y: H - 18 + Math.sin(aim) * len, vx: Math.cos(aim) * 950, vy: Math.sin(aim) * 950 };
+    SFX.play.shoot();
+  }
+
+  function hit(ball) {
+    const p = problems[qi];
+    bullet = null;
+    if (ball.label === p.type) {
+      busy = true;
+      const secs = (performance.now() - qStart) / 1000;
+      const gain = (wrongNow ? 50 : 100) * stage + Math.max(0, Math.round(50 - secs * 3)) + (surged ? 20 : 0);
+      score += gain; if (!wrongNow) firstTry++;
+      $('#score').textContent = score;
+      burst(ball, COLORS[ball.label][0]);
+      balls = balls.filter((b) => b !== ball);
+      SFX.play.pop(); SFX.play.good();
+      toast(`정답! +${gain}점`, 'good');
+      $('#explain').innerHTML = p.explain; $('#explain').className = 'explain good';
+      setTimeout(next, 2800);
+    } else {
+      wrongNow++; if (!trial) lives--; paintLives();
+      ball.flash = 0.6;
+      SFX.play.bad();
+      toast(`${ball.label} 닮음이 아니에요`, 'bad');
+      $('#explain').innerHTML = `${WHY_NOT[ball.label]} 그림에 무엇이 주어졌는지 다시 살펴봐요.`; $('#explain').className = 'explain bad';
+      if (lives <= 0) { busy = true; setTimeout(() => finish(false), 1200); }
+    }
+  }
+  function next() {
+    if (!running) return;
+    qi++;
+    if (qi < TOTAL) { loadQ(); return; }
+    if (stage === 1) stageClear(); else finish(true);
+  }
+  // 1단계 클리어 → 2단계 안내
+  function stageClear() {
+    paused = true; balls = []; bullet = null;
+    SFX.play.win();
+    const c = $('#clear');
+    c.innerHTML = `<div class="big">🎉</div><h2>1단계 클리어!</h2><p>지금 점수 ${score}점. 이제 <b>2단계 · 도형 속 도형</b>이에요.<br>한 도형 안에 숨은 두 삼각형의 닮음 조건을 찾아요. 하트는 다시 3개!</p><button class="g-btn" id="go2">2단계 시작 ▶</button>`;
+    c.classList.remove('hidden');
+    $('#go2').onclick = () => {
+      c.classList.add('hidden');
+      stage = 2; problems = stage2Set(); qi = 0; lives = 3; paused = false;
+      paintLives(); setStageTag(); loadQ();
+    };
+  }
+
+  function burst(b, color) {
+    for (let i = 0; i < 26; i++) {
+      const a = Math.random() * Math.PI * 2, sp = 80 + Math.random() * 260;
+      parts.push({ x: b.x, y: b.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.8, color: i % 3 ? color : '#fff3a8' });
+    }
+  }
+
+  function loop(t) {
+    if (!running) return;
+    const dt = Math.min(0.05, (t - last) / 1000); last = t;
+    if (keys.ArrowLeft) aim = Math.max(-Math.PI + 0.15, aim - 2.2 * dt);
+    if (keys.ArrowRight) aim = Math.min(-0.15, aim + 2.2 * dt);
+    if (!paused && !busy && surgeAt != null && !surged && t - qStart > surgeAt) surge();
+    const top = H * 0.68;
+    balls.forEach((b) => {
+      b.x += b.vx * dt; b.y += b.vy * dt; b.ph += dt * 2;
+      if (b.x < R) { b.x = R; b.vx = Math.abs(b.vx); } if (b.x > W - R) { b.x = W - R; b.vx = -Math.abs(b.vx); }
+      if (b.y < R) { b.y = R; b.vy = Math.abs(b.vy); } if (b.y > top - R) { b.y = top - R; b.vy = -Math.abs(b.vy); }
+      b.flash = Math.max(0, b.flash - dt);
+    });
+    for (let i = 0; i < balls.length; i++) {
+      for (let j = i + 1; j < balls.length; j++) {
+        const a = balls[i], b = balls[j], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy);
+        if (d > 0 && d < 2 * R) {
+          const nx = dx / d, ny = dy / d, push = (2 * R - d) / 2;
+          a.x -= nx * push; a.y -= ny * push; b.x += nx * push; b.y += ny * push;
+          const p = (a.vx - b.vx) * nx + (a.vy - b.vy) * ny;
+          if (p > 0) { a.vx -= p * nx; a.vy -= p * ny; b.vx += p * nx; b.vy += p * ny; }
+        }
+      }
+    }
+    if (bullet) {
+      bullet.x += bullet.vx * dt; bullet.y += bullet.vy * dt;
+      const target = balls.find((b) => Math.hypot(b.x - bullet.x, b.y - bullet.y) < R + 6);
+      if (target) hit(target);
+      else if (bullet.x < -20 || bullet.x > W + 20 || bullet.y < -20) bullet = null;
+    }
+    parts.forEach((q) => { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 300 * dt; q.life -= dt; });
+    parts = parts.filter((q) => q.life > 0);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function draw() {
+    const c = cx2;
+    c.clearRect(0, 0, W, H);
+    c.fillStyle = 'rgba(255,255,255,.75)';
+    [[0.18, 0.12], [0.7, 0.08], [0.45, 0.22]].forEach(([fx, fy]) => { const x = fx * W, y = fy * H; c.beginPath(); c.arc(x, y, 18, 0, 7); c.arc(x + 20, y - 8, 22, 0, 7); c.arc(x + 42, y, 17, 0, 7); c.fill(); });
+    balls.forEach((b) => {
+      const [light, dark] = COLORS[b.label];
+      const wob = b.flash > 0 ? Math.sin(b.flash * 50) * 5 : 0;
+      const x = b.x + wob, y = b.y + Math.sin(b.ph) * 2;
+      const g = c.createRadialGradient(x - R * 0.35, y - R * 0.4, R * 0.15, x, y, R);
+      g.addColorStop(0, '#ffffff'); g.addColorStop(0.25, light); g.addColorStop(1, b.flash > 0 ? '#e0402a' : dark);
+      c.fillStyle = g; c.beginPath(); c.arc(x, y, R, 0, Math.PI * 2); c.fill();
+      c.lineWidth = 3; c.strokeStyle = 'rgba(255,255,255,.8)'; c.stroke();
+      c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillStyle = '#fff'; c.strokeStyle = 'rgba(0,0,0,.28)';
+      c.font = `900 ${Math.round(R * (b.label === 'AA' ? 0.58 : 0.46))}px Pretendard, "Malgun Gothic", sans-serif`;
+      c.lineWidth = 4; c.strokeText(b.label, x, y - R * 0.18); c.fillText(b.label, x, y - R * 0.18);
+      c.font = `800 ${Math.round(R * 0.34)}px Pretendard, "Malgun Gothic", sans-serif`;
+      c.lineWidth = 3; c.strokeText('닮음', x, y + R * 0.36); c.fillText('닮음', x, y + R * 0.36);
+    });
+    if (!busy && !paused) {
+      c.setLineDash([6, 8]); c.strokeStyle = 'rgba(30,40,60,.35)'; c.lineWidth = 2;
+      c.beginPath(); c.moveTo(W / 2, H - 18); c.lineTo(W / 2 + Math.cos(aim) * H * 0.75, H - 18 + Math.sin(aim) * H * 0.75); c.stroke(); c.setLineDash([]);
+    }
+    c.save(); c.translate(W / 2, H - 18); c.rotate(aim);
+    c.fillStyle = '#3b4252'; c.fillRect(0, -11, 62, 22); c.fillStyle = '#e08a1e'; c.fillRect(48, -13, 14, 26);
+    c.restore();
+    c.fillStyle = '#5b4636'; c.beginPath(); c.arc(W / 2, H - 14, 26, Math.PI, 0); c.fill();
+    if (bullet) { c.fillStyle = '#1c2230'; c.beginPath(); c.arc(bullet.x, bullet.y, 8, 0, Math.PI * 2); c.fill(); }
+    parts.forEach((q) => { c.globalAlpha = Math.max(0, q.life / 0.8); c.fillStyle = q.color; c.beginPath(); c.arc(q.x, q.y, 5, 0, Math.PI * 2); c.fill(); });
+    c.globalAlpha = 1;
+  }
+
+  async function finish(cleared) {
+    running = false;
+    SFX.bgm(false);
+    if (cleared) SFX.play.win(); else SFX.play.bad();
+    $('#play').classList.add('hidden'); document.body.classList.remove('playing');
+    $('#end').classList.remove('hidden');
+    const reached = stage === 2 ? (cleared ? '2단계까지 모두 클리어!' : '2단계에서 하트를 모두 썼어요') : '1단계에서 하트를 모두 썼어요';
+    $('#end').innerHTML = `<div class="big">${cleared ? '🏆' : '💥'}</div>
+      <h2>${reached}</h2>
+      <p>점수 <b>${score}점</b> · 한 번에 맞힌 문제 ${firstTry}개</p>
+      <p id="rankLine" class="g-sub">기록 저장 중…</p>
+      <p class="g-sub">헷갈리면 다시 정리해요: SSS는 세 변, SAS는 두 변과 그 끼인각, AA는 두 각.</p>
+      <div class="start-row" style="justify-content:center"><button class="g-btn" id="again">다시 하기 ▶</button><button class="g-btn ghost" id="rankEnd">🏆 랭킹 보기</button></div>`;
+    $('#again').onclick = () => start(1, false);
+    $('#rankEnd').onclick = () => RANK.open('shoot');
+    const line = $('#rankLine');
+    if (trial) { line.textContent = '👩‍🏫 체험 모드라 기록은 랭킹에 남기지 않았어요.'; return; }
+    try {
+      const d = await RANK.submit('shoot', score);
+      if (!d) { line.textContent = '반·번호를 고르지 않아 랭킹에 올리지 않았어요.'; return; }
+      line.innerHTML = `${d.newBest ? '<b>🏆 내 최고 기록!</b> ' : ''}${d.me.classRank ? `우리 반 오늘 ${d.me.classRank}등` : ''}${d.me.overallRank ? ` · 전체 ${d.me.overallRank}등` : ''}`;
+    } catch (e) {
+      line.textContent = `기록을 저장하지 못했어요: ${e.message}`;
+    }
+  }
+
+  function toast(msg, kind) {
+    const t = $('#toast');
+    t.textContent = msg; t.className = `g-toast on ${kind || ''}`;
+    clearTimeout(toast.h); toast.h = setTimeout(() => { t.className = 'g-toast'; }, 1600);
+  }
+})();
+</script>
+</body>
+</html>

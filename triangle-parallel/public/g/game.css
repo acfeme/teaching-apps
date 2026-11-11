@@ -1,0 +1,41 @@
+/* 게임 공통 화면 */
+:root {
+  --bg: #fff8ec; --card: #ffffff; --ink: #1c2230; --muted: #5a6474; --line: #ead9bd;
+  --brand: #e08a1e; --brand-dark: #a85e05; --good: #17835f; --bad: #c24a2b;
+  --math: "Times New Roman", "Noto Serif", serif;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); }
+body {
+  font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+  font-size: 20px; line-height: 1.5; min-height: 100dvh; touch-action: manipulation;
+  background-image: radial-gradient(#f4e2c2 1.2px, transparent 1.2px); background-size: 22px 22px;
+}
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; }
+.hidden { display: none !important; }
+.g-wrap { max-width: 1040px; margin: 0 auto; padding: 16px 16px 40px; }
+.g-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.g-back { color: var(--brand-dark); font-weight: 800; text-decoration: none; font-size: 18px; }
+.g-sound { min-height: 44px; padding: 0 14px; border-radius: 999px; background: #fff; border: 2px solid var(--line); font-weight: 700; font-size: 16px; }
+.g-title { font-size: clamp(28px, 5vw, 42px); font-weight: 900; margin: 10px 0 2px; }
+.g-sub { color: var(--muted); margin: 0 0 14px; word-break: keep-all; }
+.g-panel { background: var(--card); border: 2px solid var(--line); border-radius: 22px; padding: 18px; box-shadow: 0 6px 0 #f0dfc2; }
+.g-btn { min-height: 60px; padding: 0 26px; border-radius: 16px; background: var(--brand); color: #fff; font-weight: 900; font-size: 22px; box-shadow: 0 5px 0 var(--brand-dark); }
+.g-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 var(--brand-dark); }
+.g-btn.ghost { background: #fff; color: var(--brand-dark); border: 2px solid var(--line); box-shadow: 0 4px 0 #ecdcbf; }
+.g-opts { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0 18px; }
+.g-opt { min-height: 54px; padding: 0 18px; border-radius: 14px; background: #fff; border: 2px solid var(--line); font-weight: 800; font-size: 19px; }
+.g-opt.on { background: #fff0d9; border-color: var(--brand); color: var(--brand-dark); }
+.g-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+.g-stat { background: #fff; border: 2px solid var(--line); border-radius: 14px; padding: 4px 14px; font-weight: 800; font-size: 18px; }
+.g-stat b { color: var(--brand-dark); }
+.g-end { text-align: center; }
+.g-end .big { font-size: 64px; }
+.g-end h2 { margin: 6px 0; font-size: 30px; }
+.g-end .row { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+.g-toast { position: fixed; left: 50%; top: 18px; transform: translate(-50%, -20px); opacity: 0; transition: .25s; z-index: 50; background: #1c2230; color: #fff; padding: 10px 18px; border-radius: 14px; font-weight: 700; font-size: 19px; max-width: calc(100vw - 32px); text-align: center; pointer-events: none; }
+.g-toast.on { opacity: 1; transform: translate(-50%, 0); }
+.g-toast.good { background: var(--good); }
+.g-toast.bad { background: var(--bad); }
+body.playing > .g-wrap > .g-title, body.playing > .g-wrap > .g-sub { display: none; }
+.r { font-family: var(--math); white-space: nowrap; }

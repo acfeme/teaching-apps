@@ -29,6 +29,17 @@
     if (u.kind === 'link') {
       return `<a class="unit-card is-link" href="${esc(u.url)}" target="_blank" rel="noopener"><div class="u-icon">${u.icon}</div><div class="u-body"><b>${esc(u.title)}</b><span>${esc(u.desc)}</span></div><span class="u-tag">열기 ↗</span></a>`;
     }
+    if (u.kind === 'game') {
+      // 교사 화면: 단계가 있는 게임은 단계별 체험(같은 탭에서 열어야 체험 모드가 켜진다)
+      if (isAdmin) {
+        const btns = u.stages
+          ? Array.from({ length: u.stages }, (_, i) => `<a class="mat-sw on" style="text-decoration:none;display:inline-flex;align-items:center" href="${esc(u.url)}?stage=${i + 1}">${i + 1}단계 체험 ▶</a>`).join('')
+          : `<a class="mat-sw on" style="text-decoration:none;display:inline-flex;align-items:center" href="${esc(u.url)}">체험하기 ▶</a>`;
+        return `<div class="unit-card is-game admin"><div class="u-icon">${u.icon}</div><div class="u-body"><b>${esc(u.title)}</b><span>${esc(u.desc)}</span>
+          <div class="mat-sws">${btns}</div>${u.stages ? '<span class="mat-note">체험 모드: 하트가 줄지 않고, 문제를 넘길 수 있고, 랭킹에 남지 않아요. (비밀번호를 넣은 뒤 눌러요)</span>' : ''}</div></div>`;
+      }
+      return `<a class="unit-card is-game" href="${esc(u.url)}"><div class="u-icon">${u.icon}</div><div class="u-body"><b>${esc(u.title)}</b><span>${esc(u.desc)}</span></div><span class="u-tag go">하러 가기 →</span></a>`;
+    }
     if (u.kind === 'mat') {
       if (isAdmin) {
         return `<div class="unit-card is-mat admin"><div class="u-icon">${u.icon}</div><div class="u-body"><b>${esc(u.title)}</b><span>${esc(u.desc)}</span>
@@ -44,7 +55,7 @@
   }
 
   function render() {
-    const quiz = group('quiz'), mats = group('mat'), link = group('link'), soon = group('soon');
+    const quiz = group('quiz'), mats = group('mat'), games = group('game'), link = group('link'), soon = group('soon');
     app.innerHTML = `<div class="wrap">
       <header class="hub-head">
         <div class="hub-kicker">${isAdmin ? '교사 관리자' : '중학교 2학년 · 닮음'}</div>
@@ -54,12 +65,14 @@
       ${isAdmin ? '<div id="login"></div>' : ''}
       <section><h2 class="hub-h2">✏️ 문제풀이</h2><div class="unit-grid">${quiz.map(card).join('')}</div></section>
       ${mats.length ? `<section><h2 class="hub-h2">📚 수업 자료</h2>${isAdmin ? '<p class="hub-note">반마다 눌러서 열고 닫아요. 닫으면 학생 화면이 15초 안에 잠겨요.</p>' : ''}<div class="unit-grid">${mats.map(card).join('')}</div></section>` : ''}
+      ${games.length ? `<section><h2 class="hub-h2 hub-h2-row">🎮 게임 ${window.RANK ? '<button class="g-rank-btn" id="gameRank">🏆 게임 랭킹</button>' : ''}</h2><div class="unit-grid">${games.map(card).join('')}</div></section>` : ''}
       ${link.length ? `<section><h2 class="hub-h2">🔗 바로가기</h2><div class="unit-grid">${link.map(card).join('')}</div></section>` : ''}
       ${isAdmin ? '<section><h2 class="hub-h2">🧺 학생 보관함 현황</h2><div id="garden"></div></section>' : ''}
       ${soon.length ? `<section><h2 class="hub-h2">🌱 곧 열려요</h2><div class="unit-grid">${soon.map(card).join('')}</div></section>` : ''}
       ${isAdmin ? '<p class="hub-foot"><a href="/">학생 첫 화면 보기</a></p>' : ''}
     </div>`;
     loadOpen(quiz);
+    app.querySelector('#gameRank')?.addEventListener('click', () => window.RANK.open('match'));
     if (isAdmin) { paintLogin(); if (pw) loadMat(); paintGarden(); } else loadMat();
   }
 

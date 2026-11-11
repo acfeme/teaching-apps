@@ -9,6 +9,7 @@
   try { if (window.top !== window && window.top.location.host === location.host) return; } catch (e) { /* 다른 사이트 안 */ }
   // /m/lesson → /m/lesson/ (상대 주소의 화면 파일을 찾을 수 있게)
   if (/^\/m\/[a-z0-9-]+$/.test(location.pathname)) { location.replace(location.pathname + '/' + location.search); return; }
+  var isGame = id === 'games';
 
   var CLASSES = ['2-1', '2-2', '2-3', '2-4', '2-A', '2-B', '2-C']; // 2-A·2-B·2-C = 외부 체험용 샘플반
   var CHECK_MS = 15000;
@@ -65,12 +66,20 @@
     });
   }
   function askClass() {
-    show('<div class="ico">🏫</div><h1>몇 반인가요?</h1><p>선생님이 우리 반에 열어 준 자료만 볼 수 있어요.</p><div class="cls">'
+    show('<div class="ico">🏫</div><h1>몇 반인가요?</h1><p>' + (isGame ? '우리 반 게임이 열려 있는지 확인할게요.' : '선생님이 우리 반에 열어 준 자료만 볼 수 있어요.') + '</p><div class="cls">'
       + CLASSES.map(function (c) { return '<button data-cls="' + c + '">' + c + '반</button>'; }).join('') + '</div>');
   }
 
   function check() {
-    if (!cls && !pw) { askClass(); return; }
+    if (!cls && !pw) {
+      if (!isGame) { askClass(); return; }
+      // 게임: 반을 모를 때는 모든 반이 열려 있으면 그냥 열고, 한 반이라도 잠겼으면 반을 묻는다
+      fetch('/api/material', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+        var st = (d && d.open && d.open.games) || {};
+        if (CLASSES.every(function (c) { return st[c]; })) unlock(); else askClass();
+      }).catch(function () { unlock(); });
+      return;
+    }
     var headers = pw ? { 'x-admin-password': pw } : {};
     var url = '/api/material?id=' + encodeURIComponent(id) + '&cls=' + encodeURIComponent(cls || CLASSES[0]);
     fetch(url, { cache: 'no-store', headers: headers })
@@ -79,7 +88,9 @@
         if (x.ok && x.d.open) { unlock(); return; }
         if (x.ok && !cls) { pw = null; askClass(); return; } // 관리자 비밀번호가 바뀐 탭
         if (!x.ok) throw new Error(x.d.error || '');
-        show('<div class="ico">🔒</div><h1>아직 열리지 않았어요</h1><p><b>' + cls + '반</b>에는 선생님이 아직 이 자료를 열지 않았어요.<br>선생님이 열어 주시면 저절로 보여요.</p>'
+        show(isGame
+          ? '<div class="ico">🎮🔒</div><h1>지금은 게임이 잠겨 있어요</h1><p><b>' + cls + '반</b>은 선생님이 게임을 잠갔어요.<br>문제풀이를 먼저 하고 오세요! 게임이 열리면 저절로 보여요.</p><button data-change>다른 반이에요</button>'
+          : '<div class="ico">🔒</div><h1>아직 열리지 않았어요</h1><p><b>' + cls + '반</b>에는 선생님이 아직 이 자료를 열지 않았어요.<br>선생님이 열어 주시면 저절로 보여요.</p>'
           + '<button data-change>다른 반이에요</button>');
       })
       .catch(function () {
@@ -88,6 +99,6 @@
   }
 
   check();
-  timer = setInterval(function () { if (!document.hidden && (cls || pw)) check(); }, CHECK_MS);
-  document.addEventListener('visibilitychange', function () { if (!document.hidden && (cls || pw)) check(); });
+  timer = setInterval(function () { if (!document.hidden && (cls || pw || isGame)) check(); }, CHECK_MS);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && (cls || pw || isGame)) check(); });
 })();

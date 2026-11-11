@@ -73,6 +73,10 @@ export default async function handler(req, res) {
     if (!G) return res.status(400).json({ error: '게임이 올바르지 않습니다.' });
     const t = tokenOf(req);
     if (game === 'dungeon' && req.method === 'GET' && src.tower) return res.status(200).json({ tower: await towerToday(s) });
+    // 선생님이 게임을 잠근 반은 기록 저장·상자·상점 등 바꾸는 요청을 받지 않는다(보기만 가능)
+    if (req.method === 'POST' && t && String((await s.hget('state', `mat:games:${t.cls}`)) ?? '0') !== '1') { // 저장된 값이 없으면 잠김
+      return res.status(403).json({ code: 'GAME_LOCKED', error: '지금은 게임이 잠겨 있어요. 문제풀이를 먼저 해요!' });
+    }
     if (game === 'dungeon' && (src.profile || src.action)) {
       if (!t) return res.status(401).json({ code: 'LOGIN', error: '비밀번호로 다시 들어와 주세요.' });
       return await dungeon(req, res, s, t, src);

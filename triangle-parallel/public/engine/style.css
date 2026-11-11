@@ -349,3 +349,10 @@ body.garden-open { overflow: hidden; }
 .me-chip { margin: 0 0 14px; padding: 10px 14px; border-radius: 14px; background: #fff; border: 2px solid #ead9bd; font-size: 17px; }
 .me-chip b { color: #a85e05; }
 .g-table td.left { text-align: left; }
+
+/* 게임 잠금 */
+.game-lock { background: #fff6f0; border: 2px dashed #f0b48a; border-radius: 14px; padding: 10px 12px; margin: 0 0 12px; }
+.game-lock .mat-sws { margin-top: 8px; }
+.game-lock .lock-all { font-weight: 800; }
+.game-lock-note { background: #fff1ec; border: 2px solid #f0b48a; color: #8d2f17; border-radius: 12px; padding: 8px 12px; margin: 0 0 12px; font-weight: 800; }
+.unit-card.is-game.is-locked { opacity: .55; }

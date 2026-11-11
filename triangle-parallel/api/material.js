@@ -1,18 +1,20 @@
 import { CLASSES, checkAdmin, noStore, readBody, store } from './_lib.js';
-import { MATERIALS } from './_units.js';
+import { MATERIALS, OPEN_BY_DEFAULT } from './_units.js';
 
 // 수업 자료(도형의 닮음, 직각삼각형의 닮음) 반별 열림·닫힘
 // GET  /api/material                → { open: { 자료: { 반: true|false } } } (허브 카드 표시용)
 // GET  /api/material?id=&cls=       → { open } (자료 화면의 잠금 확인. 관리자 비밀번호가 맞으면 늘 열림)
 // GET  /api/material?check=1 (관리자) → 비밀번호 확인
 // POST /api/material {id, cls, value} (관리자)
+// id 'games' = 게임 전체 잠금(저장된 값이 없으면 잠김)
+const isOpen = (id, raw) => String(raw ?? (OPEN_BY_DEFAULT.includes(id) ? '1' : '0')) === '1';
 const field = (id, cls) => `mat:${id}:${cls}`;
 const FIELDS = MATERIALS.flatMap((id) => CLASSES.map((c) => field(id, c)));
 
 async function readAll(s) {
   const vals = await s.hmget('state', ...FIELDS);
   const out = {};
-  MATERIALS.forEach((id) => { out[id] = {}; CLASSES.forEach((c) => { out[id][c] = String(vals[FIELDS.indexOf(field(id, c))] ?? '0') === '1'; }); });
+  MATERIALS.forEach((id) => { out[id] = {}; CLASSES.forEach((c) => { out[id][c] = isOpen(id, vals[FIELDS.indexOf(field(id, c))]); }); });
   return out;
 }
 
@@ -35,7 +37,7 @@ export default async function handler(req, res) {
       }
       const cls = req.query?.cls;
       if (!CLASSES.includes(cls)) return res.status(400).json({ error: '반이 올바르지 않습니다.' });
-      return res.status(200).json({ open: String((await s.hget('state', field(id, cls))) ?? '0') === '1' });
+      return res.status(200).json({ open: isOpen(id, await s.hget('state', field(id, cls))) });
     }
     if (req.method === 'POST') {
       if (!(await checkAdmin(req, res, s))) return undefined;

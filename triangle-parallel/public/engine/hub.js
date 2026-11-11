@@ -65,7 +65,7 @@
       ${isAdmin ? '<div id="login"></div>' : '<div id="meChip" class="me-chip"></div>'}
       <section><h2 class="hub-h2">✏️ 문제풀이</h2><div class="unit-grid">${quiz.map(card).join('')}</div></section>
       ${mats.length ? `<section><h2 class="hub-h2">📚 수업 자료</h2>${isAdmin ? '<p class="hub-note">반마다 눌러서 열고 닫아요. 닫으면 학생 화면이 15초 안에 잠겨요.</p>' : ''}<div class="unit-grid">${mats.map(card).join('')}</div></section>` : ''}
-      ${games.length ? `<section><h2 class="hub-h2 hub-h2-row">🎮 게임 ${window.RANK ? '<button class="g-rank-btn" id="gameRank">🏆 게임 랭킹</button>' : ''}</h2><div class="unit-grid">${games.map(card).join('')}</div></section>` : ''}
+      ${games.length ? `<section><h2 class="hub-h2 hub-h2-row">🎮 게임 ${window.RANK ? '<button class="g-rank-btn" id="gameRank">🏆 게임 랭킹</button>' : ''}</h2>${isAdmin ? '<div class="game-lock"><b>🔒 게임 잠금</b> <span class="mat-note">잠그면 그 반 학생의 게임 화면이 15초 안에 잠기고 기록도 저장되지 않아요. 문제풀이를 먼저 하게 할 때 써요.</span><div class="mat-sws" data-mat="games"></div></div>' : '<div class="game-lock-note hidden" id="gameLockNote"></div>'}<div class="unit-grid">${games.map(card).join('')}</div></section>` : ''}
       ${link.length ? `<section><h2 class="hub-h2">🔗 바로가기</h2><div class="unit-grid">${link.map(card).join('')}</div></section>` : ''}
       ${isAdmin ? '<section><h2 class="hub-h2">🧺 학생 보관함 현황</h2><div id="garden"></div></section><section><h2 class="hub-h2">🔐 학생 별명·비밀번호</h2><div id="nicks"></div></section>' : ''}
       ${soon.length ? `<section><h2 class="hub-h2">🌱 곧 열려요</h2><div class="unit-grid">${soon.map(card).join('')}</div></section>` : ''}
@@ -107,6 +107,7 @@
   }
 
   function paintMat() {
+    paintGameLock();
     group('mat').forEach((u) => {
       const st = mat?.[u.id] || {};
       const open = CLASSES.filter((c) => st[c]);
@@ -132,6 +133,29 @@
     });
   }
 
+  // 게임 전체 잠금: 관리자는 반별 스위치, 학생은 우리 반이 잠겼으면 안내
+  function paintGameLock() {
+    const st = mat?.games || {};
+    if (isAdmin) {
+      const box = app.querySelector('[data-mat="games"]');
+      if (!box) return;
+      if (!pw || !mat) { box.innerHTML = '<span class="mat-note">비밀번호를 넣으면 잠그고 열 수 있어요.</span>'; return; }
+      const openN = CLASSES.filter((c) => st[c]).length;
+      box.innerHTML = CLASSES.map((c) => `<button class="mat-sw ${st[c] ? 'on' : ''}" data-cls="${c}" aria-pressed="${st[c] ? 'true' : 'false'}">${c}반 <b>${st[c] ? '열림' : '잠김'}</b></button>`).join('')
+        + `<button class="mat-all lock-all" data-all="${openN ? '0' : '1'}">${openN ? '🔒 모든 반 게임 잠그기' : '🔓 모든 반 게임 열기'}</button>`;
+      box.querySelectorAll('.mat-sw').forEach((b) => { b.onclick = () => setMat('games', b.dataset.cls, !st[b.dataset.cls]); });
+      box.querySelector('.mat-all').onclick = (e) => setMat('games', 'all', e.currentTarget.dataset.all === '1');
+      return;
+    }
+    const note = app.querySelector('#gameLockNote');
+    if (!note || !mat) return;
+    const m = window.ME && window.ME.get();
+    const locked = m ? !st[m.cls] : CLASSES.every((c) => !st[c]);
+    note.textContent = locked ? '🔒 지금은 게임이 잠겨 있어요. 문제풀이를 먼저 해요!' : '';
+    note.classList.toggle('hidden', !locked);
+    app.querySelectorAll('.unit-card.is-game').forEach((c) => c.classList.toggle('is-locked', locked));
+  }
+
   async function setMat(id, cls, value) {
     const prev = JSON.parse(JSON.stringify(mat));
     (cls === 'all' ? CLASSES : [cls]).forEach((c) => { mat[id][c] = value; });
@@ -140,7 +164,7 @@
     try {
       const d = await api('/api/material', { method: 'POST', body: JSON.stringify({ id, cls, value }) });
       mat = d.open;
-      toast(`${units.find((u) => u.id === id).title} · ${cls === 'all' ? '모든 반' : `${cls}반`} ${value ? '열었어요' : '닫았어요'}`);
+      toast(id === 'games' ? `게임 · ${cls === 'all' ? '모든 반' : `${cls}반`} ${value ? '열었어요' : '잠갔어요'}` : `${units.find((u) => u.id === id).title} · ${cls === 'all' ? '모든 반' : `${cls}반`} ${value ? '열었어요' : '닫았어요'}`);
     } catch (e) {
       mat = prev;
       toast(`바꾸지 못했어요: ${e.message}`);
@@ -220,8 +244,8 @@
     box.innerHTML = m
       ? `🙋 ${esc(m.cls)}반 · 별명 <b>${esc(m.nick || '')}</b> <button class="link-btn" id="meOut">나가기</button>`
       : '<button class="link-btn" id="meIn">🔑 내 번호로 들어가기</button> <span class="hub-note">게임·순위에는 번호 대신 별명만 보여요.</span>';
-    box.querySelector('#meOut')?.addEventListener('click', () => { window.ME.logout(); paintMe(); });
-    box.querySelector('#meIn')?.addEventListener('click', async () => { await window.ME.login(); paintMe(); });
+    box.querySelector('#meOut')?.addEventListener('click', () => { window.ME.logout(); paintMe(); paintGameLock(); });
+    box.querySelector('#meIn')?.addEventListener('click', async () => { await window.ME.login(); paintMe(); paintGameLock(); });
   }
 
   // ---- 교사: 학생 별명·비밀번호(별명 ↔ 반·번호는 선생님만 볼 수 있다) ----

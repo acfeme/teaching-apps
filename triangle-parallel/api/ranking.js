@@ -1,12 +1,14 @@
 import {
-  CLASSES, latestPerStudent, noStore, rank, readList, requireStore, todayKST,
+  CLASSES, latestPerStudent, noStore, rank, readList, requireStore, store, todayKST,
 } from './_lib.js';
+import { nicksFor } from './_auth.js';
 import { unitFrom } from './_units.js';
 
 const CLASS_LIMIT = 5;
 const OVERALL_LIMIT = 10;
 
 // GET /api/ranking?cls= → 오늘 우리 반 상위 5명, 전체 상위 10명 (1·2단계 점수 합)
+// 학생 번호는 내보내지 않고 별명만 보낸다(누구인지는 관리자만 안다)
 export default async function handler(req, res) {
   noStore(res);
   const U = unitFrom(req, res);
@@ -20,12 +22,12 @@ export default async function handler(req, res) {
   const date = todayKST();
   try {
     const list = latestPerStudent(await readList(s, `subs:${date}`));
-    const strip = ({ rank: r, cls: c, num, total }) => ({ rank: r, cls: c, num, total });
-    return res.status(200).json({
-      date,
-      classTop: rank(list.filter((x) => x.cls === cls)).slice(0, CLASS_LIMIT).map(strip),
-      overallTop: rank(list).slice(0, OVERALL_LIMIT).map(strip),
-    });
+    const classTop = rank(list.filter((x) => x.cls === cls)).slice(0, CLASS_LIMIT);
+    const overallTop = rank(list).slice(0, OVERALL_LIMIT);
+    const site = store('site:');
+    const nicks = site ? await nicksFor(site, [...classTop, ...overallTop].map((x) => `${x.cls}:${x.num}`)) : {};
+    const strip = ({ rank: r, cls: c, num, total }) => ({ rank: r, cls: c, nick: nicks[`${c}:${num}`] || '익명', total });
+    return res.status(200).json({ date, classTop: classTop.map(strip), overallTop: overallTop.map(strip) });
   } catch (e) {
     console.error('ranking failed', e);
     return res.status(502).json({ error: '순위를 불러오지 못했습니다.' });

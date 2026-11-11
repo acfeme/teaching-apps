@@ -342,3 +342,10 @@ body.garden-open { overflow: hidden; }
 .unit-card.is-game:hover { transform: translateY(-1px); }
 .hub-h2-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
 .g-rank-btn { min-height: 44px; padding: 0 16px; border-radius: 999px; background: #fff7e8; border: 2px solid #e6b75c; font-weight: 800; font-size: 17px; }
+
+.my-nick { color: var(--muted, #5a6474); font-size: 16px; margin-top: 2px; }
+.my-nick b { color: #a85e05; }
+
+.me-chip { margin: 0 0 14px; padding: 10px 14px; border-radius: 14px; background: #fff; border: 2px solid #ead9bd; font-size: 17px; }
+.me-chip b { color: #a85e05; }
+.g-table td.left { text-align: left; }

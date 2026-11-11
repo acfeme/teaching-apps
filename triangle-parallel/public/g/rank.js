@@ -1,5 +1,5 @@
 // 게임 랭킹 화면(모든 게임이 함께 쓴다): 내 기록, 우리 반 오늘 실시간 상위 5명, 전체 학생 누적 상위 10명.
-// 학생은 반·번호로 구분하고 문제풀이·보관함과 같은 저장 이름(sessionStorage 'tp-me')을 쓴다.
+// 학생은 로그인(engine/me.js의 ME: 반·번호 + 비밀번호)으로 구분하고, 랭킹에는 번호 대신 별명만 보인다.
 // RANK.submit('shoot', 점수) → 기록 저장, RANK.open('match') → 랭킹 화면
 window.RANK = (function () {
   const CLASSES = ['2-1', '2-2', '2-3', '2-4'];
@@ -45,7 +45,7 @@ window.RANK = (function () {
     get: (k) => { try { return JSON.parse(sessionStorage.getItem(k)); } catch (e) { return null; } },
     set: (k, v) => { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 저장 불가 */ } },
   };
-  function me() { const m = ss.get('tp-me'); return m && CLASSES.includes(m.cls) && m.num >= 1 && m.num <= MAX_NUMBER ? m : null; }
+  function me() { return window.ME.get(); }
 
   let box = null, timer = null;
   function frame(html) {
@@ -56,66 +56,50 @@ window.RANK = (function () {
   }
   function close() { clearInterval(timer); timer = null; box?.remove(); box = null; if (askDone) { const f = askDone; askDone = null; f(null); } }
 
-  // 반·번호 고르기
+  // 로그인(반·번호·비밀번호)은 engine/me.js가 맡는다
   let askDone = null;
-  function ask(reason) {
-    return new Promise((resolve) => {
-      askDone = resolve;
-      const head = `<div class="rk-head"><h2>🏫 누구인가요?</h2><button class="rk-x" data-x>닫기</button></div><p class="rk-note">${esc(reason || '기록을 랭킹에 올리려면 반과 번호를 골라요.')}</p>`;
-      frame(`${head}<div class="rk-pick">${CLASSES.map((c) => `<button data-c="${c}">${c}반</button>`).join('')}</div>`);
-      box.querySelectorAll('[data-c]').forEach((b) => {
-        b.onclick = () => {
-          const cls = b.dataset.c;
-          frame(`<div class="rk-head"><h2>${cls}반 · 번호</h2><button class="rk-x" data-x>닫기</button></div><div class="rk-nums">${Array.from({ length: MAX_NUMBER }, (_, i) => `<button data-n="${i + 1}">${i + 1}</button>`).join('')}</div>`);
-          box.querySelectorAll('[data-n]').forEach((n) => {
-            n.onclick = () => {
-              const m = { cls, num: Number(n.dataset.n) };
-              ss.set('tp-me', m);
-              const f = askDone; askDone = null;
-              clearInterval(timer); box.remove(); box = null;
-              f(m);
-            };
-          });
-        };
-      });
-    });
-  }
+  function ask(reason) { close(); return window.ME.login(reason); }
 
   async function api(path, opts) {
-    const r = await fetch(path, { cache: 'no-store', ...opts });
+    const r = await fetch(path, { cache: 'no-store', ...opts, headers: { ...((opts && opts.headers) || {}), ...window.ME.headers() } });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(d.error || '잠시 후 다시 시도해 주세요.');
+    if (!r.ok) { if (d.code === 'LOGIN') window.ME.logout(); const e = new Error(d.error || '잠시 후 다시 시도해 주세요.'); e.code = d.code; throw e; }
     return d;
   }
 
   // 게임이 끝나면 기록 저장(반·번호를 모르면 먼저 묻는다)
   async function submit(game, value) {
+    const send = () => api('/api/game', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game, value }) });
     let m = me();
-    if (!m) m = await ask('기록을 랭킹에 올리려면 반과 번호를 골라요.');
+    if (!m) m = await ask('기록을 랭킹에 올리려면 반·번호를 고르고 비밀번호를 넣어요.');
     if (!m) return null;
-    return api('/api/game', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game, cls: m.cls, num: m.num, value }) });
+    try { return await send(); } catch (e) {
+      if (e.code !== 'LOGIN') throw e;
+      m = await ask('다시 확인할게요. 반·번호를 고르고 비밀번호를 넣어요.');
+      return m ? send() : null;
+    }
   }
 
   async function open(game) {
     let m = me();
-    if (!m) m = await ask('내 기록과 우리 반 순위를 보려면 반과 번호를 골라요.');
+    if (!m) m = await ask('내 기록과 우리 반 순위를 보려면 반·번호를 고르고 비밀번호를 넣어요.');
     if (!m) return;
     let cur = game || GAMES[0].id;
     const fmt = (g, v) => (v == null ? '—' : `${v}${g.unit}`);
     async function paint() {
       const g = GAMES.find((x) => x.id === cur);
       let d;
-      try { d = await api(`/api/game?game=${cur}&cls=${encodeURIComponent(m.cls)}&num=${m.num}`); } catch (e) { d = null; }
+      try { d = await api(`/api/game?game=${cur}&cls=${encodeURIComponent(m.cls)}`); } catch (e) { d = null; }
       if (!box) return;
-      const row = (r, showCls) => `<div class="rk-row ${r.rank <= 3 ? `top${r.rank}` : ''} ${r.cls === m.cls && r.num === m.num ? 'me' : ''}"><span class="rk-no">${r.rank}</span><span class="rk-name">${showCls ? `${r.cls}반 ` : ''}${r.num}번</span><span class="rk-val">${fmt(g, r.value)}</span></div>`;
+      const row = (r, showCls) => `<div class="rk-row ${r.rank <= 3 ? `top${r.rank}` : ''} ${r.me ? 'me' : ''}"><span class="rk-no">${r.rank}</span><span class="rk-name">${showCls ? `${r.cls}반 ` : ''}${esc(r.nick)}</span><span class="rk-val">${fmt(g, r.value)}</span></div>`;
       frame(`<div class="rk-head"><h2>🏆 게임 랭킹</h2><button class="rk-x" data-x>닫기</button></div>
         <div class="rk-tabs">${GAMES.map((x) => `<button class="rk-tab ${x.id === cur ? 'on' : ''}" data-g="${x.id}">${x.icon} ${x.title}</button>`).join('')}</div>
-        ${d ? `<div class="rk-me"><span>🙋 ${m.cls}반 ${m.num}번</span><span>내 최고 <b>${fmt(g, d.me.best)}</b>${d.me.overallRank ? ` (전체 ${d.me.overallRank}등)` : ''}</span><span>오늘 <b>${fmt(g, d.me.today)}</b>${d.me.classRank ? ` (반 ${d.me.classRank}등)` : ''}</span><span>한 판 수 ${d.me.plays}</span></div>
+        ${d ? `${d.me ? `<div class="rk-me"><span>🙋 <b style="font-size:20px">${esc(m.nick || '')}</b></span><span>내 최고 <b>${fmt(g, d.me.best)}</b>${d.me.overallRank ? ` (전체 ${d.me.overallRank}등)` : ''}</span><span>오늘 <b>${fmt(g, d.me.today)}</b>${d.me.classRank ? ` (반 ${d.me.classRank}등)` : ''}</span><span>한 판 수 ${d.me.plays}</span></div>` : ''}
         <div class="rk-grid">
           <div class="rk-card"><h3><span class="rk-live"></span>${m.cls}반 오늘 순위 (5등까지)</h3>${d.classToday.map((r) => row(r, false)).join('') || '<div class="rk-empty">오늘 아직 기록이 없어요.</div>'}</div>
           <div class="rk-card"><h3>🌏 전체 학생 누적 순위 (10등까지)</h3>${d.overall.map((r) => row(r, true)).join('') || '<div class="rk-empty">아직 기록이 없어요.</div>'}</div>
         </div>
-        <p class="rk-note">${g.note}. 반 순위는 오늘 기록으로 실시간으로 바뀌고, 전체 순위는 지금까지의 최고 기록으로 매겨요.</p>` : '<div class="rk-empty">랭킹을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</div>'}`);
+        <p class="rk-note">${g.note}. 반 순위는 오늘 기록으로 실시간으로 바뀌고, 전체 순위는 지금까지의 최고 기록으로 매겨요. 랭킹에는 번호 대신 별명만 보여요.</p>` : '<div class="rk-empty">랭킹을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</div>'}`);
       box.querySelectorAll('[data-g]').forEach((b) => { b.onclick = () => { cur = b.dataset.g; paint(); }; });
     }
     frame('<div class="rk-empty">불러오는 중…</div>');

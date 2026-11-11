@@ -62,18 +62,18 @@
         <h1 class="hub-title">${esc(window.SITE.title)}</h1>
         <p class="hub-sub">${isAdmin ? '관리할 유닛을 고르세요. 비밀번호는 한 번만 넣으면 모든 유닛에 쓰여요.' : '오늘 공부할 유닛을 골라 들어가세요. 문제풀이와 수업 자료는 선생님이 반을 열어 주시면 볼 수 있어요.'}</p>
       </header>
-      ${isAdmin ? '<div id="login"></div>' : ''}
+      ${isAdmin ? '<div id="login"></div>' : '<div id="meChip" class="me-chip"></div>'}
       <section><h2 class="hub-h2">✏️ 문제풀이</h2><div class="unit-grid">${quiz.map(card).join('')}</div></section>
       ${mats.length ? `<section><h2 class="hub-h2">📚 수업 자료</h2>${isAdmin ? '<p class="hub-note">반마다 눌러서 열고 닫아요. 닫으면 학생 화면이 15초 안에 잠겨요.</p>' : ''}<div class="unit-grid">${mats.map(card).join('')}</div></section>` : ''}
       ${games.length ? `<section><h2 class="hub-h2 hub-h2-row">🎮 게임 ${window.RANK ? '<button class="g-rank-btn" id="gameRank">🏆 게임 랭킹</button>' : ''}</h2><div class="unit-grid">${games.map(card).join('')}</div></section>` : ''}
       ${link.length ? `<section><h2 class="hub-h2">🔗 바로가기</h2><div class="unit-grid">${link.map(card).join('')}</div></section>` : ''}
-      ${isAdmin ? '<section><h2 class="hub-h2">🧺 학생 보관함 현황</h2><div id="garden"></div></section>' : ''}
+      ${isAdmin ? '<section><h2 class="hub-h2">🧺 학생 보관함 현황</h2><div id="garden"></div></section><section><h2 class="hub-h2">🔐 학생 별명·비밀번호</h2><div id="nicks"></div></section>' : ''}
       ${soon.length ? `<section><h2 class="hub-h2">🌱 곧 열려요</h2><div class="unit-grid">${soon.map(card).join('')}</div></section>` : ''}
       ${isAdmin ? '<p class="hub-foot"><a href="/">학생 첫 화면 보기</a></p>' : ''}
     </div>`;
     loadOpen(quiz);
     app.querySelector('#gameRank')?.addEventListener('click', () => window.RANK.open('match'));
-    if (isAdmin) { paintLogin(); if (pw) loadMat(); paintGarden(); } else loadMat();
+    if (isAdmin) { paintLogin(); if (pw) loadMat(); paintGarden(); paintNicks(); } else { loadMat(); paintMe(); }
   }
 
   // 문제풀이 유닛마다 지금 열린 반을 보여 준다
@@ -164,7 +164,7 @@
     if (!box) return;
     if (pw) {
       box.innerHTML = '<div class="hub-login ok">🔑 로그인되어 있어요. <button id="logout" class="link-btn">나가기</button></div>';
-      box.querySelector('#logout').onclick = () => { pw = ''; setPw(''); mat = null; paintLogin(); paintMat(); paintGarden(); };
+      box.querySelector('#logout').onclick = () => { pw = ''; setPw(''); mat = null; paintLogin(); paintMat(); paintGarden(); paintNicks(); };
       return;
     }
     box.innerHTML = `<form class="hub-login" id="lf"><label>🔑 수업 자료 열기·닫기와 보관함 현황은 비밀번호를 넣어야 보여요.</label>
@@ -179,7 +179,7 @@
         const d = await api('/api/material?check=1');
         setPw(v);
         mat = d.open;
-        paintLogin(); paintMat(); paintGarden();
+        paintLogin(); paintMat(); paintGarden(); paintNicks();
       } catch (err) {
         pw = '';
         paintLogin(err.message);
@@ -209,6 +209,54 @@
     } catch (e) {
       if (e.status === 401) { pw = ''; setPw(''); paintLogin('비밀번호가 바뀌었어요. 다시 넣어 주세요.'); paintMat(); paintGarden(); return; }
       box.querySelector('#gtable').innerHTML = `<div class="msg">${esc(e.message)}</div>`;
+    }
+  }
+
+  // ---- 학생: 지금 로그인한 별명과 나가기 ----
+  function paintMe() {
+    const box = app.querySelector('#meChip');
+    if (!box || !window.ME) return;
+    const m = window.ME.get();
+    box.innerHTML = m
+      ? `🙋 ${esc(m.cls)}반 · 별명 <b>${esc(m.nick || '')}</b> <button class="link-btn" id="meOut">나가기</button>`
+      : '<button class="link-btn" id="meIn">🔑 내 번호로 들어가기</button> <span class="hub-note">게임·순위에는 번호 대신 별명만 보여요.</span>';
+    box.querySelector('#meOut')?.addEventListener('click', () => { window.ME.logout(); paintMe(); });
+    box.querySelector('#meIn')?.addEventListener('click', async () => { await window.ME.login(); paintMe(); });
+  }
+
+  // ---- 교사: 학생 별명·비밀번호(별명 ↔ 반·번호는 선생님만 볼 수 있다) ----
+  let nickCls = CLASSES[0];
+  async function paintNicks() {
+    const box = app.querySelector('#nicks');
+    if (!box) return;
+    if (!pw) { box.innerHTML = '<div class="empty">비밀번호를 넣으면 볼 수 있어요.</div>'; return; }
+    box.innerHTML = `<div class="g-tabs">${CLASSES.map((c) => `<button class="g-tab ${c === nickCls ? 'on' : ''}" data-c="${c}">${c}반</button>`).join('')}</div><div id="ntable"><div class="empty">불러오는 중…</div></div>`;
+    box.querySelectorAll('.g-tab').forEach((b) => { b.onclick = () => { nickCls = b.dataset.c; paintNicks(); }; });
+    try {
+      const d = await api(`/api/auth?cls=${encodeURIComponent(nickCls)}`);
+      const t = box.querySelector('#ntable');
+      if (!d.students.length) { t.innerHTML = '<div class="empty">아직 비밀번호를 정한 학생이 없어요.</div>'; return; }
+      const rows = d.students.map((s) => `<tr><td>${s.num}번</td><td class="left"><b>${esc(s.nick || '—')}</b></td>
+        <td>${s.locked ? '🔒 잠김(5번 틀림)' : s.hasPin ? '✅ 정함' : '⬜ 아직'}</td>
+        <td><button class="link-btn" data-reset="${s.num}" ${s.hasPin ? '' : 'disabled'}>비밀번호 초기화</button> · <button class="link-btn" data-renick="${s.num}">별명 다시 뽑기</button></td></tr>`).join('');
+      t.innerHTML = `<div class="table-wrap"><table class="g-table"><thead><tr><th>번호</th><th>별명</th><th>비밀번호</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
+        <p class="hub-note">학생 화면과 랭킹에는 번호 없이 별명만 보여요. 비밀번호는 선생님도 볼 수 없고, 초기화하면 학생이 다음에 들어올 때 새로 정해요. 별명을 다시 뽑으면 랭킹에도 새 별명으로 보여요.</p>`;
+      t.querySelectorAll('[data-reset]').forEach((b) => {
+        b.onclick = async () => {
+          if (!confirm(`${nickCls}반 ${b.dataset.reset}번 학생의 비밀번호를 초기화할까요?
+학생이 다음에 들어올 때 새 비밀번호를 정해요.`)) return;
+          try { await api('/api/auth', { method: 'POST', body: JSON.stringify({ action: 'reset', cls: nickCls, num: Number(b.dataset.reset) }) }); toast('비밀번호를 초기화했어요.'); paintNicks(); } catch (e) { toast(e.message); }
+        };
+      });
+      t.querySelectorAll('[data-renick]').forEach((b) => {
+        b.onclick = async () => {
+          if (!confirm(`${nickCls}반 ${b.dataset.renick}번 학생의 별명을 새로 뽑을까요?`)) return;
+          try { const r = await api('/api/auth', { method: 'POST', body: JSON.stringify({ action: 'renick', cls: nickCls, num: Number(b.dataset.renick) }) }); toast(`새 별명: ${r.nick}`); paintNicks(); } catch (e) { toast(e.message); }
+        };
+      });
+    } catch (e) {
+      if (e.status === 401) { pw = ''; setPw(''); paintLogin('비밀번호가 바뀌었어요. 다시 넣어 주세요.'); paintMat(); paintGarden(); paintNicks(); return; }
+      box.querySelector('#ntable').innerHTML = `<div class="msg">${esc(e.message)}</div>`;
     }
   }
 

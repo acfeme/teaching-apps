@@ -3,6 +3,7 @@ import {
   FB_COUNT, LOCK_FIELDS, attField, fbEligible, fbField, gradeFb, noStore, normAtt, normCfg, normFb,
   readBody, requireStore, todayKST, validStudent,
 } from './_lib.js';
+import { requireStudent } from './_auth.js';
 import { unitFrom } from './_units.js';
 
 // 피드백(보충) 문제 — 1단계를 FB_MAX개 이하로 맞힌 학생에게 자동으로 열리고, 1단계 문제 5개를 맞힐 때까지 푼다.
@@ -20,6 +21,7 @@ export default async function handler(req, res) {
   const cls = body.cls;
   const num = validStudent(cls, body.num);
   if (!num) return res.status(400).json({ error: '반 또는 번호가 올바르지 않습니다.' });
+  if (!requireStudent(req, res, cls, num)) return undefined;
   const s = requireStore(res, U);
   if (!s) return undefined;
 

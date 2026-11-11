@@ -2,6 +2,7 @@ import {
   attField, feedbackFor, gradeStage, noStore, normAtt, readBody, requireStore, todayKST,
   validStage, validStudent,
 } from './_lib.js';
+import { requireStudent } from './_auth.js';
 import { unitFrom } from './_units.js';
 
 // POST /api/submit {cls, num, stage, answers} → 채점, 기록 저장, 피드백
@@ -15,6 +16,7 @@ export default async function handler(req, res) {
   const num = validStudent(cls, body?.num);
   const stage = validStage(body?.stage, U);
   if (!num || !stage) return res.status(400).json({ error: '반, 번호, 단계가 올바르지 않습니다.' });
+  if (!requireStudent(req, res, cls, num)) return undefined;
   if (!body.answers || typeof body.answers !== 'object') return res.status(400).json({ error: '답안이 없습니다.' });
 
   const s = requireStore(res, U);

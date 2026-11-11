@@ -1,6 +1,7 @@
 import {
   FB_COUNT, LOCK_FIELDS, attField, fbField, fbStatus, normFb, noStore, normAtt, normCfg, requireStore, stageStatus, validStudent,
 } from './_lib.js';
+import { requireStudent } from './_auth.js';
 import { unitFrom } from './_units.js';
 
 // GET /api/state            → 반별 입장 가능 여부
@@ -21,6 +22,7 @@ export default async function handler(req, res) {
     const cls = req.query.cls;
     const num = validStudent(cls, req.query.num);
     if (!num) return res.status(400).json({ error: '반 또는 번호가 올바르지 않습니다.' });
+    if (!requireStudent(req, res, cls, num)) return undefined;
 
     const vals = await s.hmget('state', ...LOCK_FIELDS, ...U.STAGES.map((st) => attField(cls, num, st)), fbField(cls, num));
     const cfg = normCfg(vals.slice(0, LOCK_FIELDS.length));

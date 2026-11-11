@@ -37,12 +37,25 @@
   const withUnit = (path) => `${path}${path.includes('?') ? '&' : '?'}unit=${encodeURIComponent(UNIT.id)}`;
   async function api(path, opts) {
     let r;
-    try { r = await fetch(withUnit(path), { cache: 'no-store', ...opts }); } catch (e) {
+    const o = { cache: 'no-store', ...opts, headers: { ...((opts && opts.headers) || {}), ...window.ME.headers() } };
+    try { r = await fetch(withUnit(path), o); } catch (e) {
       throw new Error('인터넷 연결을 확인하고 다시 눌러 주세요.');
     }
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) { const e = new Error(d.error || '잠시 후 다시 시도해 주세요.'); e.code = d.code; throw e; }
+    if (!r.ok) {
+      // 로그인 표가 없거나 지난 경우: 다시 비밀번호를 묻는다
+      if (d.code === 'LOGIN' && S.cls) relogin();
+      const e = new Error(d.error || '잠시 후 다시 시도해 주세요.'); e.code = d.code; throw e;
+    }
     return d;
+  }
+  let relogging = false;
+  async function relogin() {
+    if (relogging) return;
+    relogging = true;
+    const m = await window.ME.pin(S.cls, S.num, '다시 확인할게요. 내 비밀번호를 눌러요.');
+    relogging = false;
+    if (!m) showClasses();
   }
   const post = (path, body) => api(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
 
@@ -67,7 +80,7 @@
   // ---- 1. 반 선택 (선생님이 연 반만 들어갈 수 있음) ----
   function showClasses() {
     S.screen = 'classes';
-    ss.del('tp-me');
+    window.ME.logout();
     app.innerHTML = `<div class="wrap">
       <a class="hub-link" href="/">← ${window.SITE.short}</a>
       <h1 class="title">${UNIT.title}</h1>
@@ -107,7 +120,12 @@
     </div>`;
     app.querySelector('#back').onclick = showClasses;
     app.querySelectorAll('[data-n]').forEach((b) => {
-      b.onclick = () => { S.num = Number(b.dataset.n); ss.set('tp-me', { cls: S.cls, num: S.num }); showHome(); };
+      b.onclick = async () => {
+        const m = await window.ME.pin(S.cls, Number(b.dataset.n));
+        if (!m) return;
+        S.num = m.num; S.nick = m.nick;
+        showHome();
+      };
     });
     window.scrollTo(0, 0);
   }
@@ -117,8 +135,8 @@
     S.screen = 'home';
     app.innerHTML = `<div class="wrap">
       <a class="hub-link" href="/">← ${window.SITE.short}</a>
-      <div class="head-row"><div><div class="unit-name">${UNIT.icon || ''} ${UNIT.title}</div><h1 class="title">${S.cls}반 ${S.num}번</h1></div>
-        <button class="back" id="back">내 번호가 아니에요</button></div>
+      <div class="head-row"><div><div class="unit-name">${UNIT.icon || ''} ${UNIT.title}</div><h1 class="title">${S.cls}반 ${S.num}번</h1><div class="my-nick">랭킹 별명 · <b>${esc(S.nick || '')}</b></div></div>
+        <button class="back" id="back">나가기</button></div>
       <div class="home-grid">
         <div class="tree-card"><div id="tree"></div><div class="tree-cap" id="treeCap"></div></div>
         <div class="stage-list" id="stages"><div class="empty">불러오는 중…</div></div>
@@ -419,7 +437,8 @@
     saveDraft();
     try {
       fetch(withUnit('/api/warn'), {
-        method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...window.ME.headers() },
+        method: 'POST', keepalive: true,
         body: JSON.stringify({ cls: S.cls, num: S.num, stage: isFb() ? 'fb' : S.stage, kind }),
       }).catch(() => {});
     } catch (e) { /* 경고 기록 실패는 화면 경고만 남김 */ }
@@ -746,9 +765,9 @@
       const cr = app.querySelector('#cr'); const or = app.querySelector('#or');
       if (!cr || !or) return;
       const row = (x, showCls) => {
-        const me = x.cls === S.cls && x.num === S.num;
+        const me = x.cls === S.cls && x.nick === S.nick;
         return `<div class="rank-row${x.rank <= 3 ? ' top' : ''}${me ? ' me' : ''}"><span class="rank-no">${x.rank}</span>
-          <span class="rank-name">${showCls ? `${x.cls}반 ` : ''}${x.num}번</span><span class="rank-score">${x.total}점</span></div>`;
+          <span class="rank-name">${showCls ? `${x.cls}반 ` : ''}${esc(x.nick)}</span><span class="rank-score">${x.total}점</span></div>`;
       };
       cr.innerHTML = d.classTop.map((x) => row(x, false)).join('') || '<div class="empty">아직 기록이 없어요.</div>';
       or.innerHTML = d.overallTop.map((x) => row(x, true)).join('') || '<div class="empty">아직 기록이 없어요.</div>';
@@ -762,9 +781,9 @@
   window.GARDEN_VISIBLE = () => S.screen === 'home' || S.screen === 'result';
 
   // 새로 고침해도 같은 학생 화면으로 돌아온다(브라우저 탭을 닫으면 처음부터)
-  const me = ss.get('tp-me');
-  if (me && CLASSES.includes(me.cls) && me.num >= 1 && me.num <= MAX_NUMBER) {
-    S.cls = me.cls; S.num = me.num;
+  const me = window.ME.get();
+  if (me) {
+    S.cls = me.cls; S.num = me.num; S.nick = me.nick;
     showHome();
   } else {
     showClasses();

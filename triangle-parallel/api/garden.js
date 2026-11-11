@@ -1,6 +1,7 @@
 import {
   CLASSES, MAX_NUMBER, attField, checkAdmin, fbField, gardenField, gardenOf, noStore, readBody, store, validStudent,
 } from './_lib.js';
+import { requireStudent } from './_auth.js';
 import { UNITS } from './_units.js';
 
 // 내 보관함(모든 문제풀이 유닛의 사과나무와 수확한 사과)
@@ -22,6 +23,7 @@ export default async function handler(req, res) {
       const cls = req.query?.cls;
       const num = validStudent(cls, req.query?.num);
       if (!num) return res.status(400).json({ error: '반 또는 번호가 올바르지 않습니다.' });
+      if (!requireStudent(req, res, cls, num)) return undefined;
       return res.status(200).json(await studentView(cls, num));
     }
     if (req.method === 'POST') {
@@ -29,6 +31,7 @@ export default async function handler(req, res) {
       const num = validStudent(body.cls, body.num);
       const U = UNITS[String(body.unit || '')];
       if (!num || !U) return res.status(400).json({ error: '반, 번호, 유닛이 올바르지 않습니다.' });
+      if (!requireStudent(req, res, body.cls, num)) return undefined;
       const s = store(U.prefix);
       const g = await unitGarden(s, U, body.cls, num);
       if (g.ready <= 0) return res.status(409).json({ error: '아직 수확할 사과가 없어요.' });

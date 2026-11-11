@@ -1,6 +1,7 @@
 import {
   LOCK_FIELDS, attField, noStore, normAtt, normCfg, readBody, requireStore, validStage, validStudent,
 } from './_lib.js';
+import { requireStudent } from './_auth.js';
 import { unitFrom } from './_units.js';
 
 // POST /api/start {cls, num, stage} → 응시 시작(이미 시작했으면 이어서 풀기)
@@ -14,6 +15,7 @@ export default async function handler(req, res) {
   const num = validStudent(cls, body?.num);
   const stage = validStage(body?.stage, U);
   if (!num || !stage) return res.status(400).json({ error: '반, 번호, 단계가 올바르지 않습니다.' });
+  if (!requireStudent(req, res, cls, num)) return undefined;
 
   const s = requireStore(res, U);
   if (!s) return undefined;

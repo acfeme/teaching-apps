@@ -87,6 +87,7 @@
 </div>
 <div class="g-toast" id="toast"></div>
 <script src="/g/sound.js"></script>
+<script src="/engine/me.js"></script>
 <script src="/g/rank.js"></script>
 <script>
 (function () {
@@ -622,7 +623,7 @@
     if (trial) { line.textContent = '👩‍🏫 체험 모드라 기록은 랭킹에 남기지 않았어요.'; return; }
     try {
       const d = await RANK.submit('right', score);
-      if (!d) { line.textContent = '반·번호를 고르지 않아 랭킹에 올리지 않았어요.'; return; }
+      if (!d) { line.textContent = '로그인하지 않아 랭킹에 올리지 않았어요.'; return; }
       line.innerHTML = `${d.newBest ? '<b>🏆 내 최고 기록!</b> ' : ''}${d.me.classRank ? `우리 반 오늘 ${d.me.classRank}등` : ''}${d.me.overallRank ? ` · 전체 ${d.me.overallRank}등` : ''}`;
     } catch (e) { line.textContent = `기록을 저장하지 못했어요: ${e.message}`; }
   }

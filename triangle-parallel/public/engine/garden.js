@@ -1,16 +1,10 @@
 // 🧺 내 보관함: 화면 오른쪽 아래 버튼. 누르면 유닛별 사과나무와 수확한 사과를 언제든 볼 수 있다.
-// 허브(/)와 문제풀이 유닛 화면(/u/<id>)에서 함께 쓴다. 학생은 반·번호(sessionStorage 'tp-me')로 구분한다.
+// 허브(/)와 문제풀이 유닛 화면(/u/<id>)에서 함께 쓴다. 학생은 로그인(engine/me.js의 ME)으로 구분한다.
 // 유닛 화면은 window.GARDEN_VISIBLE()로 시험 중에는 버튼을 숨긴다.
 (function () {
-  const CLASSES = ['2-1', '2-2', '2-3', '2-4'];
-  const MAX_NUMBER = 35;
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const ss = {
-    get: (k) => { try { return JSON.parse(sessionStorage.getItem(k)); } catch (e) { return null; } },
-    set: (k, v) => { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 저장 불가 */ } },
-  };
   const inUnit = typeof window.GARDEN_VISIBLE === 'function' || !!window.UNIT;
-  const me = () => { const m = ss.get('tp-me'); return m && CLASSES.includes(m.cls) && m.num >= 1 && m.num <= MAX_NUMBER ? m : null; };
+  const me = () => window.ME.get();
   const icon = (id) => (window.UNIT_LIST || []).find((u) => u.id === id)?.icon || '🌳';
 
   const btn = document.createElement('button');
@@ -23,9 +17,10 @@
 
   async function api(path, opts) {
     let r;
-    try { r = await fetch(path, { cache: 'no-store', ...opts }); } catch (e) { throw new Error('인터넷 연결을 확인하고 다시 눌러 주세요.'); }
+    const o = { cache: 'no-store', ...opts, headers: { ...((opts && opts.headers) || {}), ...window.ME.headers() } };
+    try { r = await fetch(path, o); } catch (e) { throw new Error('인터넷 연결을 확인하고 다시 눌러 주세요.'); }
     const d = await r.json().catch(() => ({}));
-    if (!r.ok) throw new Error(d.error || '잠시 후 다시 시도해 주세요.');
+    if (!r.ok) { if (d.code === 'LOGIN') window.ME.logout(); throw new Error(d.error || '잠시 후 다시 시도해 주세요.'); }
     return d;
   }
 
@@ -79,17 +74,11 @@
     load(m);
   }
 
-  // 허브에서 처음 열면 반·번호를 묻는다(문제풀이 화면과 같은 저장 이름을 쓴다)
-  function askWho(cls) {
-    if (!cls) {
-      frame(`<p class="garden-sub">몇 반인가요?</p><div class="garden-cls">${CLASSES.map((c) => `<button class="st-btn" data-c="${c}">${c}반</button>`).join('')}</div>`);
-      overlay.querySelectorAll('[data-c]').forEach((b) => { b.onclick = () => askWho(b.dataset.c); });
-      return;
-    }
-    frame(`<p class="garden-sub">${cls}반 · 내 번호를 눌러요</p><div class="garden-nums">${Array.from({ length: MAX_NUMBER }, (_, i) => `<button class="num-btn" data-n="${i + 1}">${i + 1}</button>`).join('')}</div>`);
-    overlay.querySelectorAll('[data-n]').forEach((b) => {
-      b.onclick = () => { const m = { cls, num: Number(b.dataset.n) }; ss.set('tp-me', m); load(m); };
-    });
+  // 로그인하지 않았으면 반·번호·비밀번호를 묻는다(engine/me.js)
+  async function askWho() {
+    close();
+    const m = await window.ME.login('내 보관함을 보려면 반·번호를 고르고 비밀번호를 넣어요.');
+    if (m) load(m);
   }
 
   async function load(m, msg) {
@@ -121,12 +110,12 @@
           ${u.ready > 0 ? `<button class="st-btn go harvest" data-u="${u.id}">🍎 사과 ${u.ready}개 수확하기</button>` : `<span class="garden-tip">${tip}</span>`}
         </div></div>`;
     }).join('');
-    frame(`<div class="garden-who">${m.cls}반 ${m.num}번 ${inUnit ? '' : '<button class="link-btn" data-who>내 번호가 아니에요</button>'}</div>
+    frame(`<div class="garden-who">${m.cls}반 ${m.num}번 · 별명 <b>${esc(m.nick || '')}</b> ${inUnit ? '' : '<button class="link-btn" data-who>나가기</button>'}</div>
       ${msg ? `<div class="garden-pop">${msg}</div>` : ''}
       <div class="garden-basket"><div class="garden-basket-head">🧺 바구니 <b>${d.basket}개</b></div><div class="garden-apples">${apples}</div></div>
       <div class="garden-list">${cards}</div>
       <p class="garden-rule">1·2단계에서 맞힌 문제만큼 나무가 자라요. 다 자란 나무에는 사과가 열리고(최대 8개), 피드백 문제를 끝내면 사과 1개를 더 받아요.</p>`);
-    overlay.querySelector('[data-who]')?.addEventListener('click', () => askWho());
+    overlay.querySelector('[data-who]')?.addEventListener('click', () => { window.ME.logout(); close(); });
     overlay.querySelectorAll('.harvest').forEach((b) => {
       b.onclick = async () => {
         b.disabled = true;

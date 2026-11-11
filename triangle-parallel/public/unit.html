@@ -16,7 +16,7 @@
     if (!U) { location.replace('/'); return; }
     window.UNIT = U;
     document.title = U.title + ' · ' + window.SITE.short;
-    window.loadScripts(['/engine/render.js', '/units/' + U.id + '/problems.js', '/engine/tree.js', '/engine/app.js', '/engine/garden.js'])
+    window.loadScripts(['/engine/render.js', '/units/' + U.id + '/problems.js', '/engine/tree.js', '/engine/me.js', '/engine/app.js', '/engine/garden.js'])
       .catch(function (e) { document.getElementById('app').textContent = '화면을 불러오지 못했어요: ' + e.message; });
   })();
 </script>

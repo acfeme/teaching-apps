@@ -118,9 +118,10 @@ $('#again').onclick=()=>newGame();
 $('#rank').onclick=()=>RANK.open('match');
 $('#rank2').onclick=()=>RANK.open('match');
 async function saveRecord(sec){const o=$('#ovr');o.textContent='기록 저장 중…';
-  try{const d=await RANK.submit('match',sec);if(!d){o.textContent='반·번호를 고르지 않아 랭킹에 올리지 않았어요.';return}
+  try{const d=await RANK.submit('match',sec);if(!d){o.textContent='로그인하지 않아 랭킹에 올리지 않았어요.';return}
     o.textContent=(d.newBest?'🏆 내 최고 기록! ':'')+(d.me.classRank?`우리 반 오늘 ${d.me.classRank}등`:'')+(d.me.overallRank?` · 전체 ${d.me.overallRank}등`:'')}
   catch(e){o.textContent='기록을 저장하지 못했어요: '+e.message}}
 newGame();
 </script>
+<script src="/engine/me.js"></script>
 <script src="/g/rank.js"></script>

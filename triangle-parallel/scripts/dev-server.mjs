@@ -19,6 +19,7 @@ const handlers = {
   garden: (await import('../api/garden.js')).default,
   material: (await import('../api/material.js')).default,
   game: (await import('../api/game.js')).default,
+  auth: (await import('../api/auth.js')).default,
 };
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
 

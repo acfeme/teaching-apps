@@ -1,6 +1,7 @@
 import {
   noStore, readBody, requireStore, todayKST, validStage, validStudent,
 } from './_lib.js';
+import { requireStudent } from './_auth.js';
 import { unitFrom } from './_units.js';
 
 const KINDS = { hidden: '다른 창·앱으로 이동', blur: '화면 밖을 누름(다른 창)', fullscreen: '전체 화면에서 나감' };
@@ -16,6 +17,7 @@ export default async function handler(req, res) {
   const num = validStudent(cls, body?.num);
   const stage = body?.stage === 'fb' ? 'fb' : validStage(body?.stage, U);
   if (!num || !stage) return res.status(400).json({ error: '반, 번호, 단계가 올바르지 않습니다.' });
+  if (!requireStudent(req, res, cls, num)) return undefined;
   const kind = KINDS[body?.kind] ? body.kind : 'hidden';
 
   const s = requireStore(res, U);

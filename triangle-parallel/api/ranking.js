@@ -1,5 +1,5 @@
 import {
-  CLASSES, latestPerStudent, noStore, rank, readList, requireStore, store, todayKST,
+  CLASSES, latestPerStudent, noStore, rank, readList, requireStore, sameGroup, store, todayKST,
 } from './_lib.js';
 import { nicksFor } from './_auth.js';
 import { unitFrom } from './_units.js';
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   try {
     const list = latestPerStudent(await readList(s, `subs:${date}`));
     const classTop = rank(list.filter((x) => x.cls === cls)).slice(0, CLASS_LIMIT);
-    const overallTop = rank(list).slice(0, OVERALL_LIMIT);
+    const overallTop = rank(list.filter((x) => sameGroup(x.cls, cls))).slice(0, OVERALL_LIMIT); // 샘플반은 샘플반끼리
     const site = store('site:');
     const nicks = site ? await nicksFor(site, [...classTop, ...overallTop].map((x) => `${x.cls}:${x.num}`)) : {};
     const strip = ({ rank: r, cls: c, num, total }) => ({ rank: r, cls: c, nick: nicks[`${c}:${num}`] || '익명', total });

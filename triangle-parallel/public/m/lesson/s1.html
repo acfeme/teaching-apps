@@ -39,6 +39,13 @@ footer.on{opacity:1;transform:translateY(0) rotate(-1deg)}
 @keyframes fall{0%{transform:translateY(-30px) rotate(0);opacity:1}100%{transform:translateY(420px) rotate(540deg);opacity:0}}
 .conf{animation:fall 1.6s ease-in forwards;transform-box:fill-box}
 @media (prefers-reduced-motion:reduce){.pulse{animation:none}.conf{animation:none;opacity:0}footer{transition:none}}
+/* 휴대폰 */
+@media (max-width:640px){
+  header{flex-wrap:wrap;row-gap:8px}
+  .hrow{flex-wrap:wrap;row-gap:8px}
+  .by{display:none}
+  #hint{order:9;flex:1 1 100%;min-width:0;white-space:normal}
+}
 </style>
 
 <div id="app">

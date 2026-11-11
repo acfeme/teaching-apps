@@ -10,7 +10,7 @@
   // /m/lesson → /m/lesson/ (상대 주소의 화면 파일을 찾을 수 있게)
   if (/^\/m\/[a-z0-9-]+$/.test(location.pathname)) { location.replace(location.pathname + '/' + location.search); return; }
 
-  var CLASSES = ['2-1', '2-2', '2-3', '2-4'];
+  var CLASSES = ['2-1', '2-2', '2-3', '2-4', '2-A', '2-B', '2-C']; // 2-A·2-B·2-C = 외부 체험용 샘플반
   var CHECK_MS = 15000;
   var root = document.documentElement;
   var ssGet = function (k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } };

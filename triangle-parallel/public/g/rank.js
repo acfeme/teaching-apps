@@ -2,12 +2,13 @@
 // 학생은 로그인(engine/me.js의 ME: 반·번호 + 비밀번호)으로 구분하고, 랭킹에는 번호 대신 별명만 보인다.
 // RANK.submit('shoot', 점수) → 기록 저장, RANK.open('match') → 랭킹 화면
 window.RANK = (function () {
-  const CLASSES = ['2-1', '2-2', '2-3', '2-4'];
+  const CLASSES = ['2-1', '2-2', '2-3', '2-4', '2-A', '2-B', '2-C']; // 2-A·2-B·2-C = 외부 체험용 샘플반
   const MAX_NUMBER = 35;
   const GAMES = [
     { id: 'match', icon: '🃏', title: '닮음비 짝맞추기', unit: '초', note: '짧은 시간일수록 높은 순위' },
     { id: 'shoot', icon: '🎯', title: '닮음 조건 쏘기', unit: '점', note: '높은 점수일수록 높은 순위' },
     { id: 'right', icon: '👾', title: '직각 몬스터 쪼개기', unit: '점', note: '높은 점수일수록 높은 순위' },
+    { id: 'dungeon', icon: '🗝️', title: '평행선 던전 탐험', unit: '점', note: '높은 점수일수록 높은 순위' },
   ];
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const css = document.createElement('style');
@@ -30,7 +31,7 @@ window.RANK = (function () {
   .rk-row.me{background:#fff0c7;font-weight:800}
   .rk-no{width:34px;height:34px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#eee;font-weight:900;flex:none}
   .rk-row.top1 .rk-no{background:#ffd54a}.rk-row.top2 .rk-no{background:#d9dee5}.rk-row.top3 .rk-no{background:#f0b98a}
-  .rk-name{flex:1}.rk-val{font-weight:900;color:#a85e05}
+  .rk-name{flex:1;display:flex;align-items:center;gap:6px}.rk-av{display:inline-flex;flex:none}.rk-val{font-weight:900;color:#a85e05}
   .rk-empty{color:#6b7588;padding:8px}
   .rk-note{color:#6b7588;font-size:15px;margin:10px 0 0}
   .rk-live{display:inline-block;width:9px;height:9px;border-radius:50%;background:#e0402a;margin-right:6px;animation:rk-blink 1.2s infinite}
@@ -91,7 +92,7 @@ window.RANK = (function () {
       let d;
       try { d = await api(`/api/game?game=${cur}&cls=${encodeURIComponent(m.cls)}`); } catch (e) { d = null; }
       if (!box) return;
-      const row = (r, showCls) => `<div class="rk-row ${r.rank <= 3 ? `top${r.rank}` : ''} ${r.me ? 'me' : ''}"><span class="rk-no">${r.rank}</span><span class="rk-name">${showCls ? `${r.cls}반 ` : ''}${esc(r.nick)}</span><span class="rk-val">${fmt(g, r.value)}</span></div>`;
+      const row = (r, showCls) => `<div class="rk-row ${r.rank <= 3 ? `top${r.rank}` : ''} ${r.me ? 'me' : ''}"><span class="rk-no">${r.rank}</span><span class="rk-name">${r.av && window.AVATAR ? `<span class="rk-av">${window.AVATAR.svg(r.av, 34)}</span>` : ''}${showCls ? `${r.cls}반 ` : ''}${esc(r.nick)}</span><span class="rk-val">${fmt(g, r.value)}</span></div>`;
       frame(`<div class="rk-head"><h2>🏆 게임 랭킹</h2><button class="rk-x" data-x>닫기</button></div>
         <div class="rk-tabs">${GAMES.map((x) => `<button class="rk-tab ${x.id === cur ? 'on' : ''}" data-g="${x.id}">${x.icon} ${x.title}</button>`).join('')}</div>
         ${d ? `${d.me ? `<div class="rk-me"><span>🙋 <b style="font-size:20px">${esc(m.nick || '')}</b></span><span>내 최고 <b>${fmt(g, d.me.best)}</b>${d.me.overallRank ? ` (전체 ${d.me.overallRank}등)` : ''}</span><span>오늘 <b>${fmt(g, d.me.today)}</b>${d.me.classRank ? ` (반 ${d.me.classRank}등)` : ''}</span><span>한 판 수 ${d.me.plays}</span></div>` : ''}

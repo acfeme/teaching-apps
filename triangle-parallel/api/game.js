@@ -1,14 +1,18 @@
-import { CLASSES, noStore, readBody, store, todayKST } from './_lib.js';
+import { CLASSES, noStore, readBody, sameGroup, store, todayKST } from './_lib.js';
 import { nicksFor, tokenOf } from './_auth.js';
+import { dungeon, parseJson, towerToday } from './_dungeon.js';
 
 // 게임 기록과 랭킹. 학생은 로그인 표(x-student-token)로 구분하고, 랭킹에는 번호 대신 별명만 보낸다.
 // POST /api/game {game, value}     → 기록 저장 후 랭킹 (로그인 필요)
 // GET  /api/game?game=&cls=         → 우리 반 오늘 상위 5명, 전체 누적(최고 기록) 상위 10명 (+ 로그인했으면 내 기록)
-// 짝맞추기는 걸린 시간(초, 짧을수록 좋음), 닮음 조건 쏘기는 점수(클수록 좋음)
+// 짝맞추기는 걸린 시간(초, 짧을수록 좋음), 나머지는 점수(클수록 좋음)
+// 평행선 던전 탐험의 캐릭터·가방·상자·상점: GET ?game=dungeon&profile=1, POST {game:'dungeon', action} (api/_dungeon.js)
+// GET ?game=dungeon&tower=1 → 오늘 반별 탑 높이(로그인 없이)
 const GAMES = {
   match: { better: 'low', min: 3, max: 3600, unit: '초' },
   shoot: { better: 'high', min: 0, max: 5000, unit: '점' },
   right: { better: 'high', min: 0, max: 20000, unit: '점' },
+  dungeon: { better: 'high', min: 0, max: 30000, unit: '점' },
 };
 const CLASS_TOP = 5;
 const ALL_TOP = 10;
@@ -39,12 +43,17 @@ async function view(s, game, cls, num) {
   const G = GAMES[game];
   const date = todayKST();
   const [all, day, plays] = await Promise.all([s.hgetall(bestKey(game)), s.hgetall(dayKey(game, date)), num ? s.hget(playKey(game), who(cls, num)) : null]);
-  const overall = ranked(G, all);
+  // 전체 순위는 우리 반끼리, 샘플반(체험)끼리 따로
+  const overall = ranked(G, all, (r) => sameGroup(r.cls, cls));
   const classToday = ranked(G, day, (r) => r.cls === cls);
   const me = (list) => (num ? list.find((r) => r.cls === cls && r.num === num) || null : null);
   const ct = classToday.slice(0, CLASS_TOP), ov = overall.slice(0, ALL_TOP);
-  const nicks = await nicksFor(s, [...ct, ...ov].map((r) => who(r.cls, r.num)));
-  const pub = (r) => ({ rank: r.rank, cls: r.cls, nick: nicks[who(r.cls, r.num)] || '익명', value: r.value, me: !!num && r.cls === cls && r.num === num });
+  const keys = [...ct, ...ov].map((r) => who(r.cls, r.num));
+  const nicks = await nicksFor(s, keys);
+  const uniq = [...new Set(keys)];
+  const avs = uniq.length ? await s.hmget('avatar', ...uniq) : [];
+  const av = Object.fromEntries(uniq.map((k, i) => [k, parseJson(avs[i])]));
+  const pub = (r) => ({ rank: r.rank, cls: r.cls, nick: nicks[who(r.cls, r.num)] || '익명', av: av[who(r.cls, r.num)] || null, value: r.value, me: !!num && r.cls === cls && r.num === num });
   return {
     game, unit: G.unit, better: G.better, date,
     me: num ? { best: me(overall)?.value ?? null, today: me(classToday)?.value ?? null, overallRank: me(overall)?.rank ?? null, classRank: me(classToday)?.rank ?? null, plays: Number(plays) || 0 } : null,
@@ -63,6 +72,11 @@ export default async function handler(req, res) {
     const G = GAMES[game];
     if (!G) return res.status(400).json({ error: '게임이 올바르지 않습니다.' });
     const t = tokenOf(req);
+    if (game === 'dungeon' && req.method === 'GET' && src.tower) return res.status(200).json({ tower: await towerToday(s) });
+    if (game === 'dungeon' && (src.profile || src.action)) {
+      if (!t) return res.status(401).json({ code: 'LOGIN', error: '비밀번호로 다시 들어와 주세요.' });
+      return await dungeon(req, res, s, t, src);
+    }
 
     if (req.method === 'GET') {
       const cls = t ? t.cls : src.cls;

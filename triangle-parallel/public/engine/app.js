@@ -1,5 +1,5 @@
 (function () {
-  const CLASSES = ['2-1', '2-2', '2-3', '2-4'];
+  const CLASSES = ['2-1', '2-2', '2-3', '2-4', '2-A', '2-B', '2-C']; // 2-A·2-B·2-C = 외부 체험용 샘플반
   const MAX_NUMBER = 35;
   const POLL_MS = 5000;
   const RANK_POLL_MS = 15000;

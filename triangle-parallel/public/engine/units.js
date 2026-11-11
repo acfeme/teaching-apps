@@ -23,6 +23,7 @@ window.UNIT_LIST = [
   },
   { id: 'match', kind: 'game', icon: '🃏', title: '닮음비 짝맞추기', desc: '닮음비·넓이비·부피비 카드 세 장을 한 묶음으로 · 시간 기록', url: '/g/match/' },
   { id: 'shoot', kind: 'game', stages: 2, icon: '🎯', title: '닮음 조건 쏘기', desc: 'AA·SAS·SSS 닮음 공을 쏘아 맞히기 · 1단계 두 삼각형, 2단계 도형 속 도형', url: '/g/shoot/' },
+  { id: 'dungeon', kind: 'game', stages: 4, icon: '🗝️', title: '평행선 던전 탐험', desc: '삼각형과 평행선 · 문제를 풀면 상자에서 도구와 꾸미기 아이템! 내 캐릭터·옷장·사과 상점·반 협동 탑', url: '/g/dungeon/' },
   { id: 'right', kind: 'game', stages: 3, icon: '👾', title: '직각 몬스터 쪼개기', desc: '직각 꼭짓점에 수선 레이저! 닮은 꼬마 몬스터로 쪼개고 이름표로 물리치기 · 마지막은 보스전', url: '/g/right/' },
   { id: 'lesson', kind: 'mat', icon: '🔍', title: '도형의 닮음 (수업 화면)', desc: '닮음이란? · 닮음비 · 넓이비 · 부피비 · 짝맞추기', url: '/m/lesson/' },
   { id: 'right-triangle', kind: 'mat', icon: '📏', title: '직각삼각형의 닮음', desc: '수선의 발 문제', url: '/m/right-triangle/' },

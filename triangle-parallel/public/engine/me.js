@@ -7,7 +7,7 @@
 //   ME.logout()
 //   ME.headers()             → 서버 요청에 붙일 {'x-student-token': ...}
 window.ME = (function () {
-  const CLASSES = ['2-1', '2-2', '2-3', '2-4'];
+  const CLASSES = ['2-1', '2-2', '2-3', '2-4', '2-A', '2-B', '2-C']; // 2-A·2-B·2-C = 외부 체험용 샘플반
   const MAX_NUMBER = 35;
   const KEY = 'tp-me';
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

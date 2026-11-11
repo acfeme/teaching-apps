@@ -46,6 +46,17 @@ main{flex:1;min-height:0;position:relative;padding:0 max(10px,env(safe-area-inse
 @keyframes fall{0%{transform:translateY(-40px) rotate(0);opacity:1}100%{transform:translateY(80vh) rotate(600deg);opacity:0}}
 .conf{position:fixed;top:0;width:14px;height:14px;animation:fall 2s ease-in forwards;pointer-events:none;z-index:9}
 @media (prefers-reduced-motion:reduce){.card,.conf{transition:none;animation:none}}
+/* 휴대폰 */
+@media (max-width:640px){
+  header{flex-wrap:wrap;row-gap:6px}
+  .by{display:none}
+  #msg{order:9;flex:1 1 100%}
+}
+@media (max-width:640px) and (orientation:portrait){
+  #board{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(6,1fr)}
+  .card .k{font-size:14px}
+  .card .v{font-size:24px}
+}
 </style>
 
 <div id="app">

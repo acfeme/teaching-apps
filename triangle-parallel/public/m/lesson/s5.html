@@ -38,6 +38,13 @@ footer{display:flex;align-items:center;justify-content:center;gap:clamp(8px,1.4v
 @keyframes bob{50%{transform:translateY(-7px)}}
 .bob{animation:bob 2.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
 @media (prefers-reduced-motion:reduce){.conf{animation:none;opacity:0}.bob{animation:none}}
+/* 휴대폰 */
+@media (max-width:640px){
+  header{flex-wrap:wrap;row-gap:8px}
+  .hrow{flex-wrap:wrap;row-gap:8px}
+  .by{display:none}
+  #hint{order:9;flex:1 1 100%;min-width:0;white-space:normal}
+}
 </style>
 
 <div id="app">

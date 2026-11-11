@@ -4,7 +4,7 @@
 (function () {
   const app = document.getElementById('app');
   const isAdmin = window.HUB_MODE === 'admin';
-  const CLASSES = ['2-1', '2-2', '2-3', '2-4'];
+  const CLASSES = ['2-1', '2-2', '2-3', '2-4', '2-A', '2-B', '2-C']; // 2-A·2-B·2-C = 외부 체험용 샘플반
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const units = window.UNIT_LIST;
   const group = (kind) => units.filter((u) => u.kind === kind);

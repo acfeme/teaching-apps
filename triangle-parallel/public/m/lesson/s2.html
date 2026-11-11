@@ -47,6 +47,13 @@ footer{display:flex;align-items:center;gap:clamp(10px,1.6vw,24px);padding:0 max(
 @keyframes pop{0%{opacity:.4}50%{opacity:1}100%{opacity:.4}}
 .pulse{animation:pop 1s ease-in-out infinite}
 @media (prefers-reduced-motion:reduce){.conf{animation:none;opacity:0}.pulse{animation:none}}
+/* 휴대폰 */
+@media (max-width:640px){
+  header{flex-wrap:wrap;row-gap:8px}
+  .hrow{flex-wrap:wrap;row-gap:8px}
+  .by{display:none}
+  #hint{order:9;flex:1 1 100%;min-width:0;white-space:normal}
+}
 </style>
 
 <div id="app">

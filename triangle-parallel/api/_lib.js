@@ -2,7 +2,10 @@ import crypto from 'node:crypto';
 import { Redis } from '@upstash/redis';
 import { sameValue } from './_grade.js';
 
-export const CLASSES = ['2-1', '2-2', '2-3', '2-4'];
+// 2-A·2-B·2-C는 외부 학생·교사 체험용 샘플반. 랭킹(전체 순위·반 탑)은 우리 반끼리, 샘플반끼리 따로 본다.
+export const SAMPLE_CLASSES = ['2-A', '2-B', '2-C'];
+export const CLASSES = ['2-1', '2-2', '2-3', '2-4', ...SAMPLE_CLASSES];
+export const sameGroup = (a, b) => SAMPLE_CLASSES.includes(a) === SAMPLE_CLASSES.includes(b);
 export const MAX_NUMBER = 35;
 
 // Redis 키 (앞에 유닛 prefix가 붙는다. 삼각형과 평행선 = 'tp:')

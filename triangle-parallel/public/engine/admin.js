@@ -1,7 +1,7 @@
 (function () {
   const POLL_MS = 5000;
   const DATES_EVERY = 12; // 12번 갱신마다 날짜 목록도 새로
-  const CLASSES = ['2-1', '2-2', '2-3', '2-4'];
+  const CLASSES = ['2-1', '2-2', '2-3', '2-4', '2-A', '2-B', '2-C']; // 2-A·2-B·2-C = 외부 체험용 샘플반
   const ST = window.STAGES;
   const UNIT = window.UNIT; // 지금 유닛
   const fileTitle = UNIT.title.replace(/\s+/g, '');

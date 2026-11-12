@@ -1,0 +1,113 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script src="/engine/gate.js" data-mat="centroid-lesson"></script>
+<title>무게중심의 성질 ① 2 : 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<link rel="stylesheet" href="c.css">
+<style>
+.quiz{margin-top:10px;padding-top:10px;border-top:3px dashed #ccc}
+.quiz b{color:var(--coral)}
+.quiz .ans{display:inline-block;min-width:2em;text-align:center;border-bottom:4px dashed #aaa;color:transparent;cursor:pointer}
+.quiz .ans.show{color:var(--mint);border-bottom-color:var(--mint)}
+.quiz .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.quiz button{font:inherit;font-size:.8em;border:3px solid var(--ink);border-radius:999px;background:var(--sun);padding:2px 14px;cursor:pointer}
+</style>
+<!-- 4. 무게중심의 성질 ①: 무게중심은 각 중선을 꼭짓점으로부터 2 : 1로 나눈다 — 중점연결정리와 AA 닮음으로 한 단계씩 증명 -->
+<div id="app">
+  <header>
+    <div class="tag">④ 성질 ① 2 : 1</div><span class="by">by 이송원</span>
+    <div id="hint"></div>
+    <div class="btns"><button class="pill" id="prev" type="button">◀ 이전</button><button class="pill hot" id="next" type="button">다음 ▶</button><button class="pill" id="reset" type="button">↺ 처음</button></div>
+  </header>
+  <main>
+    <svg id="sv" viewBox="0 0 1600 720" preserveAspectRatio="xMinYMid meet"></svg>
+    <div class="proof" id="proof"></div>
+  </main>
+  <footer id="foot">
+    <div class="def">무게중심은 세 중선의 길이를 각각 <span class="key">꼭짓점으로부터</span> <span class="term">2 : 1</span>로 나눈다
+      <small>AG : GD = BG : GE = CG : GF = 2 : 1 — 중선을 3칸으로 나누면 꼭짓점 쪽 2칸, 변 쪽 1칸!</small></div>
+  </footer>
+</div>
+<script src="c.js"></script>
+<script>
+const { $, S, P, mid, lerp, dist, cen, draggable, clamp, confetti, sfx, label } = C;
+const sv = $('#sv');
+const START = { A: [380, 70], B: [70, 650], C: [790, 600] };
+let V = JSON.parse(JSON.stringify(START)), step = 0, cel = false, qn = 9;
+const STEPS = [
+  { t: '중선 <span class="ov">AD</span>, <span class="ov">BE</span>의 교점 G가 무게중심이에요.', w: 'D는 BC의 중점, E는 CA의 중점' },
+  { t: '<span class="ov">DE</span>를 그으면 <span class="ov">DE</span> // <span class="ov">AB</span>, <span class="ov">DE</span> = ½<span class="ov">AB</span>', w: '삼각형 두 변의 중점 E, D를 이은 선분(중점연결정리)' },
+  { t: '<span class="ov">AB</span> // <span class="ov">DE</span> 이므로 ∠GAB = ∠GDE, ∠GBA = ∠GED', w: '평행선의 엇각 — 같은 색 각끼리 크기가 같아요' },
+  { t: '그래서 △GAB ∽ △GDE (AA 닮음)', w: '분홍 삼각형과 하늘색 삼각형은 닮은 꼴!' },
+  { t: '닮음비 = <span class="ov">AB</span> : <span class="ov">DE</span> = 2 : 1 이니까 <span class="ov">AG</span> : <span class="ov">GD</span> = 2 : 1', w: '마찬가지로 BG : GE = 2 : 1' },
+  { t: '<b class="fin">중선을 3칸으로 나누면 꼭짓점 쪽 2칸, 변 쪽 1칸!</b>', w: '아래 문제를 풀어 봐요 👇' },
+];
+function arc(V0, P1, P2, r, col) {
+  const a1 = Math.atan2(P1[1] - V0[1], P1[0] - V0[0]);
+  let d = Math.atan2(P2[1] - V0[1], P2[0] - V0[0]) - a1;
+  while (d <= -Math.PI) d += 2 * Math.PI; while (d > Math.PI) d -= 2 * Math.PI;
+  const e = [V0[0] + r * Math.cos(a1 + d), V0[1] + r * Math.sin(a1 + d)], s0 = [V0[0] + r * Math.cos(a1), V0[1] + r * Math.sin(a1)];
+  S('path', { d: `M${V0[0]} ${V0[1]} L${s0[0]} ${s0[1]} A${r} ${r} 0 0 ${d > 0 ? 1 : 0} ${e[0]} ${e[1]} Z`, fill: col, opacity: 0.85 }, sv);
+}
+function draw() {
+  sv.innerHTML = '';
+  const { A, B, C: Cc } = V;
+  const D = mid(B, Cc), E = mid(Cc, A), G = cen(A, B, Cc);
+  S('polygon', { points: [A, B, Cc].map(P).join(' '), fill: '#FFE7A8', stroke: '#2A2140', 'stroke-width': 6, 'stroke-linejoin': 'round' }, sv);
+  if (step >= 3) {
+    S('polygon', { points: [G, A, B].map(P).join(' '), fill: '#FF9AA2', opacity: 0.65, class: step === 3 ? 'pop' : '' }, sv);
+    S('polygon', { points: [G, D, E].map(P).join(' '), fill: '#A8D8FF', opacity: 0.85, class: step === 3 ? 'pop' : '' }, sv);
+  }
+  if (step >= 2) { arc(A, B, G, 48, '#2DBE9E'); arc(D, E, G, 48, '#2DBE9E'); arc(B, A, G, 42, '#9B6BFF'); arc(E, D, G, 42, '#9B6BFF'); }
+  const seg = (p, q, col, w) => S('line', { x1: p[0], y1: p[1], x2: q[0], y2: q[1], stroke: col, 'stroke-width': w, 'stroke-linecap': 'round' }, sv);
+  if (step >= 4) { seg(A, G, '#FF6B6B', 13); seg(G, D, '#6FB7FF', 13); seg(B, G, '#FF6B6B', 9); seg(G, E, '#6FB7FF', 9); }
+  else { seg(A, D, '#2A2140', 5); seg(B, E, '#2A2140', 5); }
+  if (step >= 1) { seg(D, E, '#2F6FE0', 7); seg(A, B, '#2F6FE0', 9); }
+  if (step >= 5) {
+    [1 / 3, 2 / 3].forEach((t) => { const p = lerp(A, D, t), d = dist(A, D), nx = -(D[1] - A[1]) / d, ny = (D[0] - A[0]) / d; seg([p[0] - nx * 26, p[1] - ny * 26], [p[0] + nx * 26, p[1] + ny * 26], '#2A2140', 6); });
+    [1 / 6, 1 / 2, 5 / 6].forEach((t, i) => {
+      const p = lerp(A, D, t), d = dist(A, D), nx = -(D[1] - A[1]) / d, ny = (D[0] - A[0]) / d;
+      S('circle', { cx: p[0] - nx * 48, cy: p[1] - ny * 48, r: 26, fill: i < 2 ? '#FF6B6B' : '#6FB7FF', stroke: '#2A2140', 'stroke-width': 3, class: 'pop', style: `animation-delay:${i * 0.2}s` }, sv);
+      const tx = S('text', { x: p[0] - nx * 48, y: p[1] - ny * 48 + 2, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 32, fill: '#fff', class: 'pop', style: `animation-delay:${i * 0.2}s` }, sv); tx.textContent = i + 1;
+    });
+  } else if (step >= 4) {
+    const t1 = S('text', { x: mid(A, G)[0] - 46, y: mid(A, G)[1], 'font-size': 46, fill: '#D6336C' }, sv); t1.textContent = '2';
+    const t2 = S('text', { x: mid(G, D)[0] - 42, y: mid(G, D)[1] + 8, 'font-size': 46, fill: '#2F6FE0' }, sv); t2.textContent = '1';
+  }
+  [[D, 'D'], [E, 'E']].forEach(([p, n]) => { S('circle', { cx: p[0], cy: p[1], r: 10, fill: '#2A2140' }, sv); label(sv, p, G, n, { size: 42, d: 40 }); });
+  S('circle', { cx: G[0], cy: G[1], r: 13, fill: '#fff', stroke: '#2A2140', 'stroke-width': 5 }, sv);
+  const gt = S('text', { x: G[0] + 26, y: G[1] - 24, 'font-size': 48 }, sv); gt.textContent = 'G';
+  ['A', 'B', 'C'].forEach((k) => label(sv, V[k], G, k, { size: 48, d: 58 }));
+  ['A', 'B', 'C'].forEach((k) => {
+    const h = S('g', {}, sv);
+    S('circle', { cx: V[k][0], cy: V[k][1], r: 18, fill: '#FFD93D', stroke: '#2A2140', 'stroke-width': 4 }, h);
+    S('circle', { cx: V[k][0], cy: V[k][1], r: 56, fill: 'transparent' }, h);
+    draggable(sv, h, (q) => { V[k] = clamp(q, 60, 60, 810, 680); draw(); });
+  });
+  paint();
+}
+function paint() {
+  const last = step === STEPS.length - 1;
+  $('#proof').innerHTML = `<div style="margin-bottom:4px">🔎 왜 2 : 1일까?</div>` + STEPS.slice(0, step + 1).map((s, i) => `<div class="st ${i === step ? 'now' : ''}"><b class="n">${i + 1}</b><span>${s.t}<span class="why">${s.w}</span></span></div>`).join('')
+    + (last ? `<div class="quiz">🧩 중선 <b>AD = ${qn}</b> 이면<br>AG = <span class="ans">${(qn * 2) / 3}</span> , GD = <span class="ans">${qn / 3}</span>
+      <div class="row"><button id="show" type="button">정답 보기</button><button id="new" type="button">다른 문제</button></div></div>` : '');
+  if (last) {
+    document.querySelectorAll('.quiz .ans').forEach((a) => { a.onclick = () => { a.classList.add('show'); sfx.good(); }; });
+    $('#show').onclick = () => { document.querySelectorAll('.quiz .ans').forEach((a) => a.classList.add('show')); sfx.good(); };
+    $('#new').onclick = () => { let n; do { n = 3 * (2 + Math.floor(Math.random() * 7)); } while (n === qn); qn = n; sfx.pop(); paint(); };
+  }
+  $('#proof').scrollTop = $('#proof').scrollHeight; // 새 단계가 보이게
+  const h = $('#hint');
+  h.classList.toggle('ok', last);
+  h.textContent = last ? 'AG : GD = 2 : 1 ✌️ 모양을 바꿔도 늘 2 : 1!' : '다음 ▶을 눌러 한 단계씩 증명해요';
+  $('#foot').classList.toggle('on', last);
+  $('#prev').disabled = step === 0; $('#next').disabled = last;
+}
+$('#next').onclick = () => { if (step < STEPS.length - 1) { step += 1; sfx.pop(); draw(); if (step === STEPS.length - 1 && !cel) { cel = true; sfx.win(); confetti(sv, 450, 160); } } };
+$('#prev').onclick = () => { if (step > 0) { step -= 1; draw(); } };
+$('#reset').onclick = () => { V = JSON.parse(JSON.stringify(START)); step = 0; cel = false; draw(); };
+draw();
+</script>

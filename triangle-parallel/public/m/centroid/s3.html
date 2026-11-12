@@ -1,0 +1,133 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script src="/engine/gate.js" data-mat="centroid-lesson"></script>
+<title>무게중심은 하나일까?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<link rel="stylesheet" href="c.css">
+<!-- 3. 무게중심은 하나? (교과서 219쪽 함께해요와 같은 흐름)
+     ① △ABC에서 중선 BE, CF의 교점 G → FE // BC, FE = ½BC → △GBC ∽ △GEF → BG : GE = 2 : 1
+     ② 옆에 똑같은 △ABC를 하나 더 그려 중선 AD, BE의 교점 G' → △G'AB ∽ △G'DE → BG' : G'E = 2 : 1
+     ③ G와 G' 모두 중선 BE를 2 : 1로 나누는 점 → 같은 점 → 세 중선은 한 점에서 만난다 -->
+<div id="app">
+  <header>
+    <div class="tag">③ 무게중심은 하나?</div><span class="by">by 이송원</span>
+    <div id="hint"></div>
+    <div class="btns"><button class="pill" id="prev" type="button">◀ 이전</button><button class="pill hot" id="next" type="button">다음 ▶</button><button class="pill" id="reset" type="button">↺ 처음</button></div>
+  </header>
+  <main>
+    <svg id="sv" viewBox="0 0 970 700" preserveAspectRatio="xMinYMid meet"></svg>
+    <div class="proof" id="proof" style="width:min(36vw,580px)"></div>
+  </main>
+  <footer id="foot">
+    <div class="def"><span class="term">세 중선은 한 점(무게중심 G)에서 만나고</span>, 그 점은 세 중선의 길이를 각 꼭짓점으로부터 <span class="key">2 : 1</span>로 나눈다
+      <small>노란 꼭짓점을 끌어 모양을 바꿔 봐도 G와 G'은 늘 같은 자리예요.</small></div>
+  </footer>
+</div>
+<script src="c.js"></script>
+<script>
+const { $, S, P, mid, lerp, dist, cen, draggable, clamp, confetti, sfx, label } = C;
+const sv = $('#sv');
+// 왼쪽 그림(△ABC)과, 4단계부터 옆에 그리는 똑같은 △ABC(오른쪽으로 DX만큼 옮김)
+const START = { A: [225, 70], B: [30, 650], C: [445, 620] };
+const DX = 480;
+let V = JSON.parse(JSON.stringify(START)), step = 0, cel = false;
+const STEPS = [
+  { t: '△ABC에서 두 중선 <span class="ov">BE</span>, <span class="ov">CF</span>의 교점을 <b style="color:#FF6B6B">G</b>라 해요.', w: 'E는 AC의 중점, F는 AB의 중점' },
+  { t: '두 점 E, F가 각각 <span class="ov">AC</span>, <span class="ov">AB</span>의 중점이므로<br><span class="ov">FE</span> // <span class="ov">BC</span>, <span class="ov">FE</span> = ½<span class="ov">BC</span>', w: '삼각형 두 변의 중점을 연결한 선분의 성질' },
+  { t: '따라서 △GBC ∽ △GEF (AA 닮음), 닮음비 2 : 1<br>→ <span class="ov">BG</span> : <span class="ov">GE</span> = <span class="ov">CG</span> : <span class="ov">GF</span> = 2 : 1', w: '평행선의 엇각이 같아요(같은 색 각)' },
+  { t: '<b>옆에 똑같은 △ABC</b>를 하나 더 그려서, 두 중선 <span class="ov">AD</span>, <span class="ov">BE</span>의 교점을 <b style="color:#2F6FE0">G\'</b>이라 하면<br>같은 방법으로 △G\'AB ∽ △G\'DE (AA 닮음)<br>→ <span class="ov">AG\'</span> : <span class="ov">G\'D</span> = <span class="ov">BG\'</span> : <span class="ov">G\'E</span> = 2 : 1', w: '이번엔 DE // AB, DE = ½AB 를 써요' },
+  { t: 'G와 G\'은 <b>모두 중선 <span class="ov">BE</span>를 2 : 1로 나누는 점</b><br>→ <b class="fin">G와 G\'은 같은 점!</b>', w: '그래서 세 중선은 모두 한 점에서 만나요 🤝' },
+];
+function arc(V0, P1, P2, r, col) {
+  const a1 = Math.atan2(P1[1] - V0[1], P1[0] - V0[0]);
+  let d = Math.atan2(P2[1] - V0[1], P2[0] - V0[0]) - a1;
+  while (d <= -Math.PI) d += 2 * Math.PI; while (d > Math.PI) d -= 2 * Math.PI;
+  const e = [V0[0] + r * Math.cos(a1 + d), V0[1] + r * Math.sin(a1 + d)], s0 = [V0[0] + r * Math.cos(a1), V0[1] + r * Math.sin(a1)];
+  S('path', { d: `M${V0[0]} ${V0[1]} L${s0[0]} ${s0[1]} A${r} ${r} 0 0 ${d > 0 ? 1 : 0} ${e[0]} ${e[1]} Z`, fill: col, opacity: 0.85 }, sv);
+}
+const seg = (p, q, col, w, dash) => S('line', { x1: p[0], y1: p[1], x2: q[0], y2: q[1], stroke: col, 'stroke-width': w, 'stroke-linecap': 'round', 'stroke-dasharray': dash || null }, sv);
+function tick(p, q, n) {
+  const m = mid(p, q), L = dist(p, q), ux = (q[0] - p[0]) / L, uy = (q[1] - p[1]) / L;
+  for (let i = 0; i < n; i++) { const o = (i - (n - 1) / 2) * 9; seg([m[0] + ux * o - uy * 13, m[1] + uy * o + ux * 13], [m[0] + ux * o + uy * 13, m[1] + uy * o - ux * 13], '#2A2140', 3.5); }
+}
+function dot(p, name, G, col) { S('circle', { cx: p[0], cy: p[1], r: 9, fill: col || '#2A2140' }, sv); if (name) label(sv, p, G, name, { size: 38, d: 34 }); }
+// 왼쪽: 중선 BE, CF → G
+function fig1() {
+  const { A, B, C: Cc } = V;
+  const E = mid(Cc, A), F = mid(A, B), G = cen(A, B, Cc);
+  S('polygon', { points: [A, B, Cc].map(P).join(' '), fill: '#FFE7A8', stroke: '#2A2140', 'stroke-width': 5, 'stroke-linejoin': 'round' }, sv);
+  if (step >= 2) {
+    S('polygon', { points: [G, B, Cc].map(P).join(' '), fill: '#FF9AA2', opacity: 0.75 }, sv);
+    S('polygon', { points: [G, E, F].map(P).join(' '), fill: '#FF9AA2', opacity: 0.75 }, sv);
+    arc(B, Cc, G, 34, '#2DBE9E'); arc(E, F, G, 34, '#2DBE9E'); arc(Cc, B, G, 30, '#9B6BFF'); arc(F, E, G, 30, '#9B6BFF');
+  }
+  seg(B, E, '#2A2140', 4); seg(Cc, F, '#2A2140', 4);
+  if (step >= 1) { seg(F, E, '#FF6B6B', 6); seg(B, Cc, '#FF6B6B', 7); }
+  tick(A, F, 1); tick(F, B, 1); tick(A, E, 2); tick(E, Cc, 2);
+  dot(E, 'E', G); dot(F, 'F', G);
+  if (step >= 4) seg(B, E, '#FF6B6B', 9); // 마지막: 중선 BE 강조
+  S('circle', { cx: G[0], cy: G[1], r: 11, fill: '#FF6B6B', stroke: '#2A2140', 'stroke-width': 3 }, sv);
+  const gt = S('text', { x: G[0] + 18, y: G[1] + 34, 'font-size': 40, fill: '#FF6B6B' }, sv); gt.textContent = 'G';
+  ['A', 'B', 'C'].forEach((k) => label(sv, V[k], G, k, { size: 44, d: 54 }));
+  ['A', 'B', 'C'].forEach((k) => {
+    const h = S('g', {}, sv);
+    S('circle', { cx: V[k][0], cy: V[k][1], r: 16, fill: '#FFD93D', stroke: '#2A2140', 'stroke-width': 4 }, h);
+    S('circle', { cx: V[k][0], cy: V[k][1], r: 52, fill: 'transparent' }, h);
+    draggable(sv, h, (q) => { V[k] = clamp(q, 30, 60, 450, 660); draw(); });
+  });
+}
+// 오른쪽: 똑같은 △ABC를 옆에 하나 더 — 중선 AD, BE → G'
+function fig2() {
+  const sh = (p) => [p[0] + DX, p[1]];
+  const A = sh(V.A), B = sh(V.B), Cc = sh(V.C);
+  const D = mid(B, Cc), E = mid(Cc, A), G = cen(A, B, Cc);
+  const cls = step === 3 ? 'pop' : null;
+  S('polygon', { points: [A, B, Cc].map(P).join(' '), fill: '#FFE7A8', stroke: '#2A2140', 'stroke-width': 5, 'stroke-linejoin': 'round', class: cls }, sv);
+  S('polygon', { points: [G, A, B].map(P).join(' '), fill: '#A8D8FF', opacity: 0.85, class: cls }, sv);
+  S('polygon', { points: [G, D, E].map(P).join(' '), fill: '#A8D8FF', opacity: 0.85, class: cls }, sv);
+  arc(A, B, G, 34, '#2DBE9E'); arc(D, E, G, 34, '#2DBE9E'); arc(B, A, G, 30, '#9B6BFF'); arc(E, D, G, 30, '#9B6BFF');
+  seg(A, D, '#2A2140', 4); seg(B, E, '#2A2140', 4); seg(D, E, '#2F6FE0', 6); seg(A, B, '#2F6FE0', 7);
+  tick(B, D, 1); tick(D, Cc, 1); tick(A, E, 2); tick(E, Cc, 2);
+  if (step >= 4) seg(B, E, '#2F6FE0', 9);
+  dot(D, 'D', G); dot(E, 'E', G);
+  S('circle', { cx: G[0], cy: G[1], r: 11, fill: '#2F6FE0', stroke: '#2A2140', 'stroke-width': 3 }, sv);
+  const gt = S('text', { x: G[0] + 16, y: G[1] - 22, 'font-size': 40, fill: '#2F6FE0' }, sv); gt.textContent = "G'";
+  [[A, 'A'], [B, 'B'], [Cc, 'C']].forEach(([p, n]) => label(sv, p, G, n, { size: 44, d: 54 }));
+  return { B, E, G };
+}
+function draw() {
+  sv.innerHTML = '';
+  fig1();
+  if (step >= 3) {
+    const r = fig2();
+    if (step >= 4) {
+      // 두 그림의 중선 BE 위에서 G와 G'이 같은 자리(2 : 1)임을 보여 준다
+      const G1 = cen(V.A, V.B, V.C), B1 = V.B, E1 = mid(V.C, V.A);
+      [[B1, G1, E1, '#FF6B6B'], [r.B, r.G, r.E, '#2F6FE0']].forEach(([b, g, e, col]) => {
+        const t1 = S('text', { x: mid(b, g)[0] - 8, y: mid(b, g)[1] - 22, 'font-size': 40, fill: col }, sv); t1.textContent = '2';
+        const t2 = S('text', { x: mid(g, e)[0] - 8, y: mid(g, e)[1] - 22, 'font-size': 40, fill: col }, sv); t2.textContent = '1';
+      });
+      seg(G1, r.G, '#9B6BFF', 3, '10 8');
+      const eq = S('text', { x: (G1[0] + r.G[0]) / 2, y: G1[1] - 30, 'text-anchor': 'middle', 'font-size': 44, fill: '#13906F', class: 'pop' }, sv); eq.textContent = "G = G'";
+    }
+  }
+  paint();
+}
+function paint() {
+  const last = step === STEPS.length - 1;
+  $('#proof').innerHTML = `<div style="margin-bottom:4px">🔎 세 중선은 정말 한 점에서 만날까?</div>` + STEPS.slice(0, step + 1).map((s, i) => `<div class="st ${i === step ? 'now' : ''}"><b class="n">${i + 1}</b><span>${s.t}<span class="why">${s.w}</span></span></div>`).join('');
+  $('#proof').scrollTop = $('#proof').scrollHeight; // 새 단계가 보이게
+  const h = $('#hint');
+  h.classList.toggle('ok', last);
+  h.textContent = last ? '세 중선은 한 점에서 만나요! 무게중심은 하나 🤝' : step === 2 ? '다음 ▶을 누르면 옆에 똑같은 삼각형이 하나 더 나와요' : '다음 ▶을 눌러 한 단계씩 확인해요';
+  $('#foot').classList.toggle('on', last);
+  $('#prev').disabled = step === 0; $('#next').disabled = last;
+}
+$('#next').onclick = () => { if (step < STEPS.length - 1) { step += 1; sfx.pop(); draw(); if (step === STEPS.length - 1 && !cel) { cel = true; sfx.win(); confetti(sv, 450, 160); } } };
+$('#prev').onclick = () => { if (step > 0) { step -= 1; draw(); } };
+$('#reset').onclick = () => { V = JSON.parse(JSON.stringify(START)); step = 0; cel = false; draw(); };
+draw();
+</script>

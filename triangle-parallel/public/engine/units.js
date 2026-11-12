@@ -27,6 +27,7 @@ window.UNIT_LIST = [
   { id: 'right', kind: 'game', stages: 3, icon: '👾', title: '직각 몬스터 쪼개기', desc: '직각 꼭짓점에 수선 레이저! 닮은 꼬마 몬스터로 쪼개고 이름표로 물리치기 · 마지막은 보스전', url: '/g/right/' },
   { id: 'lesson', kind: 'mat', icon: '🔍', title: '도형의 닮음 (수업 화면)', desc: '닮음이란? · 닮음비 · 넓이비 · 부피비 · 짝맞추기', url: '/m/lesson/' },
   { id: 'right-triangle', kind: 'mat', icon: '📏', title: '직각삼각형의 닮음', desc: '수선의 발 문제', url: '/m/right-triangle/' },
+  { id: 'centroid-lesson', kind: 'mat', icon: '⚖️', title: '삼각형의 무게중심 (수업 화면)', desc: '중선 · 무게중심 G · 2 : 1 · 넓이 · 사각형 · 실로 매달기 · 스피드 퀴즈', url: '/m/centroid/' },
 ];
 
 // /u/<id> 또는 /admin/<id> 주소에서 지금 유닛을 찾는다.

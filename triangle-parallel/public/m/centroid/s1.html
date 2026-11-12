@@ -1,0 +1,102 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script src="/engine/gate.js" data-mat="centroid-lesson"></script>
+<title>중선이란?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<link rel="stylesheet" href="c.css">
+<!-- 1. 중선이란? 변 위의 점 P를 끌어 BP = PC가 되는 곳(중점)을 찾으면 AP가 중선이 된다 -->
+<div id="app">
+  <header>
+    <div class="tag">① 중선이란?</div><span class="by">by 이송원</span>
+    <div id="hint"></div>
+    <div class="btns"><button class="pill" id="other" type="button">🔄 다른 꼭짓점</button><button class="pill" id="reset" type="button">↺ 다시</button></div>
+  </header>
+  <main><svg id="sv" viewBox="0 0 1600 720" preserveAspectRatio="xMidYMid meet"></svg></main>
+  <footer id="foot">
+    <div class="def"><span class="term">중선</span> : 삼각형의 한 <span class="key">꼭짓점</span>과 그 <span class="key">대변(마주 보는 변)의 중점</span>을 이은 선분
+      <small>꼭짓점이 3개니까 한 삼각형에는 중선이 3개 있어요!</small></div>
+  </footer>
+</div>
+<script src="c.js"></script>
+<script>
+const { $, S, P, mid, lerp, dist, cen, draggable, confetti, sfx, label } = C;
+const sv = $('#sv');
+const V = { A: [640, 90], B: [250, 610], C: [1330, 590] };
+const ORDER = [['A', 'B', 'C'], ['B', 'C', 'A'], ['C', 'A', 'B']]; // [꼭짓점, 변의 양 끝]
+let k = 0, t = 0.22, done = [false, false, false], cel = false;
+const scale = 1 / 52; // 그림 1칸 ≈ 52px → cm
+const cm = (v) => (v * scale).toFixed(1);
+
+function draw() {
+  sv.innerHTML = '';
+  const [v, a, b] = ORDER[k], A = V[v], B1 = V[a], C1 = V[b];
+  const G = cen(V.A, V.B, V.C);
+  S('polygon', { points: [V.A, V.B, V.C].map(P).join(' '), fill: '#FFE7A8', stroke: '#2A2140', 'stroke-width': 6, 'stroke-linejoin': 'round' }, sv);
+  // 이미 찾은 중선은 연하게 남겨 둔다
+  ORDER.forEach(([vv, aa, bb], i) => {
+    if (!done[i] || i === k) return;
+    const M = mid(V[aa], V[bb]);
+    S('line', { x1: V[vv][0], y1: V[vv][1], x2: M[0], y2: M[1], stroke: '#FF6B6B', 'stroke-width': 6, opacity: 0.35, 'stroke-linecap': 'round' }, sv);
+  });
+  const p = lerp(B1, C1, t), M = mid(B1, C1);
+  const atMid = Math.abs(t - 0.5) < 1e-9;
+  // 선분 BP, PC 를 색으로
+  S('line', { x1: B1[0], y1: B1[1], x2: p[0], y2: p[1], stroke: '#6FB7FF', 'stroke-width': 14, 'stroke-linecap': 'round', opacity: 0.75 }, sv);
+  S('line', { x1: p[0], y1: p[1], x2: C1[0], y2: C1[1], stroke: '#FF8FC7', 'stroke-width': 14, 'stroke-linecap': 'round', opacity: 0.75 }, sv);
+  S('line', { x1: A[0], y1: A[1], x2: p[0], y2: p[1], stroke: atMid ? '#FF6B6B' : '#2A2140', 'stroke-width': atMid ? 9 : 4, 'stroke-dasharray': atMid ? null : '14 10', 'stroke-linecap': 'round' }, sv);
+  if (atMid) {
+    // 같은 길이 표시(눈금)
+    [[B1, p], [p, C1]].forEach(([u, w]) => {
+      const m = mid(u, w), d = dist(u, w), nx = -(w[1] - u[1]) / d, ny = (w[0] - u[0]) / d;
+      S('line', { x1: m[0] - nx * 18, y1: m[1] - ny * 18, x2: m[0] + nx * 18, y2: m[1] + ny * 18, stroke: '#2A2140', 'stroke-width': 5 }, sv);
+    });
+  }
+  // 길이 글자
+  const lab = (u, w, txt, col) => {
+    const m = mid(u, w), d = dist(u, w), nx = -(w[1] - u[1]) / d, ny = (w[0] - u[0]) / d;
+    const s = (nx * (G[0] - m[0]) + ny * (G[1] - m[1]) > 0) ? -1 : 1;
+    const el = S('text', { x: m[0] + nx * 52 * s, y: m[1] + ny * 52 * s, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 38, fill: col }, sv);
+    el.textContent = txt;
+  };
+  lab(B1, p, `${a}${atMid ? 'M' : 'P'} = ${cm(dist(B1, p))}`, '#2F6FE0');
+  lab(p, C1, `${atMid ? 'M' : 'P'}${b} = ${cm(dist(p, C1))}`, '#D6337F');
+  ['A', 'B', 'C'].forEach((n) => label(sv, V[n], G, n, { size: 46 }));
+  // 꼭짓점 강조
+  S('circle', { cx: A[0], cy: A[1], r: 16, fill: '#FF6B6B', stroke: '#2A2140', 'stroke-width': 4 }, sv);
+  // 끌 수 있는 점 P
+  const h = S('g', {}, sv);
+  if (!atMid) S('circle', { cx: p[0], cy: p[1], r: 40, fill: '#FFD93D', opacity: 0.45, class: 'pulse' }, h);
+  S('circle', { cx: p[0], cy: p[1], r: 22, fill: atMid ? '#FF6B6B' : '#fff', stroke: '#2A2140', 'stroke-width': 5 }, h);
+  S('circle', { cx: p[0], cy: p[1], r: 60, fill: 'transparent' }, h);
+  const nm = S('text', { x: p[0], y: p[1] + 58, 'text-anchor': 'middle', 'font-size': 44, fill: atMid ? '#FF6B6B' : '#2A2140' }, sv);
+  nm.textContent = atMid ? 'M (중점)' : 'P';
+  draggable(sv, h, (q) => {
+    // 변 위로만 움직이게(가까운 곳으로 투영)
+    const dx = C1[0] - B1[0], dy = C1[1] - B1[1];
+    let tt = ((q[0] - B1[0]) * dx + (q[1] - B1[1]) * dy) / (dx * dx + dy * dy);
+    tt = Math.max(0.06, Math.min(0.94, tt));
+    if (Math.abs(tt - 0.5) < 0.025) tt = 0.5; // 중점 근처면 딱 붙는다
+    if (tt !== t) { t = tt; draw(); hint(); }
+  });
+}
+function hint() {
+  const [v, a, b] = ORDER[k];
+  const atMid = Math.abs(t - 0.5) < 1e-9;
+  const h = $('#hint');
+  h.classList.toggle('ok', atMid);
+  if (atMid) {
+    h.textContent = `딱 가운데! 선분 ${v}M이 중선이에요 🎉`;
+    if (!done[k]) { done[k] = true; sfx.win(); confetti(sv, 800, 200); }
+  } else {
+    h.textContent = `점 P를 끌어서 ${a}P = P${b} 가 되는 곳을 찾아요`;
+  }
+  $('#foot').classList.toggle('on', done.some(Boolean));
+  if (done.every(Boolean) && !cel) { cel = true; h.textContent = '중선 3개를 모두 찾았어요! 🙌'; }
+}
+$('#other').onclick = () => { k = (k + 1) % 3; t = 0.2 + Math.random() * 0.15; sfx.pop(); draw(); hint(); };
+$('#reset').onclick = () => { k = 0; t = 0.22; done = [false, false, false]; cel = false; draw(); hint(); };
+draw(); hint();
+</script>

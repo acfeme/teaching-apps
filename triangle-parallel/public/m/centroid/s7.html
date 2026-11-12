@@ -1,0 +1,170 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script src="/engine/gate.js" data-mat="centroid-lesson"></script>
+<title>실생활 속 무게중심</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<link rel="stylesheet" href="c.css">
+<style>
+.tabs{display:flex;gap:8px;flex-wrap:wrap}
+.tabs .pill.on{background:var(--ink);color:#fff}
+</style>
+<!-- 7. 실생활 무게중심: 종이를 실로 매달면 무게중심이 실의 연장선 위에 온다 → 두 번 매달아 교점 찾기 -->
+<div id="app">
+  <header>
+    <div class="tag">⑦ 실생활 무게중심</div><span class="by">by 이송원</span>
+    <div id="hint"></div>
+    <div class="btns">
+      <div class="tabs" id="shapes"><button class="pill on" data-shape="tri" type="button">🔺</button><button class="pill" data-shape="house" type="button">🏠</button><button class="pill" data-shape="fish" type="button">🐟</button></div>
+      <button class="pill" id="reset" type="button">↺ 다시</button>
+    </div>
+  </header>
+  <main><svg id="sv" viewBox="0 0 1600 720" preserveAspectRatio="xMidYMid meet"></svg></main>
+  <footer id="foot">
+    <div class="def" id="def"></div>
+  </footer>
+</div>
+<script src="c.js"></script>
+<script>
+const { $, S, P, dist, confetti, sfx } = C;
+const sv = $('#sv');
+// 모양(무게중심이 (0,0)이 되도록 옮겨 둔다)
+const RAW = {
+  tri: [[-40, -260], [-300, 200], [330, 160]],
+  house: [[0, -250], [230, -60], [230, 210], [-230, 210], [-230, -60]],
+  fish: [[-300, 0], [-160, -150], [80, -170], [220, -60], [330, -170], [320, 170], [220, 60], [80, 170], [-160, 150]],
+};
+function centroid(pts) { // 다각형 넓이 중심
+  let a = 0, cx = 0, cy = 0;
+  pts.forEach((p, i) => { const q = pts[(i + 1) % pts.length], c = p[0] * q[1] - q[0] * p[1]; a += c; cx += (p[0] + q[0]) * c; cy += (p[1] + q[1]) * c; });
+  a /= 2; return [cx / (6 * a), cy / (6 * a)];
+}
+const SHAPE = {};
+for (const k in RAW) { const g = centroid(RAW[k]); SHAPE[k] = RAW[k].map((p) => [p[0] - g[0], p[1] - g[1]]); }
+function inside(q, pts) {
+  let c = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, yi] = pts[i], [xj, yj] = pts[j];
+    if ((yi > q[1]) !== (yj > q[1]) && q[0] < ((xj - xi) * (q[1] - yi)) / (yj - yi) + xi) c = !c;
+  }
+  return c;
+}
+// 화면이 잠깐 가려져 있어도 멈추지 않는 애니메이션 타이머(약 60번/초)
+const tick = (fn) => setTimeout(() => fn(performance.now()), 16);
+const rot = (v, t) => [v[0] * Math.cos(t) - v[1] * Math.sin(t), v[0] * Math.sin(t) + v[1] * Math.cos(t)];
+const PIN = [800, 120], REST = [800, 400];
+let mode = 'hang', shape = 'tri', pin = null, th = 0, lines = [], anim = null, cel = false;
+let finger = [800, 660], fstate = 'idle', tilt = 0, drop = 0;
+
+const DEF = {
+  hang: '종이를 <span class="term">실로 매달면</span> 무게중심은 <span class="key">실을 아래로 늘인 선 위</span>에 와요. 다른 곳에 한 번 더 매달면 두 선이 만나는 곳이 <span class="term">무게중심</span>!<small>집에서 해 보기: 두꺼운 종이에 구멍 두 개를 뚫고 실과 추를 매달아 연직선을 그어 보세요.</small>',
+  finger: '<span class="term">무게중심</span>을 손가락으로 받치면 물건이 <span class="key">기울지 않고 균형</span>을 잡아요.<small>쟁반을 한 손으로 들 때, 시소, 모빌, 줄타기 장대… 모두 무게중심을 찾는 거예요.</small>',
+};
+
+function draw() {
+  sv.innerHTML = '';
+  const pts = SHAPE[shape];
+  if (mode === 'hang') {
+    // 천장과 실
+    S('rect', { x: 600, y: 30, width: 400, height: 22, rx: 8, fill: '#C9A27A', stroke: '#2A2140', 'stroke-width': 4 }, sv);
+    if (pin) S('line', { x1: PIN[0], y1: 52, x2: PIN[0], y2: PIN[1], stroke: '#2A2140', 'stroke-width': 4 }, sv);
+    // 종이(핀이 있으면 핀을 중심으로 돌림)
+    const tf = pin ? `translate(${PIN[0]},${PIN[1]}) rotate(${(th * 180) / Math.PI}) translate(${-pin[0]},${-pin[1]})` : `translate(${REST[0]},${REST[1]})`;
+    const g = S('g', { transform: tf }, sv);
+    const id = 'clip-' + shape;
+    const cp = S('clipPath', { id }, g); S('polygon', { points: pts.map(P).join(' ') }, cp);
+    S('polygon', { points: pts.map(P).join(' '), fill: '#FFE7A8', stroke: '#2A2140', 'stroke-width': 6, 'stroke-linejoin': 'round' }, g);
+    const lg = S('g', { 'clip-path': `url(#${id})` }, g);
+    lines.forEach((p, i) => {
+      const L = Math.hypot(p[0], p[1]) || 1, u = [-p[0] / L, -p[1] / L];
+      S('line', { x1: p[0] - u[0] * 900, y1: p[1] - u[1] * 900, x2: p[0] + u[0] * 900, y2: p[1] + u[1] * 900, stroke: ['#FF6B6B', '#2F6FE0', '#2DBE9E', '#9B6BFF'][i % 4], 'stroke-width': 6, 'stroke-dasharray': '16 10' }, lg);
+    });
+    lines.forEach((p) => S('circle', { cx: p[0], cy: p[1], r: 9, fill: '#fff', stroke: '#2A2140', 'stroke-width': 3 }, g));
+    if (lines.length >= 2) { const s = S('text', { x: 0, y: 4, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 64, class: 'pop' }, g); s.textContent = '⭐'; }
+    if (pin) {
+      // 추(연직선)
+      S('line', { x1: PIN[0], y1: PIN[1], x2: PIN[0], y2: 660, stroke: '#FF6B6B', 'stroke-width': 3, 'stroke-dasharray': '6 6' }, sv);
+      S('circle', { cx: PIN[0], cy: 672, r: 16, fill: '#7A7A8C', stroke: '#2A2140', 'stroke-width': 4 }, sv);
+      S('circle', { cx: PIN[0], cy: PIN[1], r: 10, fill: '#FF6B6B', stroke: '#2A2140', 'stroke-width': 4 }, sv);
+    }
+    // 아무 곳이나 눌러 핀 꽂기
+    sv.onpointerdown = (e) => {
+      if (anim) return;
+      const s = C.toSvg(sv, e);
+      const q = pin ? (() => { const r = rot([s[0] - PIN[0], s[1] - PIN[1]], -th); return [r[0] + pin[0], r[1] + pin[1]]; })() : [s[0] - REST[0], s[1] - REST[1]];
+      if (!inside(q, pts)) return;
+      if (Math.hypot(q[0], q[1]) < 30) { $('#hint').textContent = '무게중심 바로 위는 안 돼요 — 매달아도 돌지 않거든요! 다른 곳을 눌러요'; return; }
+      // 지금 보이는 방향을 유지한 채 핀 자리로 옮긴 뒤, 흔들리며 내려앉기
+      pin = q; sfx.pop();
+      const phi = Math.atan2(-q[1], -q[0]);
+      let eq = Math.PI / 2 - phi;
+      while (eq - th > Math.PI) eq -= 2 * Math.PI; while (eq - th < -Math.PI) eq += 2 * Math.PI;
+      const th0 = th, t0 = performance.now();
+      anim = true;
+      const step = (now) => {
+        const t = (now - t0) / 1000;
+        th = eq + (th0 - eq) * Math.exp(-t / 0.7) * Math.cos(5.5 * t);
+        draw();
+        if (t < 2.6) tick(step);
+        else { th = eq; anim = null; lines.push(q); sfx.good(); draw(); hint(); if (lines.length === 2 && !cel) { cel = true; sfx.win(); confetti(sv, 800, 150); } }
+      };
+      tick(step);
+    };
+  } else {
+    sv.onpointerdown = null;
+    // 바닥에 놓인 종이를 위에서 본 모습 + 손가락
+    const G = REST;
+    // 손가락은 종이 밑에서 받치므로 먼저 그리고, 종이는 살짝 비치게(끌기는 손가락이 받는다)
+    const h = S('g', {}, sv);
+    const g = S('g', { transform: `translate(${G[0]},${G[1] + drop}) rotate(${tilt}) `, style: 'pointer-events:none' }, sv);
+    S('polygon', { points: pts.map(P).join(' '), fill: '#FFE7A8', 'fill-opacity': 0.82, stroke: '#2A2140', 'stroke-width': 6, 'stroke-linejoin': 'round', opacity: drop ? Math.max(0, 1 - drop / 300) : 1 }, g);
+    if (fstate === 'ok') { const s = S('text', { x: 0, y: 4, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 60, class: 'pop' }, g); s.textContent = '⭐'; }
+    const ft = S('text', { x: finger[0], y: finger[1] + 40, 'text-anchor': 'middle', 'font-size': 92 }, h); ft.textContent = '☝️';
+    S('circle', { cx: finger[0], cy: finger[1] - 14, r: 9, fill: '#FF6B6B', stroke: '#2A2140', 'stroke-width': 3 }, h);
+    S('circle', { cx: finger[0], cy: finger[1] + 10, r: 70, fill: 'transparent' }, h);
+    C.draggable(sv, h, (q) => { if (fstate !== 'idle' && fstate !== 'ok') return; fstate = 'idle'; tilt = 0; finger = [q[0], q[1] + 14]; draw(); }, release);
+  }
+}
+function release() {
+  if (mode !== 'finger') return;
+  const tip = [finger[0], finger[1] - 14];
+  if (!inside([tip[0] - REST[0], tip[1] - REST[1]], SHAPE[shape])) { hint(); return; }
+  const off = [tip[0] - REST[0], tip[1] - REST[1]];
+  if (Math.hypot(off[0], off[1]) < 34) {
+    fstate = 'ok'; sfx.win(); confetti(sv, 800, 150); draw(); hint(); return;
+  }
+  // 무게중심에서 벗어났으면 기울어져 떨어짐
+  fstate = 'fall'; sfx.bad();
+  const dir = off[0] > 0 ? -1 : 1, t0 = performance.now();
+  const side = Math.abs(off[0]) > Math.abs(off[1]) ? (off[0] > 0 ? '왼쪽' : '오른쪽') : (off[1] > 0 ? '위쪽' : '아래쪽');
+  $('#hint').textContent = `앗, 기울었어요! 손가락을 조금 더 ${side}으로 옮겨 봐요`;
+  const step = (now) => {
+    const t = (now - t0) / 1000;
+    tilt = dir * Math.min(35, t * 70); drop = Math.max(0, (t - 0.35) * 500);
+    draw();
+    if (t < 1.1) tick(step); else { tilt = 0; drop = 0; fstate = 'idle'; draw(); }
+  };
+  tick(step);
+}
+function hint() {
+  const h = $('#hint');
+  $('#def').innerHTML = DEF[mode];
+  if (mode === 'hang') {
+    h.classList.toggle('ok', lines.length >= 2);
+    h.textContent = !lines.length ? '종이의 아무 곳이나 눌러 실을 매달아 봐요'
+      : lines.length === 1 ? '실 방향으로 선이 그어졌어요. 다른 곳을 눌러 한 번 더 매달아요!'
+        : '두 선이 만나는 ⭐ 이 무게중심! 어디에 매달아도 이 점을 지나요';
+    $('#foot').classList.toggle('on', lines.length >= 2);
+  } else {
+    h.classList.toggle('ok', fstate === 'ok');
+    h.textContent = fstate === 'ok' ? '균형! 손가락이 무게중심을 받치고 있어요 ⚖️' : '☝️ 손가락을 끌어 종이 밑을 받쳐 봐요. 어디를 받쳐야 안 떨어질까?';
+    $('#foot').classList.toggle('on', fstate === 'ok');
+  }
+}
+function resetAll() { pin = null; th = 0; lines = []; cel = false; finger = [800, 660]; fstate = 'idle'; tilt = 0; drop = 0; draw(); hint(); }
+document.querySelectorAll('[data-shape]').forEach((b) => { b.onclick = () => { shape = b.dataset.shape; document.querySelectorAll('[data-shape]').forEach((x) => x.classList.toggle('on', x === b)); sfx.pop(); resetAll(); }; });
+$('#reset').onclick = resetAll;
+resetAll();
+</script>

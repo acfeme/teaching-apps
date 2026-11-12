@@ -1,0 +1,99 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script src="/engine/gate.js" data-mat="centroid-lesson"></script>
+<title>무게중심의 뜻과 기호</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<link rel="stylesheet" href="c.css">
+<style>
+@keyframes drawIn{from{stroke-dashoffset:var(--len)}to{stroke-dashoffset:0}}
+.draw{animation:drawIn .9s ease-out forwards}
+@keyframes wobble{0%{transform:rotate(-9deg)}20%{transform:rotate(7deg)}40%{transform:rotate(-4deg)}60%{transform:rotate(2deg)}80%{transform:rotate(-1deg)}100%{transform:rotate(0)}}
+.wob{animation:wobble 2.6s ease-out both}
+</style>
+<!-- 2. 무게중심의 뜻과 기호: 중선을 하나씩 그으면 세 중선이 한 점에서 만나고, 그 점이 무게중심 G -->
+<div id="app">
+  <header>
+    <div class="tag">② 무게중심의 뜻·기호</div><span class="by">by 이송원</span>
+    <div id="hint"></div>
+    <div class="btns"><button class="pill hot" id="go" type="button">✏️ 중선 긋기</button><button class="pill" id="bal" type="button" disabled>✏️ 연필 위에 올려 보기</button><button class="pill" id="reset" type="button">↺ 다시</button></div>
+  </header>
+  <main><svg id="sv" viewBox="0 0 1600 720" preserveAspectRatio="xMidYMid meet"></svg></main>
+  <footer id="foot">
+    <div class="def"><span class="term">무게중심</span> : 삼각형의 <span class="key">세 중선의 교점</span> · 기호는 보통 <span class="term">G</span>
+      <small>G는 무게·중력을 뜻하는 영어 Gravity의 첫 글자예요. 이 점을 받치면 삼각형이 기울지 않고 균형을 잡아요.</small></div>
+  </footer>
+</div>
+<script src="c.js"></script>
+<script>
+const { $, S, P, mid, dist, cen, cross, confetti, sfx, label } = C;
+const sv = $('#sv');
+const V = { A: [700, 80], B: [260, 620], C: [1300, 560] };
+const MED = [['A', 'B', 'C', '#FF6B6B', 'D'], ['B', 'C', 'A', '#2DBE9E', 'E'], ['C', 'A', 'B', '#9B6BFF', 'F']];
+let n = 0;
+const G = cen(V.A, V.B, V.C);
+
+function base(group) {
+  S('polygon', { points: [V.A, V.B, V.C].map(P).join(' '), fill: '#FFE7A8', stroke: '#2A2140', 'stroke-width': 6, 'stroke-linejoin': 'round' }, group);
+}
+function draw(animLast) {
+  sv.innerHTML = '';
+  const g = S('g', { id: 'tri' }, sv);
+  base(g);
+  for (let i = 0; i < n; i++) {
+    const [v, a, b, col, mn] = MED[i];
+    const M = mid(V[a], V[b]), len = dist(V[v], M);
+    const ln = S('line', { x1: V[v][0], y1: V[v][1], x2: M[0], y2: M[1], stroke: col, 'stroke-width': 8, 'stroke-linecap': 'round', 'stroke-dasharray': len, style: `--len:${len};stroke-dashoffset:${animLast && i === n - 1 ? len : 0}`, class: animLast && i === n - 1 ? 'draw' : '' }, g);
+    // 그리는 움직임이 멈춰 있는 화면(백그라운드 탭 등)에서도 선이 끝까지 보이게 마무리
+    if (animLast && i === n - 1) setTimeout(() => { ln.classList.remove('draw'); ln.style.strokeDashoffset = 0; }, 950);
+    S('circle', { cx: M[0], cy: M[1], r: 11, fill: col, stroke: '#2A2140', 'stroke-width': 3 }, g);
+    label(g, M, G, mn, { size: 36, fill: col, d: 34 });
+  }
+  ['A', 'B', 'C'].forEach((k) => label(g, V[k], G, k, { size: 46 }));
+  if (n === 2) {
+    const X = cross(V.A, mid(V.B, V.C), V.B, mid(V.C, V.A));
+    S('circle', { cx: X[0], cy: X[1], r: 26, fill: '#FFD93D', stroke: '#2A2140', 'stroke-width': 4, class: 'pulse' }, g);
+    const q = S('text', { x: X[0] + 46, y: X[1] - 30, 'font-size': 48 }, g); q.textContent = '?';
+  }
+  if (n === 3) {
+    S('circle', { cx: G[0], cy: G[1], r: 24, fill: '#FF6B6B', stroke: '#2A2140', 'stroke-width': 5, class: 'pop', style: 'animation-delay:.8s' }, g);
+    const t = S('text', { x: G[0] + 34, y: G[1] - 28, 'font-size': 64, fill: '#FF6B6B', class: 'pop', style: 'animation-delay:.9s' }, g); t.textContent = 'G';
+  }
+  hint();
+}
+function hint() {
+  const h = $('#hint');
+  h.classList.toggle('ok', n === 3);
+  h.textContent = ['버튼을 눌러 중선을 하나씩 그어 봐요', '중선 하나! 하나 더 그어 볼까요?', '두 중선이 만났어요. 세 번째 중선은 어디를 지날까?', '세 중선이 한 점에서 만나요! 이 점이 무게중심 G 🎯'][n];
+  $('#foot').classList.toggle('on', n === 3);
+  $('#go').disabled = n >= 3;
+  $('#bal').disabled = n < 3;
+}
+$('#go').onclick = () => {
+  if (n >= 3) return;
+  n += 1; sfx.pop(); draw(true);
+  if (n === 3) setTimeout(() => { sfx.win(); confetti(sv, G[0], G[1] - 120); }, 900);
+};
+// G를 연필 끝에 올려 균형 잡기(살짝 흔들리다 멈춤)
+$('#bal').onclick = () => {
+  n = 3; sv.innerHTML = '';
+  const off = [800 - G[0], 360 - G[1]];
+  const wrap = S('g', { transform: `translate(${off[0]},${off[1]})` }, sv);
+  const g = S('g', { class: 'wob', style: `transform-origin:${G[0]}px ${G[1]}px` }, wrap);
+  base(g);
+  MED.forEach(([v, a, b, col]) => { const M = mid(V[a], V[b]); S('line', { x1: V[v][0], y1: V[v][1], x2: M[0], y2: M[1], stroke: col, 'stroke-width': 6, opacity: 0.6 }, g); });
+  S('circle', { cx: G[0], cy: G[1], r: 16, fill: '#FF6B6B', stroke: '#2A2140', 'stroke-width': 4 }, g);
+  // 연필
+  const p = S('g', {}, sv);
+  S('polygon', { points: '800,372 784,412 816,412', fill: '#F6C27A', stroke: '#2A2140', 'stroke-width': 4 }, p);
+  S('rect', { x: 784, y: 412, width: 32, height: 300, fill: '#FFD93D', stroke: '#2A2140', 'stroke-width': 4 }, p);
+  S('polygon', { points: '800,372 794,386 806,386', fill: '#2A2140' }, p);
+  const t = S('text', { x: 860, y: 640, 'font-size': 44, fill: '#2DBE9E' }, sv); t.textContent = 'G를 받치면 균형! ⚖️';
+  $('#hint').textContent = '무게중심 G를 연필로 받치면 기울지 않아요';
+  sfx.good();
+};
+$('#reset').onclick = () => { n = 0; draw(); };
+draw();
+</script>

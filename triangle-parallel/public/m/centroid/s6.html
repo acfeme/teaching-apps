@@ -1,0 +1,116 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script src="/engine/gate.js" data-mat="centroid-lesson"></script>
+<title>사각형의 무게중심</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<link rel="stylesheet" href="c.css">
+<!-- 6. 사각형의 무게중심: 대각선으로 삼각형 두 개로 나눠 두 무게중심을 잇는다(두 방법) → 두 선분의 교점 -->
+<div id="app">
+  <header>
+    <div class="tag">⑥ 사각형의 무게중심</div><span class="by">by 이송원</span>
+    <div id="hint"></div>
+    <div class="btns"><button class="pill hot" id="next" type="button">다음 단계 ▶</button><button class="pill" id="para" type="button">▱ 평행사변형이면?</button><button class="pill" id="reset" type="button">↺ 다시</button></div>
+  </header>
+  <main><svg id="sv" viewBox="0 0 1600 720" preserveAspectRatio="xMidYMid meet"></svg></main>
+  <footer id="foot">
+    <div class="def"><span class="term">사각형의 무게중심</span> : 대각선으로 나눈 <span class="key">두 삼각형의 무게중심을 이은 선분</span> 두 개의 교점
+      <small>평행사변형은 더 쉬워요 — 두 대각선의 교점이 바로 무게중심!</small></div>
+  </footer>
+</div>
+<script src="c.js"></script>
+<script>
+const { $, S, P, mid, cen, cross, draggable, clamp, confetti, sfx, label } = C;
+const sv = $('#sv');
+const START = { A: [470, 120], B: [260, 600], C: [1180, 640], D: [1260, 170] };
+let V = JSON.parse(JSON.stringify(START)), step = 0, para = false, moved = false, cel = false;
+// 볼록한 사각형인지(끌다가 꼬이면 되돌림)
+function convex(Q) {
+  const p = ['A', 'B', 'C', 'D'].map((k) => Q[k]);
+  let sign = 0;
+  for (let i = 0; i < 4; i++) {
+    const a = p[i], b = p[(i + 1) % 4], c = p[(i + 2) % 4];
+    const z = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+    if (Math.abs(z) < 2000) return false;
+    if (sign && Math.sign(z) !== sign) return false;
+    sign = Math.sign(z);
+  }
+  return true;
+}
+const longLine = (p, q, g, col) => {
+  const dx = q[0] - p[0], dy = q[1] - p[1];
+  S('line', { x1: p[0] - dx * 0.35, y1: p[1] - dy * 0.35, x2: q[0] + dx * 0.35, y2: q[1] + dy * 0.35, stroke: col, 'stroke-width': 6, 'stroke-dasharray': '16 10', 'stroke-linecap': 'round' }, g);
+};
+function dot(p, col, name, g) {
+  S('circle', { cx: p[0], cy: p[1], r: 13, fill: col, stroke: '#2A2140', 'stroke-width': 4, class: 'pop' }, g);
+  const t = S('text', { x: p[0] + 20, y: p[1] - 18, 'font-size': 34, fill: col }, g); t.textContent = name;
+}
+function draw() {
+  sv.innerHTML = '';
+  const { A, B, C: Cc, D } = V;
+  const O = cen(A, B, Cc); // 이름 붙이기 기준(대략 가운데)
+  const mc = [(A[0] + B[0] + Cc[0] + D[0]) / 4, (A[1] + B[1] + Cc[1] + D[1]) / 4];
+  S('polygon', { points: [A, B, Cc, D].map(P).join(' '), fill: '#FFF1C9', stroke: '#2A2140', 'stroke-width': 6, 'stroke-linejoin': 'round' }, sv);
+  const g = S('g', {}, sv);
+  let G1, G2, G3, G4;
+  if (step >= 1) {
+    S('polygon', { points: [A, B, Cc].map(P).join(' '), fill: '#FF9AA2', opacity: 0.45 }, g);
+    S('polygon', { points: [A, Cc, D].map(P).join(' '), fill: '#A8D8FF', opacity: 0.45 }, g);
+    S('line', { x1: A[0], y1: A[1], x2: Cc[0], y2: Cc[1], stroke: '#2A2140', 'stroke-width': 4 }, g);
+    G1 = cen(A, B, Cc); G2 = cen(A, Cc, D);
+    longLine(G1, G2, g, '#FF6B6B');
+    dot(G1, '#D6336C', 'G₁', g); dot(G2, '#2F6FE0', 'G₂', g);
+  }
+  if (step >= 2) {
+    S('line', { x1: B[0], y1: B[1], x2: D[0], y2: D[1], stroke: '#2A2140', 'stroke-width': 4, 'stroke-dasharray': '4 0' }, g);
+    G3 = cen(A, B, D); G4 = cen(B, Cc, D);
+    longLine(G3, G4, g, '#2DBE9E');
+    dot(G3, '#9B6BFF', 'G₃', g); dot(G4, '#E07B00', 'G₄', g);
+  }
+  if (step >= 3) {
+    const X = cross(G1, G2, G3, G4);
+    if (X) {
+      const st = S('text', { x: X[0], y: X[1] + 4, 'text-anchor': 'middle', 'dominant-baseline': 'central', 'font-size': 76, class: 'pop' }, g); st.textContent = '⭐';
+      if (para) {
+        S('line', { x1: A[0], y1: A[1], x2: Cc[0], y2: Cc[1], stroke: '#FF6B6B', 'stroke-width': 7 }, g);
+        S('line', { x1: B[0], y1: B[1], x2: D[0], y2: D[1], stroke: '#FF6B6B', 'stroke-width': 7 }, g);
+      }
+    }
+  }
+  ['A', 'B', 'C', 'D'].forEach((n) => label(sv, V[n], mc, n, { size: 46, d: 52 }));
+  ['A', 'B', 'C', 'D'].forEach((n) => {
+    const h = S('g', {}, sv);
+    S('circle', { cx: V[n][0], cy: V[n][1], r: 18, fill: '#FFD93D', stroke: '#2A2140', 'stroke-width': 4 }, h);
+    S('circle', { cx: V[n][0], cy: V[n][1], r: 56, fill: 'transparent' }, h);
+    draggable(sv, h, (q) => {
+      const old = V[n]; V[n] = clamp(q, 60, 60, 1540, 680); para = false;
+      if (!convex(V)) { V[n] = old; return; }
+      moved = true; draw();
+    }, () => { if (moved) { moved = false; sfx.pop(); } });
+  });
+  const h = $('#hint');
+  h.classList.toggle('ok', step >= 3);
+  h.textContent = [
+    '사각형의 무게중심은 어디일까? 삼각형으로 나눠 봐요',
+    '대각선 AC로 나눈 두 삼각형의 무게중심 G₁, G₂를 이어요',
+    '이번엔 대각선 BD로! G₃, G₄를 이어요',
+    para ? '평행사변형은 두 대각선의 교점이 바로 무게중심 ⭐' : '두 선이 만나는 ⭐ 이 사각형의 무게중심!',
+  ][step];
+  $('#foot').classList.toggle('on', step >= 3);
+  $('#next').disabled = step >= 3;
+}
+$('#next').onclick = () => {
+  step = Math.min(3, step + 1); sfx.pop(); draw();
+  if (step === 3 && !cel) { cel = true; sfx.win(); confetti(sv, 800, 200); }
+};
+$('#para').onclick = () => {
+  const r = (a, b) => a + Math.random() * (b - a);
+  const A = [r(420, 620), r(110, 170)], w = r(560, 720), sx = r(-260, -160), sy = r(420, 480);
+  V = { A, B: [A[0] + sx, A[1] + sy], C: [A[0] + sx + w, A[1] + sy], D: [A[0] + w, A[1]] };
+  para = true; step = 3; sfx.win(); draw();
+};
+$('#reset').onclick = () => { V = JSON.parse(JSON.stringify(START)); step = 0; para = false; cel = false; draw(); };
+draw();
+</script>

@@ -1,0 +1,100 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<script src="/engine/gate.js" data-mat="centroid-lesson"></script>
+<title>삼각형의 무게중심</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+:root{
+  --paper:#FFF9F0; --grid:#F6E3C8; --ink:#2A2140; --sun:#FFD93D;
+  --display:'Jua','Gowun Dodum',sans-serif; --body:'Gowun Dodum','Jua',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background-color:var(--paper);background-image:linear-gradient(var(--grid) 2px,transparent 2px),linear-gradient(90deg,var(--grid) 2px,transparent 2px);background-size:56px 56px;color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#app{height:100%;display:flex;flex-direction:column}
+#home{flex:1;min-height:0;display:flex;flex-direction:column;padding:clamp(10px,2vw,28px) max(16px,env(safe-area-inset-right)) max(clamp(10px,1.6vw,22px),env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.top{display:flex;align-items:center;gap:clamp(10px,1.6vw,22px);margin-bottom:clamp(8px,1.4vw,18px)}
+.title{font-family:var(--display);font-size:clamp(26px,4vw,62px);background:var(--sun);border:4px solid var(--ink);border-radius:18px;padding:2px clamp(14px,2vw,30px);transform:rotate(-2deg);box-shadow:6px 6px 0 var(--ink);white-space:nowrap}
+.g-ic{font-size:clamp(30px,4vw,60px);animation:wob 2.4s ease-in-out infinite}
+@keyframes wob{50%{transform:rotate(12deg) translateY(-4px)}}
+.sub{font-family:var(--display);font-size:clamp(14px,1.8vw,28px);opacity:.6}
+.made{font-family:var(--display);font-size:clamp(18px,2.6vw,40px);white-space:nowrap;margin-left:auto}
+#cards{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(2,1fr);gap:clamp(8px,1.4vw,22px)}
+.c{display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:.25em;text-align:left;background:#fff;border:4px solid var(--ink);border-radius:22px;box-shadow:7px 7px 0 var(--ink);padding:clamp(8px,1.4vw,22px);cursor:pointer;font-family:var(--display);color:var(--ink);min-width:0;transition:transform .12s}
+.c:active{transform:translate(4px,4px);box-shadow:3px 3px 0 var(--ink)}
+.c:nth-child(odd){transform:rotate(-.7deg)} .c:nth-child(even){transform:rotate(.7deg)}
+.c .n{width:1.7em;height:1.7em;border-radius:999px;border:3px solid var(--ink);display:flex;align-items:center;justify-content:center;font-size:clamp(14px,1.7vw,26px);line-height:1}
+.c .tw{display:flex;flex-direction:column;gap:.2em}
+.c .e{font-size:clamp(24px,3vw,46px);line-height:1}
+.c .t{font-size:clamp(17px,2.2vw,36px);line-height:1.1}
+.c .d{font-family:var(--body);font-size:clamp(11px,1.25vw,20px);opacity:.65;line-height:1.3}
+.c.g1 .n{background:#FFD93D} .c.g2 .n{background:#FFC7DD} .c.g3 .n{background:#BFE3FF} .c.g4 .n{background:#B9F0D4}
+.c .row{display:flex;justify-content:space-between;align-items:center;width:100%}
+#view{flex:1;min-height:0;display:none;flex-direction:column}
+#view.on{display:flex}
+#bar{flex:none;display:flex;align-items:center;gap:clamp(6px,1vw,14px);padding:clamp(4px,.6vw,8px) max(10px,env(safe-area-inset-left))}
+#bar .b{border:3px solid var(--ink);background:#fff;border-radius:999px;font:400 clamp(13px,1.6vw,24px) var(--display);color:var(--ink);padding:clamp(2px,.35vw,6px) clamp(10px,1.3vw,20px);cursor:pointer;box-shadow:3px 3px 0 var(--ink);white-space:nowrap}
+#bar .b:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+#bar .b:disabled{opacity:.3;cursor:default}
+#vt{flex:1;min-width:0;font-family:var(--display);font-size:clamp(14px,1.8vw,28px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.75}
+#fr{flex:1;min-height:0;width:100%;border:0;display:block;background:var(--paper)}
+@media (max-width:640px){
+  #home{overflow-y:auto}
+  .top{flex-wrap:wrap;row-gap:4px}
+  .made{margin-left:0}
+  #cards{flex:none;grid-template-columns:repeat(2,1fr);grid-template-rows:none;grid-auto-rows:minmax(130px,auto)}
+  .c:nth-child(odd),.c:nth-child(even){transform:none}
+}
+</style>
+
+<div id="app">
+  <div id="home">
+    <div class="top"><span class="g-ic">⚖️</span><div class="title">삼각형의 무게중심</div><div class="sub">중2 · 수업용</div><div class="made">이송원 제작</div></div>
+    <div id="cards"></div>
+  </div>
+  <div id="view">
+    <div id="bar">
+      <button class="b" id="back" type="button">☰ 목록</button>
+      <button class="b" id="prev" type="button">‹</button>
+      <button class="b" id="next" type="button">›</button>
+      <div id="vt"></div>
+    </div>
+    <iframe id="fr" title="수업 화면"></iframe>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const SC = [
+  { f: 's1.html', e: '📏', t: '중선이란?', d: '꼭짓점과 마주 보는 변의 중점을 이어요', g: 1 },
+  { f: 's2.html', e: '🎯', t: '무게중심의 뜻·기호', d: '세 중선을 그어 보면… 점 G!', g: 1 },
+  { f: 's3.html', e: '🤝', t: '무게중심은 하나?', d: '삼각형을 마음대로 바꿔도 세 중선은 한 점에서', g: 2 },
+  { f: 's4.html', e: '✌️', t: '성질 ① 2 : 1', d: '꼭짓점 쪽 : 변 쪽 = 2 : 1', g: 2 },
+  { f: 's5.html', e: '🍕', t: '성질 ② 넓이', d: '여섯 조각 삼각형의 넓이가 모두 같아요', g: 3 },
+  { f: 's6.html', e: '🔷', t: '사각형의 무게중심', d: '삼각형 두 개로 나눠서 찾아요', g: 3 },
+  { f: 's7.html', e: '🧵', t: '실생활 무게중심', d: '종이를 실로 매달아 무게중심 찾기', g: 4 },
+  { f: 's8.html', e: '⚡', t: '모둠 스피드 퀴즈', d: 'A~H형 중 골라 8문제 · 모둠 기록 대결', g: 4 },
+];
+let cur = -1;
+$('#cards').innerHTML = SC.map((s, i) => `<button class="c g${s.g}" data-i="${i}" type="button"><span class="row"><span class="n">${i + 1}</span><span class="e">${s.e}</span></span><span class="tw"><span class="t">${s.t}</span><span class="d">${s.d}</span></span></button>`).join('');
+function open(i) {
+  cur = i; $('#home').style.display = 'none'; $('#view').classList.add('on');
+  $('#fr').src = SC[i].f; $('#vt').textContent = `${i + 1}. ${SC[i].t}`;
+  $('#prev').disabled = i === 0; $('#next').disabled = i === SC.length - 1;
+}
+function home() { cur = -1; $('#view').classList.remove('on'); $('#home').style.display = 'flex'; $('#fr').removeAttribute('src'); }
+$('#cards').addEventListener('click', (e) => { const b = e.target.closest('[data-i]'); if (b) open(+b.dataset.i); });
+$('#back').onclick = home;
+$('#prev').onclick = () => { if (cur > 0) open(cur - 1); };
+$('#next').onclick = () => { if (cur < SC.length - 1) open(cur + 1); };
+addEventListener('keydown', (e) => {
+  if (cur < 0) return;
+  if (e.key === 'Escape') home();
+  else if (e.key === 'ArrowLeft' && cur > 0) open(cur - 1);
+  else if (e.key === 'ArrowRight' && cur < SC.length - 1) open(cur + 1);
+});
+</script>

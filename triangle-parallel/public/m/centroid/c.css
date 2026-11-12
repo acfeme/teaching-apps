@@ -1,0 +1,55 @@
+/* 삼각형의 무게중심 수업 화면 공통 모양 — 모눈종이 위 스티커 제목, 큰 그림, 포스트잇 정의(도형의 닮음 수업 화면과 같은 느낌) */
+:root{
+  --paper:#FFF9F0; --grid:#F6E3C8; --ink:#2A2140; --sun:#FFD93D; --coral:#FF6B6B; --mint:#2DBE9E; --sky:#6FB7FF;
+  --grape:#9B6BFF; --peach:#FFB38A; --note:#FFF2A8; --pink:#FF8FC7; --blue:#2F6FE0;
+  --display:'Jua','Gowun Dodum',sans-serif; --body:'Gowun Dodum','Jua',sans-serif;
+  color-scheme:light;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background-color:var(--paper);background-image:linear-gradient(var(--grid) 2px,transparent 2px),linear-gradient(90deg,var(--grid) 2px,transparent 2px);background-size:56px 56px;color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+#app{height:100%;display:flex;flex-direction:column}
+header{display:flex;flex-wrap:wrap;row-gap:8px;align-items:center;gap:clamp(10px,1.8vw,26px);padding:clamp(10px,1.5vw,20px) max(18px,env(safe-area-inset-right)) 0 max(18px,env(safe-area-inset-left))}
+.tag{font-family:var(--display);font-size:clamp(22px,2.9vw,44px);background:var(--sun);border:3px solid var(--ink);border-radius:14px;padding:2px clamp(12px,1.6vw,24px);white-space:nowrap;transform:rotate(-3deg);box-shadow:4px 4px 0 var(--ink)}
+.by{font-family:'Jua',sans-serif;font-size:clamp(13px,1.5vw,22px);opacity:.55;white-space:nowrap}
+#hint{flex:1 1 380px;min-width:0;font-family:var(--display);font-size:clamp(23px,3vw,48px);line-height:1.2}
+#hint.ok{color:var(--mint)}
+.btns{display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;margin-left:auto}
+.pill{border:3px solid var(--ink);background:#fff;color:var(--ink);border-radius:999px;font:400 clamp(18px,2.2vw,33px) var(--display);padding:clamp(5px,.6vw,9px) clamp(14px,1.8vw,26px);cursor:pointer;box-shadow:3px 3px 0 var(--ink);white-space:nowrap}
+.pill:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.pill.hot{background:var(--sun)}
+.pill:disabled{opacity:.35;cursor:default}
+main{flex:1;min-height:0;position:relative}
+main>svg{width:100%;height:100%;display:block;touch-action:none}
+svg text{font-family:var(--display)}
+footer{padding:0 max(18px,env(safe-area-inset-right)) max(clamp(10px,1.4vw,20px),env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));display:flex;justify-content:center;min-height:clamp(64px,9vw,130px);opacity:0;transform:translateY(14px) rotate(-1deg);transition:opacity .5s,transform .5s}
+footer.on{opacity:1;transform:translateY(0) rotate(-1deg)}
+.def{background:var(--note);border:3px solid var(--ink);border-radius:8px;box-shadow:6px 6px 0 var(--ink);padding:clamp(10px,1.3vw,18px) clamp(16px,2.4vw,34px);font-family:var(--display);font-size:clamp(22px,2.9vw,46px);line-height:1.45;max-width:1400px;text-wrap:pretty}
+.def small{display:block;font-family:var(--display);font-size:.72em;opacity:.8;margin-top:4px;line-height:1.35}
+.term{color:var(--coral)} .key{color:var(--blue)}
+.drag{cursor:grab}
+@keyframes pulse{50%{opacity:.35}}
+.pulse{animation:pulse 1s ease-in-out infinite}
+@keyframes pop{0%{transform:scale(.2)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+.pop{animation:pop .45s ease-out both;transform-box:fill-box;transform-origin:center}
+@keyframes fall{0%{transform:translateY(-30px) rotate(0);opacity:1}100%{transform:translateY(420px) rotate(540deg);opacity:0}}
+.conf{animation:fall 1.6s ease-in forwards;transform-box:fill-box}
+@media (prefers-reduced-motion:reduce){.pulse,.pop,.conf{animation:none}footer{transition:none}}
+@media (max-width:640px){
+  header{flex-wrap:wrap;row-gap:8px}
+  .by{display:none}
+  #hint{order:9;flex:1 1 100%}
+}
+
+/* 증명·이유를 한 단계씩 보여 주는 상자 */
+.proof{position:absolute;right:max(12px,1.2vw);top:max(8px,1vw);width:min(43vw,620px);max-height:calc(100% - 16px);overflow-y:auto;background:#fff;border:4px solid var(--ink);border-radius:22px;box-shadow:6px 6px 0 var(--ink);padding:clamp(10px,1.2vw,18px) clamp(12px,1.5vw,22px);font-family:var(--display);font-size:clamp(19px,2.3vw,36px);line-height:1.45}
+.proof .st{display:flex;gap:10px;align-items:flex-start;margin:4px 0;animation:pop .4s both}
+.proof .st b.n{flex:none;display:inline-flex;align-items:center;justify-content:center;width:1.5em;height:1.5em;border-radius:50%;background:var(--sun);border:3px solid var(--ink);font-size:.8em}
+.proof .st.now{background:#FFF6C8;border-radius:12px;padding:2px 6px}
+.proof .why{display:block;font-family:var(--body);font-size:.8em;color:#5a5070}
+.proof .fin{color:var(--mint)}
+.proof .ov{text-decoration:overline}
+@media (max-width:640px){.proof{position:static;width:auto;margin:8px}}
+
+/* 정의 포스트잇이 나오기 전에는 자리를 차지하지 않게(그림을 크게) */
+footer:not(.on){min-height:0;max-height:0;padding-top:0;padding-bottom:0;overflow:hidden}

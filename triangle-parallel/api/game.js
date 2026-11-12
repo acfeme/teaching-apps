@@ -62,13 +62,41 @@ async function view(s, game, cls, num) {
   };
 }
 
+const CQ_KEEP_MS = 20 * 60 * 1000;
+const cqKey = () => `cq:${todayKST()}`;
+async function cquiz(req, res, s, src) {
+  const now = Date.now();
+  const read = async () => (await s.list(cqKey())).map((r) => { try { return typeof r === 'string' ? JSON.parse(r) : r; } catch { return null; } })
+    .filter((r) => r && now - r.at < CQ_KEEP_MS)
+    .sort((a, b) => a.sec - b.sec || a.at - b.at);
+  if (req.method === 'GET') return res.status(200).json({ records: await read(), keepMin: 20 });
+  if (req.method !== 'POST') return res.status(405).json({ error: '지원하지 않는 요청입니다.' });
+  const group = Number(src.group), type = String(src.type || ''), sec = Math.round(Number(src.sec) * 10) / 10, wrong = Math.max(0, Math.min(99, Number(src.wrong) || 0));
+  const cls = CLASSES.includes(src.cls) ? src.cls : '';
+  if (!(Number.isInteger(group) && group >= 1 && group <= 8) || !/^[A-H]$/.test(type) || !(sec >= 5 && sec <= 3600)) {
+    return res.status(400).json({ error: '기록이 올바르지 않습니다.' });
+  }
+  await s.push(cqKey(), JSON.stringify({ group, type, sec, wrong, cls, at: now }));
+  return res.status(200).json({ records: await read(), keepMin: 20 });
+}
+
 export default async function handler(req, res) {
   noStore(res);
+  // 무게중심 수업 화면을 따로 배포한 주소(centroid-lesson…)에서도 모둠 기록판을 쓰도록 cquiz만 다른 주소의 요청을 허용
+  const q0 = req.query || {};
+  if (req.method === 'OPTIONS' || q0.game === 'cquiz' || (req.method === 'POST' && (readBody(req) || {}).game === 'cquiz')) {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') return res.status(204).end();
+  }
   const s = store('site:');
   if (!s) return res.status(503).json({ error: '저장소가 아직 연결되지 않았습니다.' });
   try {
     const src = req.method === 'POST' ? readBody(req) || {} : req.query || {};
     const game = String(src.game || '');
+    // 무게중심 수업 화면 ⑧ 모둠 스피드 퀴즈: 모둠 기록(걸린 시간)을 20분 동안 보여 준다(로그인 없이)
+    if (game === 'cquiz') return await cquiz(req, res, s, src);
     const G = GAMES[game];
     if (!G) return res.status(400).json({ error: '게임이 올바르지 않습니다.' });
     const t = tokenOf(req);

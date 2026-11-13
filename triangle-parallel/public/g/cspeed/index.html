@@ -1,0 +1,171 @@
+<!doctype html>
+<meta charset="utf-8">
+<script src="/engine/gate.js" data-mat="games"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>무게중심 스피드 퀴즈 · 닮음 탐구 교실</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<link rel="stylesheet" href="/m/centroid/c.css">
+<style>
+main{display:flex;align-items:flex-start;justify-content:center;padding:clamp(8px,1.2vw,18px);overflow-y:auto}
+.box{width:min(1400px,100%);display:flex;flex-direction:column;align-items:center;gap:clamp(10px,1.4vw,20px)}
+.panel{width:100%;background:#fff;border:4px solid var(--ink);border-radius:26px;box-shadow:7px 7px 0 var(--ink);padding:clamp(12px,1.8vw,26px);font-family:var(--display);font-size:clamp(20px,2.4vw,38px)}
+.panel h2{margin:0 0 8px;font-size:1.25em}
+.rules{font-family:var(--display);font-size:.8em;color:#5a5070;line-height:1.6}
+.rules b{color:#FF6B6B}
+.go{font:inherit;font-size:1.3em;border:4px solid var(--ink);border-radius:22px;background:var(--coral);color:#fff;padding:10px 40px;cursor:pointer;box-shadow:6px 6px 0 var(--ink)}
+.ghost{font:inherit;font-size:.95em;border:3px solid var(--ink);border-radius:999px;background:#fff;padding:6px 22px;cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
+.bar{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;font-family:var(--display);font-size:clamp(20px,2.4vw,38px)}
+.bar span{background:#fff;border:3px solid var(--ink);border-radius:999px;padding:2px 18px}
+.bar .time{background:var(--ink);color:#fff;min-width:5.5em;text-align:center}
+.prog{width:100%;height:12px;background:#fff;border:3px solid var(--ink);border-radius:999px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--mint);transition:width .3s}
+.q{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:clamp(12px,1.6vw,26px);align-items:center;position:relative}
+.q svg{width:100%;height:auto;max-height:52vh;background:#FFFDF5;border:3px solid #eee0c5;border-radius:18px}
+.q svg text{font-family:var(--display)}
+.kind{display:inline-block;font-size:.75em;background:var(--sun);border:3px solid var(--ink);border-radius:12px;padding:0 14px;transform:rotate(-2deg);margin-bottom:6px}
+.qt{font-size:clamp(26px,3.2vw,52px);line-height:1.35;word-break:keep-all}
+.cho{display:flex;gap:10px;margin:6px 0}
+.cho b{display:inline-flex;align-items:center;justify-content:center;width:clamp(56px,6.5vw,104px);height:clamp(56px,6.5vw,104px);font-size:clamp(34px,4.6vw,74px);background:var(--note);border:4px solid var(--ink);border-radius:18px;box-shadow:4px 4px 0 var(--ink);animation:pop .4s both}
+.opts{display:grid;grid-template-columns:repeat(2,1fr);gap:clamp(8px,1vw,16px);margin-top:12px}
+.opt{font:inherit;font-size:clamp(26px,3.2vw,52px);border:4px solid var(--ink);border-radius:20px;background:#fff;padding:clamp(8px,1vw,16px);cursor:pointer;box-shadow:5px 5px 0 var(--ink);color:var(--ink)}
+.opt:nth-child(1){background:#FFE3E3}.opt:nth-child(2){background:#DDF0FF}.opt:nth-child(3){background:#E2F8EC}.opt:nth-child(4){background:#F0E6FF}
+.opt.no{background:#bbb !important;color:#fff;opacity:.55;animation:shake .35s}
+.opt.yes{background:#2DBE9E !important;color:#fff}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.flash{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;font-size:min(36vw,300px);opacity:0;font-family:var(--display);color:var(--coral);z-index:50}
+.flash.on{animation:fl .7s ease-out}
+@keyframes fl{0%{opacity:.95;transform:scale(.6)}100%{opacity:0;transform:scale(1.3)}}
+.count{font-family:var(--display);font-size:min(40vw,320px);color:var(--coral);animation:pop .5s both}
+.home-link{text-decoration:none;color:var(--ink)}
+@media (max-width:760px){.q{grid-template-columns:1fr}.q svg{max-height:34vh}}
+</style>
+<!-- 게임: 무게중심 스피드 퀴즈(개인). 수업 화면 ⑧ 모둠 스피드 퀴즈의 문제 은행(/m/centroid/cq.js 64문제)에서
+     열 때마다 20문제를 무작위로 뽑는다(쉬운 칸 → 어려운 칸 순). 최종 기록 = 걸린 시간 + 틀림 벌점(같은 문제에서 +15 → +20 → +25초),
+     짧을수록 높은 순위. 닮음비 짝맞추기처럼 개인 랭킹(RANK.submit('cspeed', 초)). -->
+<div id="app">
+  <header>
+    <a class="pill home-link" href="/">← 교실</a>
+    <div class="tag">⚖️ 무게중심 스피드 퀴즈</div><span class="by">by 이송원</span>
+    <div id="hint">20문제를 빨리, 정확하게! ⚡</div>
+    <div class="btns"><button class="pill" id="rank" type="button">🏆 랭킹</button></div>
+  </header>
+  <main><div class="box" id="box"></div></main>
+</div>
+<div class="flash" id="flash"></div>
+<script src="/m/centroid/c.js"></script>
+<script src="/m/centroid/cq.js"></script>
+<script>
+const { $, sfx } = C;
+const { shuffle, TYPES, setOf, fig } = CQ;
+const N = 20;
+// 칸(문제 종류)마다 몇 문제씩: 초성 3 · OX 3 · 2:1(AG) 3 · 2:1(AD) 3 · 넓이 2 · 넓이 2 · 2:1(GE) 2 · 도전 2 = 20
+const PER_SLOT = [3, 3, 3, 3, 2, 2, 2, 2];
+// 같은 문제에서 틀릴수록 벌점이 커진다 (마구 찍으면 손해)
+// 무작위로 찍으면 20문제 평균 약 9분(5분 안에 끝낼 확률 0.65%) → 상위권 어려움, 한 번 실수는 +15초뿐
+const PEN = [15, 20, 25];
+let list = [], qi = 0, t0 = 0, wrong = 0, pen = 0, qWrong = 0, ok = 0, timer = null, busy = false, best = null;
+const fmt = (sec) => `${Math.floor(sec / 60)}:${(sec % 60).toFixed(1).padStart(4, '0')}`;
+const elapsed = () => (performance.now() - t0) / 1000 + pen;
+
+// 64문제(8유형 × 8칸)에서 칸마다 서로 다른 유형을 골라 20문제(같은 문제는 절대 두 번 나오지 않음).
+// 순서는 섞되, 바로 앞 문제와 같은 종류(초성·OX·2:1·넓이·도전)나 같은 삼각형 그림이면 다시 섞는다. 도전 문제는 뒤쪽 절반에.
+const GROUP = ['cho', 'ox', 'r21', 'r21', 'area', 'area', 'r21', 'hard'];
+function draw20() {
+  const sets = TYPES.map((_, ti) => setOf(ti));
+  const pool = [];
+  PER_SLOT.forEach((n, slot) => {
+    shuffle(TYPES.map((_, ti) => ti)).slice(0, n).forEach((ti) => pool.push({ ...sets[ti][slot], ti, g: GROUP[slot] }));
+  });
+  // 한 칸씩 채운다: 앞 문제와 종류·그림이 다른 것 중에서, 남은 개수가 가장 많은 종류를 먼저(2:1이 8개라 몰리지 않게)
+  for (let tries = 0; tries < 300; tries++) {
+    const left = shuffle([...pool]), o = [];
+    while (left.length) {
+      const prev = o[o.length - 1];
+      const okc = left.filter((p) => (!prev || (p.g !== prev.g && p.ti !== prev.ti)) && (p.g !== 'hard' || o.length >= N / 2));
+      if (!okc.length) break;
+      const cnt = (g) => left.filter((p) => p.g === g).length;
+      const most = Math.max(...okc.map((p) => cnt(p.g)));
+      const pickFrom = okc.filter((p) => cnt(p.g) === most || Math.random() < 0.35);
+      const p = pickFrom[Math.floor(Math.random() * pickFrom.length)];
+      o.push(p); left.splice(left.indexOf(p), 1);
+    }
+    if (o.length === pool.length) return o;
+  }
+  return shuffle(pool);
+}
+function home() {
+  clearInterval(timer);
+  $('#hint').textContent = '20문제를 빨리, 정확하게! ⚡';
+  $('#box').innerHTML = `<div class="panel"><h2>⚖️ 무게중심 스피드 퀴즈</h2>
+    <div class="rules">📌 무게중심 문제 <b style="color:var(--ink)">20개</b>를 모두 맞히면 끝! 열 때마다 문제가 바뀌어요.<br>
+    ⏱ 최종 기록 = 걸린 시간 + 틀림 벌점 · 짧을수록 높은 순위<br>
+    ❌ 같은 문제에서 틀릴수록 벌점이 커져요: 첫 번째 <b>+${PEN[0]}초</b>, 두 번째 <b>+${PEN[1]}초</b>, 세 번째 <b>+${PEN[2]}초</b><br>
+    🙅 마구 찍으면 벌점이 쌓여서 오히려 늦어져요. 한 번쯤 실수는 괜찮아요!</div>
+    <div style="margin-top:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="go" id="start" type="button">시작! ▶</button>${best != null ? `<span style="color:#9a8fb0">이번 접속 최고 기록 ${fmt(best)}</span>` : ''}</div></div>`;
+  $('#start').onclick = countdown;
+}
+function countdown() {
+  let n = 3;
+  const show = () => { $('#box').innerHTML = `<div class="count">${n || 'GO!'}</div>`; sfx.pop(); };
+  show();
+  const iv = setInterval(() => { n -= 1; if (n >= 0) show(); else { clearInterval(iv); begin(); } }, 750);
+}
+function begin() {
+  list = draw20(); qi = 0; wrong = 0; pen = 0; qWrong = 0; ok = 0; busy = false; t0 = performance.now();
+  clearInterval(timer);
+  timer = setInterval(() => { const el = $('#time'); if (el) el.textContent = `⏱ ${fmt(elapsed())}`; }, 100);
+  show();
+}
+function show() {
+  const p = list[qi];
+  $('#hint').textContent = `${qi + 1}번째 문제 — 침착하게!`;
+  $('#box').innerHTML = `<div class="bar"><span class="time" id="time">⏱ ${fmt(elapsed())}</span><span>${qi + 1} / ${N}</span><span id="wr">❌ ${wrong} (+${pen}초)</span></div>
+    <div class="prog"><i style="width:${(qi / N) * 100}%"></i></div>
+    <div class="panel q"><div id="fig"></div><div><span class="kind">${p.k}</span>
+      ${p.cho ? `<div class="cho">${[...p.cho].map((c, i) => `<b style="animation-delay:${i * 0.08}s">${c}</b>`).join('')}</div>` : ''}
+      <div class="qt">${p.t}</div>
+      <div class="opts">${p.o.map((o) => `<button class="opt" data-v="${o}" type="button">${o}</button>`).join('')}</div></div></div>`;
+  $('#fig').appendChild(fig(p.f, p.ti));
+  document.querySelectorAll('.opt').forEach((b) => { b.onclick = () => pick(b); });
+}
+function flash(t, col) { const f = $('#flash'); f.textContent = t; f.style.color = col || ''; f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }
+function pick(b) {
+  if (busy || b.classList.contains('no')) return;
+  const p = list[qi];
+  if (b.dataset.v === p.a) {
+    busy = true; if (!qWrong) ok += 1; b.classList.add('yes'); sfx.good(); flash('⭕', '#2DBE9E');
+    setTimeout(() => { busy = false; qWrong = 0; qi += 1; if (qi < list.length) show(); else finish(); }, 450);
+  } else {
+    const add = PEN[Math.min(qWrong, PEN.length - 1)]; qWrong += 1; pen += add; wrong += 1;
+    b.classList.add('no'); sfx.bad(); flash(`+${add}초`, '#FF6B6B');
+    const w = $('#wr'); if (w) w.textContent = `❌ ${wrong} (+${pen}초)`;
+  }
+}
+async function finish() {
+  clearInterval(timer);
+  const sec = Math.round(elapsed() * 10) / 10, raw = Math.max(0, Math.round((sec - pen) * 10) / 10);
+  if (best == null || sec < best) best = sec;
+  sfx.win();
+  $('#hint').textContent = '클리어! 🎉';
+  $('#box').innerHTML = `<div class="panel" style="text-align:center"><div style="font-size:2.2em">🎉 최종 기록 ${fmt(sec)}</div>
+    <div>🎯 한 번에 맞힘 <b style="color:#13906F">${ok} / ${N}</b></div>
+    <div style="color:#5a5070">시간 기록 ${fmt(raw)} + 틀림 ${wrong}개 벌점 ${pen}초 = <b style="color:var(--ink)">${fmt(sec)}</b></div>
+    <div id="ovr" style="margin-top:8px;color:#a85e05">기록 저장 중…</div>
+    <div style="margin-top:14px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center"><button class="go" id="again" type="button">🎲 새 문제로 다시</button><button class="ghost" id="rank2" type="button">🏆 랭킹 보기</button></div></div>`;
+  $('#again').onclick = countdown;
+  $('#rank2').onclick = () => RANK.open('cspeed');
+  const o = $('#ovr');
+  try {
+    const d = await RANK.submit('cspeed', sec);
+    if (!d) { o.textContent = '로그인하지 않아 랭킹에 올리지 않았어요.'; return; }
+    o.textContent = (d.newBest ? '🏆 내 최고 기록! ' : '') + (d.me.classRank ? `우리 반 오늘 ${d.me.classRank}등` : '') + (d.me.overallRank ? ` · 전체 ${d.me.overallRank}등` : '');
+  } catch (e) { o.textContent = '기록을 저장하지 못했어요: ' + e.message; }
+}
+$('#rank').onclick = () => RANK.open('cspeed');
+home();
+</script>
+<script src="/engine/me.js"></script>
+<script src="/g/avatar.js"></script>
+<script src="/g/rank.js"></script>

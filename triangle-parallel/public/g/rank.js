@@ -9,6 +9,7 @@ window.RANK = (function () {
     { id: 'shoot', icon: '🎯', title: '닮음 조건 쏘기', unit: '점', note: '높은 점수일수록 높은 순위' },
     { id: 'right', icon: '👾', title: '직각 몬스터 쪼개기', unit: '점', note: '높은 점수일수록 높은 순위' },
     { id: 'dungeon', icon: '🗝️', title: '평행선 던전 탐험', unit: '점', note: '높은 점수일수록 높은 순위' },
+    { id: 'cspeed', icon: '⚖️', title: '무게중심 스피드 퀴즈', unit: '초', note: '짧은 기록(시간 + 벌점)일수록 높은 순위' },
   ];
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   const css = document.createElement('style');

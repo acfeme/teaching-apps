@@ -13,6 +13,7 @@ const GAMES = {
   shoot: { better: 'high', min: 0, max: 5000, unit: '점' },
   right: { better: 'high', min: 0, max: 20000, unit: '점' },
   dungeon: { better: 'high', min: 0, max: 30000, unit: '점' },
+  cspeed: { better: 'low', min: 10, max: 7200, unit: '초' }, // 무게중심 스피드 퀴즈: 20문제 시간 + 틀림 벌점
 };
 const CLASS_TOP = 5;
 const ALL_TOP = 10;

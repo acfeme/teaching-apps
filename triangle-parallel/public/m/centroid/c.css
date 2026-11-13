@@ -48,7 +48,7 @@ footer.on{opacity:1;transform:translateY(0) rotate(-1deg)}
 .proof .st.now{background:#FFF6C8;border-radius:12px;padding:2px 6px}
 .proof .why{display:block;font-family:var(--body);font-size:.8em;color:#5a5070}
 .proof .fin{color:var(--mint)}
-.proof .ov{text-decoration:overline}
+.proof .ov,.ov{text-decoration:overline;text-decoration-thickness:.07em}
 @media (max-width:640px){.proof{position:static;width:auto;margin:8px}}
 
 /* 정의 포스트잇이 나오기 전에는 자리를 차지하지 않게(그림을 크게) */

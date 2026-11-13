@@ -63,7 +63,9 @@ tr.first td{font-size:1.1em}
 const { $, S, P, mid, lerp, cen, sfx, confetti } = C;
 const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const TYPES = 'ABCDEFGH'.split('');
-const PENALTY = 5;
+// 같은 문제에서 틀릴수록 벌점이 커진다: 첫 번째 +20초, 두 번째 +30초, 세 번째 +40초 (마구 찍는 모둠은 평균 5분 넘게 → 상위권 어려움)
+const PEN = [20, 30, 40];
+const penOf = (r) => (Number.isFinite(r.pen) ? r.pen : (Number(r.wrong) || 0) * 5); // 예전 기록(pen 없음)은 5초씩
 // 유형마다 다른 삼각형 모양(그림 칸 520×340)
 const TRI = [
   [[250, 34], [42, 306], [480, 296]], [[176, 34], [48, 300], [472, 308]], [[338, 34], [40, 298], [482, 290]], [[128, 40], [58, 306], [470, 282]],
@@ -158,22 +160,23 @@ const myCls = (() => { try { const m = JSON.parse(sessionStorage.getItem('tp-me'
 async function getRecords() { try { const r = await fetch(API + '/api/game?game=cquiz', { cache: 'no-store' }); return (await r.json()).records || []; } catch (e) { return null; } }
 async function postRecord(rec) { const r = await fetch(API + '/api/game', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game: 'cquiz', ...rec, cls: myCls }) }); return (await r.json()).records || []; }
 const fmt = (sec) => `${Math.floor(sec / 60)}:${(sec % 60).toFixed(1).padStart(4, '0')}`;
+const okOf = (r) => (Number.isFinite(r.ok) ? r.ok : Math.max(0, 8 - r.wrong)); // 예전 기록(ok 없음)은 어림값
 function boardHtml(list, me) {
   if (!list) return '<div class="empty">기록을 불러오지 못했어요. 인터넷 연결을 확인해 주세요.</div>';
   if (!list.length) return '<div class="empty">아직 기록이 없어요. 첫 기록의 주인공이 되어 봐요!</div>';
   const ago = (t) => { const m = Math.floor((Date.now() - t) / 60000); return m < 1 ? '방금' : `${m}분 전`; };
-  // 최종 기록 = 시간 기록 + 틀림 × 5초 (서버에는 최종 기록 sec와 틀린 횟수 wrong이 저장됨). 최종 기록이 짧을수록 1등
-  return `<table><tr><th>순위</th><th>모둠</th><th>유형</th><th>시간 기록</th><th>틀림 (×${PENALTY}초)</th><th>최종 기록</th><th></th></tr>${list.map((r, i) => {
-    const raw = Math.max(0, Math.round((r.sec - r.wrong * PENALTY) * 10) / 10);
-    return `<tr class="${i === 0 ? 'first' : ''} ${me && me.at === r.at ? 'me' : ''}"><td>${i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</td><td>${r.cls ? `${r.cls}반 ` : ''}${r.group}모둠</td><td>${r.type}형</td><td>${fmt(raw)}</td><td>${r.wrong}개 <span style="color:#FF6B6B">(+${r.wrong * PENALTY}초)</span></td><td><b style="color:#2A2140;font-size:1.15em">${fmt(r.sec)}</b></td><td style="font-size:.7em;color:#9a8fb0">${ago(r.at)}</td></tr>`;
-  }).join('')}</table><div style="font-size:.7em;color:#9a8fb0;margin-top:6px">최종 기록 = 시간 기록 + 틀림 × ${PENALTY}초 · 최종 기록이 짧을수록 1등</div>`;
+  // 순위: ① 한 번에 맞힌 문제(ok)가 많을수록 위 ② 같으면 최종 기록(시간 기록 + 틀림 × 5초)이 짧을수록 위 — 마구 찍어 빨리 끝내는 모둠이 1등 못 하게
+  return `<table><tr><th>순위</th><th>모둠</th><th>유형</th><th>한 번에 맞힘</th><th>시간 기록</th><th>틀림 벌점</th><th>최종 기록</th><th></th></tr>${list.map((r, i) => {
+    const raw = Math.max(0, Math.round((r.sec - penOf(r)) * 10) / 10);
+    return `<tr class="${i === 0 ? 'first' : ''} ${me && me.at === r.at ? 'me' : ''}"><td>${i === 0 ? '🏆' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}</td><td>${r.cls ? `${r.cls}반 ` : ''}${r.group}모둠</td><td>${r.type}형</td><td><b style="color:#13906F;font-size:1.15em">${okOf(r)}</b> / 8</td><td>${fmt(raw)}</td><td>${r.wrong}개 <span style="color:#FF6B6B">(+${penOf(r)}초)</span></td><td><b style="color:#2A2140;font-size:1.15em">${fmt(r.sec)}</b></td><td style="font-size:.7em;color:#9a8fb0">${ago(r.at)}</td></tr>`;
+  }).join('')}</table><div style="font-size:.7em;color:#9a8fb0;margin-top:6px">최종 기록 = 시간 기록 + 틀림 벌점 · 최종 기록이 짧을수록 1등 · 벌점은 같은 문제에서 틀릴수록 커져요 (+20 → +30 → +40초)</div>`;
 }
 let boardTimer = null;
 async function showBoard(me) {
   clearInterval(timer); clearInterval(boardTimer);
   const paint = async () => {
     const list = await getRecords();
-    $('#box').innerHTML = `<div class="panel"><h2>🏆 모둠 기록판 <span style="font-size:.6em;color:#9a8fb0">(최근 20분 · 시간이 짧을수록 1등)</span></h2>${boardHtml(list, me)}
+    $('#box').innerHTML = `<div class="panel"><h2>🏆 모둠 기록판 <span style="font-size:.6em;color:#9a8fb0">(최근 20분 · 최종 기록이 짧을수록 1등)</span></h2>${boardHtml(list, me)}
       <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="ghost" id="b1" type="button">🏠 처음으로</button></div></div>`;
     $('#b1').onclick = home;
   };
@@ -181,14 +184,14 @@ async function showBoard(me) {
   boardTimer = setInterval(paint, 5000);
 }
 // ---------- 진행 ----------
-let group = 0, type = '', list = [], qi = 0, t0 = 0, wrong = 0, timer = null, busy = false;
+let group = 0, type = '', list = [], qi = 0, t0 = 0, wrong = 0, ok = 0, missed = false, qWrong = 0, pen = 0, timer = null, busy = false;
 async function home() {
   clearInterval(timer); clearInterval(boardTimer);
   const recs = (await getRecords()) || [];
   const used = new Set(recs.map((r) => r.type));
   $('#hint').textContent = '모둠끼리 기록 대결! 빨리, 정확하게 ⚡';
   $('#box').innerHTML = `<div class="panel"><h2>⚡ 무게중심 모둠 스피드 퀴즈</h2>
-    <div class="rules">📌 8문제를 모두 맞히면 끝! 걸린 시간이 기록이에요. · ❌ 틀리면 <b style="color:#FF6B6B">+${PENALTY}초</b> · 🏆 기록은 20분 동안 기록판에 남아요.<br>A~H형은 문제 종류와 난이도가 같고, 문제는 모두 달라요.</div>
+    <div class="rules">📌 8문제를 모두 맞히면 끝! · ⏱ 최종 기록이 짧을수록 1등! · ❌ 틀리면 벌점 — 같은 문제에서 <b style="color:#FF6B6B">첫 번째 +${PEN[0]}초, 두 번째 +${PEN[1]}초, 세 번째 +${PEN[2]}초</b> · 🏆 기록은 20분 동안 기록판에 남아요.<br>🙅 마구 찍으면 벌점이 쌓여서 오히려 늦어져요. 한 번쯤 실수해도 괜찮아요, 모둠이 의논해서 맞혀요!<br>A~H형은 문제 종류와 난이도가 같고, 문제는 모두 달라요.</div>
     <div style="margin-top:10px">① 우리 모둠</div><div class="pick" id="g">${[1, 2, 3, 4, 5, 6, 7, 8].map((n) => `<button data-g="${n}" type="button">${n}</button>`).join('')}</div>
     <div>② 문제 유형</div><div class="pick" id="t">${TYPES.map((t) => `<button data-t="${t}" type="button">${t}${used.has(t) ? '<small>다른 모둠도 풀었어요</small>' : ''}</button>`).join('')}</div>
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap"><button class="go" id="start" type="button" disabled>시작! ▶</button><span id="sel" style="color:#9a8fb0"></span></div></div>`;
@@ -207,16 +210,16 @@ function countdown() {
   const iv = setInterval(() => { n -= 1; if (n >= 0) show(); else { clearInterval(iv); begin(); } }, 750);
 }
 function begin() {
-  list = setOf(TYPES.indexOf(type)); qi = 0; wrong = 0; busy = false; t0 = performance.now();
+  list = setOf(TYPES.indexOf(type)); qi = 0; wrong = 0; ok = 0; missed = false; qWrong = 0; pen = 0; busy = false; t0 = performance.now();
   clearInterval(timer);
   timer = setInterval(() => { const el = $('#time'); if (el) el.textContent = `⏱ ${fmt(elapsed())}`; }, 100);
   show();
 }
-const elapsed = () => (performance.now() - t0) / 1000 + wrong * PENALTY;
+const elapsed = () => (performance.now() - t0) / 1000 + pen;
 function show() {
   const p = list[qi];
   $('#hint').textContent = `${group}모둠 · ${type}형 — 다 함께 의논해서 골라요!`;
-  $('#box').innerHTML = `<div class="bar"><span class="time" id="time">⏱ ${fmt(elapsed())}</span><span>${qi + 1} / ${list.length}</span><span>❌ ${wrong} (+${wrong * PENALTY}초)</span></div>
+  $('#box').innerHTML = `<div class="bar"><span class="time" id="time">⏱ ${fmt(elapsed())}</span><span>${qi + 1} / ${list.length}</span><span>❌ ${wrong} (+${pen}초)</span></div>
     <div class="panel q"><div id="fig"></div><div><span class="kind">${p.k}</span>
       ${p.cho ? `<div class="cho">${[...p.cho].map((c, i) => `<b style="animation-delay:${i * 0.08}s">${c}</b>`).join('')}</div>` : ''}
       <div class="qt">${p.t}</div>
@@ -229,11 +232,12 @@ function pick(b) {
   if (busy || b.classList.contains('no')) return;
   const p = list[qi];
   if (b.dataset.v === p.a) {
-    busy = true; b.classList.add('yes'); sfx.good(); flash('⭕', '#2DBE9E');
-    setTimeout(() => { busy = false; qi += 1; if (qi < list.length) show(); else finish(); }, 550);
+    busy = true; if (!missed) ok += 1; b.classList.add('yes'); sfx.good(); flash('⭕', '#2DBE9E');
+    setTimeout(() => { busy = false; missed = false; qWrong = 0; qi += 1; if (qi < list.length) show(); else finish(); }, 550);
   } else {
-    wrong += 1; b.classList.add('no'); sfx.bad(); flash(`+${PENALTY}초`, '#FF6B6B');
-    const bar = document.querySelector('.bar span:last-child'); if (bar) bar.textContent = `❌ ${wrong} (+${wrong * PENALTY}초)`;
+    const add = PEN[Math.min(qWrong, PEN.length - 1)]; qWrong += 1; pen += add;
+    wrong += 1; missed = true; b.classList.add('no'); sfx.bad(); flash(`+${add}초`, '#FF6B6B');
+    const bar = document.querySelector('.bar span:last-child'); if (bar) bar.textContent = `❌ ${wrong} (+${pen}초)`;
   }
 }
 async function finish() {
@@ -243,10 +247,10 @@ async function finish() {
   $('#hint').textContent = '클리어! 기록을 저장하고 있어요…';
   $('#box').innerHTML = `<div class="panel" style="text-align:center"><div style="font-size:2.4em">🎉 ${fmt(sec)}</div><div>${group}모둠 · ${type}형 · 틀린 횟수 ${wrong}</div></div>`;
   let recs = null, me = null;
-  try { recs = await postRecord({ group, type, sec, wrong }); me = recs.find((r) => r.group === group && r.type === type && Math.abs(r.sec - sec) < 0.05) || null; } catch (e) { recs = null; }
+  try { recs = await postRecord({ group, type, sec, wrong, ok, pen }); me = recs.find((r) => r.group === group && r.type === type && okOf(r) === ok && Math.abs(r.sec - sec) < 0.05) || null; } catch (e) { recs = null; }
   const rank = recs && me ? recs.indexOf(me) + 1 : 0;
   $('#hint').textContent = rank === 1 ? '🏆 지금 1등이에요! 상품 후보!' : rank ? `지금 ${rank}등이에요!` : '기록을 저장하지 못했어요 (기록판에 남지 않을 수 있어요)';
-  $('#box').innerHTML = `<div class="panel" style="text-align:center"><div style="font-size:2.2em">${rank === 1 ? '🏆' : '🎉'} 최종 기록 ${fmt(sec)}</div><div>${group}모둠 · ${type}형</div><div style="color:#5a5070">시간 기록 ${fmt(Math.max(0, Math.round((sec - wrong * PENALTY) * 10) / 10))} + 틀림 ${wrong}개 × ${PENALTY}초 = <b style="color:#2A2140">${fmt(sec)}</b></div></div>
+  $('#box').innerHTML = `<div class="panel" style="text-align:center"><div style="font-size:2.2em">${rank === 1 ? '🏆' : '🎉'} 최종 기록 ${fmt(sec)}</div><div>${group}모둠 · ${type}형 · 🎯 한 번에 맞힘 <b style="color:#13906F">${ok} / 8</b></div><div style="color:#5a5070">시간 기록 ${fmt(Math.max(0, Math.round((sec - pen) * 10) / 10))} + 틀림 ${wrong}개 벌점 ${pen}초 = <b style="color:#2A2140">${fmt(sec)}</b></div></div>
     <div class="panel"><h2>🏆 기록판 <span style="font-size:.6em;color:#9a8fb0">(최근 20분)</span></h2>${boardHtml(recs, me)}
     <div style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap"><button class="ghost" id="again" type="button">다른 유형 도전</button><button class="ghost" id="live" type="button">기록판 크게 보기</button></div></div>`;
   $('#again').onclick = () => { type = ''; home(); };

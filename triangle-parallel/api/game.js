@@ -68,15 +68,17 @@ async function cquiz(req, res, s, src) {
   const now = Date.now();
   const read = async () => (await s.list(cqKey())).map((r) => { try { return typeof r === 'string' ? JSON.parse(r) : r; } catch { return null; } })
     .filter((r) => r && now - r.at < CQ_KEEP_MS)
-    .sort((a, b) => a.sec - b.sec || a.at - b.at);
+    .sort((a, b) => a.sec - b.sec || a.at - b.at); // 최종 기록(시간 + 벌점) 짧은 순
   if (req.method === 'GET') return res.status(200).json({ records: await read(), keepMin: 20 });
   if (req.method !== 'POST') return res.status(405).json({ error: '지원하지 않는 요청입니다.' });
   const group = Number(src.group), type = String(src.type || ''), sec = Math.round(Number(src.sec) * 10) / 10, wrong = Math.max(0, Math.min(99, Number(src.wrong) || 0));
+  const ok = Math.max(0, Math.min(8, Math.round(Number(src.ok)) || 0));
+  const pen = Math.max(0, Math.min(720, Math.round(Number(src.pen)) || 0)); // 틀림 벌점(초)
   const cls = CLASSES.includes(src.cls) ? src.cls : '';
   if (!(Number.isInteger(group) && group >= 1 && group <= 8) || !/^[A-H]$/.test(type) || !(sec >= 5 && sec <= 3600)) {
     return res.status(400).json({ error: '기록이 올바르지 않습니다.' });
   }
-  await s.push(cqKey(), JSON.stringify({ group, type, sec, wrong, cls, at: now }));
+  await s.push(cqKey(), JSON.stringify({ group, type, sec, wrong, ok, pen, cls, at: now }));
   return res.status(200).json({ records: await read(), keepMin: 20 });
 }
 

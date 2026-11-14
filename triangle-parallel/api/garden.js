@@ -1,5 +1,5 @@
 import {
-  CLASSES, MAX_NUMBER, attField, checkAdmin, fbField, gardenField, gardenOf, noStore, readBody, store, validStudent,
+  CLASSES, MAX_NUMBER, attField, checkAdmin, fbField, gameApplesOf, gardenField, gardenOf, noStore, readBody, store, validStudent,
 } from './_lib.js';
 import { requireStudent } from './_auth.js';
 import { UNITS } from './_units.js';
@@ -52,11 +52,13 @@ async function unitGarden(s, U, cls, num) {
 
 async function studentView(cls, num) {
   const units = await Promise.all(Object.values(UNITS).map(async (U) => ({ id: U.id, title: U.title, ...(await unitGarden(store(U.prefix), U, cls, num)) })));
-  return { cls, num, units, basket: units.reduce((t, u) => t + u.harvested, 0) };
+  const game = await gameApplesOf(store('site:'), cls, num); // 게임에서 주운 사과(바로 바구니로)
+  return { cls, num, units, game, basket: units.reduce((t, u) => t + u.harvested, 0) + game };
 }
 
 async function classView(cls) {
   const all = await Promise.all(Object.values(UNITS).map(async (U) => [U, await store(U.prefix).hgetall('state')]));
+  const gap = (await store('site:').hgetall('gapple')) || {};
   const students = [];
   for (let num = 1; num <= MAX_NUMBER; num++) {
     const units = {};
@@ -66,7 +68,9 @@ async function classView(cls) {
       if (g.n || g.fbDone || g.harvested) any = true;
       units[U.id] = g;
     }
-    if (any) students.push({ num, units, basket: Object.values(units).reduce((t, g) => t + g.harvested, 0) });
+    const game = Number(gap[`${cls}:${num}`]) || 0;
+    if (game) any = true;
+    if (any) students.push({ num, units, game, basket: Object.values(units).reduce((t, g) => t + g.harvested, 0) + game });
   }
   return { cls, units: Object.values(UNITS).map((U) => ({ id: U.id, title: U.title, max: U.MAX })), students };
 }

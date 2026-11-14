@@ -218,7 +218,7 @@
     const tower = group.map((c) => { const n = Number(tw[c]) || 0; return `<div class="col ${c === data.cls ? 'mine' : ''}"><span class="n">${n}</span><div class="bar" style="height:${Math.round((n / max) * 100)}px"></div><span class="c">${c}반</span></div>`; }).join('');
     view.innerHTML = `<div class="lobby">
       <div class="g-panel me-card"><div class="preview">${A.svg(avatarNow(), 150)}</div>
-        <div class="nick">${esc(m.nick || '')}</div><div class="apples">🍎 쓸 수 있는 사과 ${data.apples}개 <small style="color:var(--muted)">(문제풀이에서 수확한 사과)</small></div>
+        <div class="nick">${esc(m.nick || '')}</div><div class="apples">🍎 쓸 수 있는 사과 ${data.apples}개 <small style="color:var(--muted)">(문제풀이에서 수확하고 게임에서 주운 사과)</small></div>
         <div class="bag">${tools}<button class="ih-btn" id="ihLobby">ℹ️ 아이템 설명</button></div>
         <div class="row center"><button class="g-btn ghost" id="closet">👕 옷장</button><button class="g-btn ghost" id="shop">🛒 사과 상점</button><button class="g-btn ghost" id="remake">🎨 캐릭터 바꾸기</button></div>
       </div>

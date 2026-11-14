@@ -113,7 +113,7 @@
     frame(`<div class="garden-who">${m.cls}반 ${m.num}번 · 별명 <b>${esc(m.nick || '')}</b> ${inUnit ? '' : '<button class="link-btn" data-who>나가기</button>'}</div>
       ${msg ? `<div class="garden-pop">${msg}</div>` : ''}
       <div class="garden-basket"><div class="garden-basket-head">🧺 바구니 <b>${d.basket}개</b></div><div class="garden-apples">${apples}</div></div>
-      <div class="garden-list">${cards}</div>
+      <div class="garden-list">${cards}${d.game ? `<div class="garden-card"><div class="garden-tree" style="font-size:44px;display:flex;align-items:center;justify-content:center">🎮</div><div class="garden-info"><b>🎮 게임에서 주운 사과</b><span>나무 아래 떨어진 사과를 주웠어요 🍎 ${d.game}개</span><span class="garden-tip">게임을 정확하게 하면 하루 최대 2개까지 주울 수 있어요.</span></div></div>` : ''}</div>
       <p class="garden-rule">1·2단계에서 맞힌 문제만큼 나무가 자라요. 다 자란 나무에는 사과가 열리고(최대 8개), 피드백 문제를 끝내면 사과 1개를 더 받아요.</p>`);
     overlay.querySelector('[data-who]')?.addEventListener('click', () => { window.ME.logout(); close(); });
     overlay.querySelectorAll('.harvest').forEach((b) => {

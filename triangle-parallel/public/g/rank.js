@@ -70,8 +70,8 @@ window.RANK = (function () {
   }
 
   // 게임이 끝나면 기록 저장(반·번호를 모르면 먼저 묻는다)
-  async function submit(game, value) {
-    const send = () => api('/api/game', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ game, value }) });
+  async function submit(game, value, extra) {
+    const send = () => api('/api/game', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...(extra || {}), game, value }) });
     let m = me();
     if (!m) m = await ask('기록을 랭킹에 올리려면 반·번호를 고르고 비밀번호를 넣어요.');
     if (!m) return null;

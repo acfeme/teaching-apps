@@ -321,6 +321,23 @@ export function readBody(req) {
 
 export function noStore(res) { res.setHeader('Cache-Control', 'no-store'); }
 
+// ---- 게임 사과(떨어진 사과 줍기) ----
+// 문제풀이는 나무를 길러 사과를 따고, 게임은 나무 아래 떨어진 사과를 줍는 작은 보너스.
+// 모든 게임을 합쳐 하루 최대 GAME_APPLE_CAP개. 누적은 site: 'gapple' {반:번호: 개수}, 오늘 받은 수는 'gapple:day:날짜'.
+// 주운 사과는 보관함 바구니에 바로 들어가고(수확 없음) 던전 사과 상점에서 쓸 수 있다.
+export const GAME_APPLE_CAP = 2;
+export async function gameApplesOf(site, cls, num) { return Number(await site.hget('gapple', `${cls}:${num}`)) || 0; }
+export async function giveGameApples(site, cls, num, want) {
+  const k = `${cls}:${num}`, dayKey = `gapple:day:${todayKST()}`;
+  const before = Number(await site.hget(dayKey, k)) || 0;
+  const got = Math.max(0, Math.min(want, GAME_APPLE_CAP - before));
+  for (let i = 0; i < got; i++) {
+    // eslint-disable-next-line no-await-in-loop
+    await Promise.all([site.hincr(dayKey, k), site.hincr('gapple', k)]);
+  }
+  return { got, want, today: before + got, cap: GAME_APPLE_CAP, total: await gameApplesOf(site, cls, num) };
+}
+
 // ---- 사과나무와 보관함 ----
 // 나무 크기 = 1·2단계에서 맞힌 문제 수(마지막 응시 기준). 유닛마다 문제 수가 달라 20칸 기준으로 맞춰 그린다.
 // 다 자란 나무(20칸 중 17칸 이상)에 사과가 열리고(최대 8개), 피드백 문제를 한 번 끝낼 때마다 보너스 사과 1개.

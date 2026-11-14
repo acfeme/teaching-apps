@@ -1,4 +1,4 @@
-import { CLASSES, noStore, readBody, sameGroup, store, todayKST } from './_lib.js';
+import { CLASSES, giveGameApples, noStore, readBody, sameGroup, store, todayKST } from './_lib.js';
 import { nicksFor, tokenOf } from './_auth.js';
 import { dungeon, parseJson, towerToday } from './_dungeon.js';
 
@@ -132,7 +132,13 @@ export default async function handler(req, res) {
     if (newBest) writes.push(s.hset(bestKey(game), { [k]: String(value) }));
     if (isBetter(G, value, today == null ? null : Number(today))) writes.push(s.hset(dayKey(game, date), { [k]: String(value) }));
     await Promise.all(writes);
-    return res.status(200).json({ saved: value, newBest, ...(await view(s, game, cls, num)) });
+    // 무게중심 스피드 퀴즈: 20문제 중 한 번에 맞힌 문제가 16개 이상이면 떨어진 사과 1개, 20개 모두면 2개(하루 최대 2개)
+    let apple = null;
+    if (game === 'cspeed') {
+      const ok = Math.max(0, Math.min(20, Math.round(Number(src.ok)) || 0));
+      apple = { ...(await giveGameApples(s, cls, num, ok >= 20 ? 2 : ok >= 16 ? 1 : 0)), ok };
+    }
+    return res.status(200).json({ saved: value, newBest, apple, ...(await view(s, game, cls, num)) });
   } catch (e) {
     console.error('game failed', e);
     return res.status(502).json({ error: '기록을 저장하지 못했어요. 다시 시도해 주세요.' });

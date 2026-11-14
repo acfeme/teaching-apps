@@ -1,5 +1,5 @@
 import crypto from 'node:crypto';
-import { attField, fbField, gardenField, gardenOf, store, todayKST } from './_lib.js';
+import { attField, fbField, gardenField, gardenOf, store, todayKST, gameApplesOf } from './_lib.js';
 import { UNITS } from './_units.js';
 
 // 평행선 던전 탐험: 학생 캐릭터·가방·꾸미기 아이템·사과 상점·반 협동 탑
@@ -46,7 +46,7 @@ async function basketOf(cls, num) {
     const vals = await s.hmget('state', ...U.STAGES.map((st) => attField(cls, num, st)), fbField(cls, num), gardenField(cls, num));
     total += gardenOf(U, vals.slice(0, U.STAGES.length), vals[U.STAGES.length], vals[U.STAGES.length + 1]).harvested;
   }
-  return total;
+  return total + await gameApplesOf(store('site:'), cls, num); // 게임에서 주운 사과도 바구니에
 }
 
 function roll(p) {

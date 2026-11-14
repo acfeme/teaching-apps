@@ -227,9 +227,9 @@
       const rows = d.students.map((s) => `<tr><td>${s.num}번</td>${d.units.map((u) => {
         const g = s.units[u.id];
         return `<td class="left"><span class="g-tree">${esc(window.treeName(g.n, g.max))}</span> <small>${g.n}/${g.max}</small><br>🍎 ${g.harvested} / ${g.ripe}${g.ready ? ` <b class="g-ready">수확 대기 ${g.ready}</b>` : ''}</td>`;
-      }).join('')}<td><b>🧺 ${s.basket}</b></td></tr>`).join('');
+      }).join('')}<td><b>🧺 ${s.basket}</b>${s.game ? `<br><small>🎮 게임 ${s.game}</small>` : ''}</td></tr>`).join('');
       t.innerHTML = `<div class="table-wrap"><table class="g-table"><thead><tr><th>번호</th>${head}<th>보관함</th></tr></thead><tbody>${rows}</tbody></table></div>
-        <p class="hub-note">나무는 1·2단계에서 맞힌 문제 수(마지막 응시)만큼 자라요. 다 자라면 사과가 열리고(최대 8개), 피드백 문제를 끝낼 때마다 사과 1개를 더 받아요. 학생이 보관함에서 수확하면 🧺에 쌓여요.</p>`;
+        <p class="hub-note">나무는 1·2단계에서 맞힌 문제 수(마지막 응시)만큼 자라요. 다 자라면 사과가 열리고(최대 8개), 피드백 문제를 끝낼 때마다 사과 1개를 더 받아요. 학생이 보관함에서 수확하면 🧺에 쌓여요. 🎮는 게임에서 주운 사과(하루 최대 2개)예요.</p>`;
     } catch (e) {
       if (e.status === 401) { pw = ''; setPw(''); paintLogin('비밀번호가 바뀌었어요. 다시 넣어 주세요.'); paintMat(); paintGarden(); return; }
       box.querySelector('#gtable').innerHTML = `<div class="msg">${esc(e.message)}</div>`;

@@ -196,7 +196,7 @@
       <div class="msg ${msg ? '' : 'hidden'}" id="lmsg">${esc(msg || '')}</div></form>`;
     box.querySelector('#lf').onsubmit = async (e) => {
       e.preventDefault();
-      const v = box.querySelector('#pw').value.trim(); // 복사할 때 딸려 온 빈칸·줄바꿈 무시
+      const v = box.querySelector('#pw').value.normalize('NFKC').trim(); // 전각 글자(１２ｍｅ)는 보통 글자로, 앞뒤 빈칸은 무시
       if (!v) return;
       pw = v;
       try {

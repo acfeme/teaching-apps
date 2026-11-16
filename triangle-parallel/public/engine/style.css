@@ -295,6 +295,8 @@ a.ox { text-decoration: none; }
 .g-table { width: 100%; border-collapse: collapse; background: var(--card); font-size: 16px; }
 .g-table th, .g-table td { border: 1px solid var(--line); padding: 8px 10px; text-align: center; vertical-align: top; }
 .g-table th small { display: block; color: var(--muted); font-weight: 400; }
+.g-dim { color: var(--muted); }
+#grec .g-tabs + .g-tabs { margin-top: 6px; }
 .g-table td.left { text-align: left; }
 .g-ready { color: var(--warn); font-size: 14px; }
 

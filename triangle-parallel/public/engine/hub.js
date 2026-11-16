@@ -67,13 +67,13 @@
       ${mats.length ? `<section><h2 class="hub-h2">📚 수업 자료</h2>${isAdmin ? '<p class="hub-note">반마다 눌러서 열고 닫아요. 닫으면 학생 화면이 15초 안에 잠겨요.</p>' : ''}<div class="unit-grid">${mats.map(card).join('')}</div></section>` : ''}
       ${games.length ? `<section><h2 class="hub-h2 hub-h2-row">🎮 게임 ${window.RANK ? '<button class="g-rank-btn" id="gameRank">🏆 게임 랭킹</button>' : ''}</h2>${isAdmin ? '<div class="game-lock"><b>🔒 게임 잠금</b> <span class="mat-note">잠그면 그 반 학생의 게임 화면이 15초 안에 잠기고 기록도 저장되지 않아요. 문제풀이를 먼저 하게 할 때 써요.</span><div class="mat-sws" data-mat="games"></div></div>' : '<div class="game-lock-note hidden" id="gameLockNote"></div>'}<div class="unit-grid">${games.map(card).join('')}</div></section>` : ''}
       ${link.length ? `<section><h2 class="hub-h2">🔗 바로가기</h2><div class="unit-grid">${link.map(card).join('')}</div></section>` : ''}
-      ${isAdmin ? '<section><h2 class="hub-h2">🧺 학생 보관함 현황</h2><div id="garden"></div></section><section><h2 class="hub-h2">🔐 학생 별명·비밀번호</h2><div id="nicks"></div></section>' : ''}
+      ${isAdmin ? '<section><h2 class="hub-h2">🧺 학생 보관함 현황</h2><div id="garden"></div></section><section><h2 class="hub-h2">🎮 학생 게임 기록</h2><div id="grec"></div></section><section><h2 class="hub-h2">🔐 학생 별명·비밀번호</h2><div id="nicks"></div></section>' : ''}
       ${soon.length ? `<section><h2 class="hub-h2">🌱 곧 열려요</h2><div class="unit-grid">${soon.map(card).join('')}</div></section>` : ''}
       ${isAdmin ? '<p class="hub-foot"><a href="/">학생 첫 화면 보기</a></p>' : ''}
     </div>`;
     loadOpen(quiz);
     app.querySelector('#gameRank')?.addEventListener('click', () => window.RANK.open('match'));
-    if (isAdmin) { paintLogin(); if (pw) loadMat(); paintGarden(); paintNicks(); } else { loadMat(); paintMe(); }
+    if (isAdmin) { paintLogin(); if (pw) loadMat(); paintGarden(); paintGameRec(); paintNicks(); } else { loadMat(); paintMe(); }
   }
 
   // 문제풀이 유닛마다 지금 열린 반을 보여 준다
@@ -102,7 +102,7 @@
       mat = d.open;
       paintMat();
     } catch (e) {
-      if (isAdmin && e.status === 401) { pw = ''; setPw(''); paintLogin('비밀번호가 바뀌었어요. 다시 넣어 주세요.'); paintMat(); paintGarden(); }
+      if (isAdmin && e.status === 401) { pw = ''; setPw(''); paintLogin('비밀번호가 바뀌었어요. 다시 넣어 주세요.'); paintMat(); paintGarden(); paintGameRec(); }
     }
   }
 
@@ -188,7 +188,7 @@
     if (!box) return;
     if (pw) {
       box.innerHTML = '<div class="hub-login ok">🔑 로그인되어 있어요. <button id="logout" class="link-btn">나가기</button></div>';
-      box.querySelector('#logout').onclick = () => { pw = ''; setPw(''); mat = null; paintLogin(); paintMat(); paintGarden(); paintNicks(); };
+      box.querySelector('#logout').onclick = () => { pw = ''; setPw(''); mat = null; paintLogin(); paintMat(); paintGarden(); paintGameRec(); paintNicks(); };
       return;
     }
     box.innerHTML = `<form class="hub-login" id="lf"><label>🔑 수업 자료 열기·닫기와 보관함 현황은 비밀번호를 넣어야 보여요.</label>
@@ -203,7 +203,7 @@
         const d = await api('/api/material?check=1');
         setPw(v);
         mat = d.open;
-        paintLogin(); paintMat(); paintGarden(); paintNicks();
+        paintLogin(); paintMat(); paintGarden(); paintGameRec(); paintNicks();
       } catch (err) {
         pw = '';
         paintLogin(err.message);
@@ -231,9 +231,38 @@
       t.innerHTML = `<div class="table-wrap"><table class="g-table"><thead><tr><th>번호</th>${head}<th>보관함</th></tr></thead><tbody>${rows}</tbody></table></div>
         <p class="hub-note">나무는 1·2단계에서 맞힌 문제 수(마지막 응시)만큼 자라요. 다 자라면 사과가 열리고(최대 8개), 피드백 문제를 끝낼 때마다 사과 1개를 더 받아요. 학생이 보관함에서 수확하면 🧺에 쌓여요. 🎮는 게임에서 주운 사과(하루 최대 2개)예요.</p>`;
     } catch (e) {
-      if (e.status === 401) { pw = ''; setPw(''); paintLogin('비밀번호가 바뀌었어요. 다시 넣어 주세요.'); paintMat(); paintGarden(); return; }
+      if (e.status === 401) { pw = ''; setPw(''); paintLogin('비밀번호가 바뀌었어요. 다시 넣어 주세요.'); paintMat(); paintGarden(); paintGameRec(); return; }
       box.querySelector('#gtable').innerHTML = `<div class="msg">${esc(e.message)}</div>`;
     }
+  }
+
+  // ---- 학생 게임 기록(반 → 게임별 번호·별명·오늘·최고·순위·한 판 수) ----
+  let recCls = CLASSES[0], recGame = 'cspeed', recData = null;
+  async function paintGameRec(reload = true) {
+    const box = app.querySelector('#grec');
+    if (!box) return;
+    if (!pw) { box.innerHTML = '<div class="empty">비밀번호를 넣으면 볼 수 있어요.</div>'; return; }
+    if (reload || !recData || recData.cls !== recCls) {
+      box.innerHTML = `<div class="g-tabs">${CLASSES.map((c) => `<button class="g-tab ${c === recCls ? 'on' : ''}" data-c="${c}">${c}반</button>`).join('')}</div><div class="empty">불러오는 중…</div>`;
+      try { recData = await api(`/api/game?all=1&cls=${encodeURIComponent(recCls)}`); } catch (e) {
+        if (e.status === 401) { pw = ''; setPw(''); paintLogin('비밀번호가 바뀌었어요. 다시 넣어 주세요.'); paintMat(); paintGarden(); paintGameRec(); paintNicks(); return; }
+        box.innerHTML = `<div class="msg">${esc(e.message)}</div>`; return;
+      }
+    }
+    const d = recData, g = d.games.find((x) => x.id === recGame) || d.games[0];
+    const fmt = (v) => (v == null ? '<span class="g-dim">—</span>' : `<b>${v}</b>${g.unit}`);
+    const rows = g.rows.filter((r) => d.nicks[r.num - 1] || r.plays || r.best != null);
+    const played = g.rows.filter((r) => r.plays > 0).length, today = g.rows.filter((r) => r.today != null).length;
+    const body = rows.length ? rows.map((r) => `<tr><td>${r.num}번</td><td class="left">${esc(d.nicks[r.num - 1] || '')}</td><td>${fmt(r.today)}</td><td>${fmt(r.best)}</td><td>${r.rank ? `${r.rank}등` : '<span class="g-dim">—</span>'}</td><td>${r.plays || '<span class="g-dim">0</span>'}</td></tr>`).join('')
+      : '<tr><td colspan="6"><div class="empty">아직 비밀번호를 정한 학생이 없어요.</div></td></tr>';
+    box.innerHTML = `<div class="g-tabs">${CLASSES.map((c) => `<button class="g-tab ${c === recCls ? 'on' : ''}" data-c="${c}">${c}반</button>`).join('')}</div>
+      <div class="g-tabs">${d.games.map((x) => `<button class="g-tab ${x.id === g.id ? 'on' : ''}" data-g="${x.id}">${esc(x.title)}</button>`).join('')} <button class="g-tab" data-r>🔄 새로고침</button></div>
+      <p class="hub-note">${esc(g.title)} · 오늘 한 학생 <b>${today}명</b> · 한 번이라도 한 학생 <b>${played}명</b> · ${g.better === 'low' ? '기록이 짧을수록' : '점수가 높을수록'} 높은 순위 · 반 순위는 최고 기록 기준</p>
+      <div class="table-wrap"><table class="g-table"><thead><tr><th>번호</th><th>별명</th><th>오늘 기록</th><th>최고 기록</th><th>반 순위</th><th>한 판 수</th></tr></thead><tbody>${body}</tbody></table></div>
+      <p class="hub-note">비밀번호를 정한 학생과 게임을 한 학생만 보여요. 오늘 기록은 오늘 가장 좋은 기록이에요. 이 표는 선생님 화면에만 보여요.</p>`;
+    box.querySelectorAll('[data-c]').forEach((b) => { b.onclick = () => { recCls = b.dataset.c; paintGameRec(); }; });
+    box.querySelectorAll('[data-g]').forEach((b) => { b.onclick = () => { recGame = b.dataset.g; paintGameRec(false); }; });
+    box.querySelector('[data-r]').onclick = () => paintGameRec();
   }
 
   // ---- 학생: 지금 로그인한 별명과 나가기 ----
@@ -279,7 +308,7 @@
         };
       });
     } catch (e) {
-      if (e.status === 401) { pw = ''; setPw(''); paintLogin('비밀번호가 바뀌었어요. 다시 넣어 주세요.'); paintMat(); paintGarden(); paintNicks(); return; }
+      if (e.status === 401) { pw = ''; setPw(''); paintLogin('비밀번호가 바뀌었어요. 다시 넣어 주세요.'); paintMat(); paintGarden(); paintGameRec(); paintNicks(); return; }
       box.querySelector('#ntable').innerHTML = `<div class="msg">${esc(e.message)}</div>`;
     }
   }

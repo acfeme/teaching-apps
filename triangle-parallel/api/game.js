@@ -1,4 +1,4 @@
-import { CLASSES, giveGameApples, noStore, readBody, sameGroup, store, todayKST } from './_lib.js';
+import { CLASSES, MAX_NUMBER, checkAdmin, giveGameApples, noStore, readBody, sameGroup, store, todayKST } from './_lib.js';
 import { nicksFor, tokenOf } from './_auth.js';
 import { dungeon, parseJson, towerToday } from './_dungeon.js';
 
@@ -63,6 +63,29 @@ async function view(s, game, cls, num) {
   };
 }
 
+// 선생님용: 한 반 학생 전체의 게임별 오늘 기록·최고 기록·한 판 수(번호와 별명 함께). GET ?all=1&cls= (관리자 비밀번호)
+const TITLES = { match: '🃏 닮음비 짝맞추기', shoot: '🎯 닮음 조건 쏘기', right: '👾 직각 몬스터 쪼개기', dungeon: '🗝️ 평행선 던전 탐험', cspeed: '⚖️ 무게중심 스피드 퀴즈' };
+async function classRecords(s, cls) {
+  const date = todayKST();
+  const ids = Object.keys(GAMES);
+  const keys = Array.from({ length: MAX_NUMBER }, (_, i) => who(cls, i + 1));
+  const [nicks, ...hs] = await Promise.all([
+    s.hmget('nick', ...keys),
+    ...ids.flatMap((g) => [s.hgetall(bestKey(g)), s.hgetall(dayKey(g, date)), s.hgetall(playKey(g))]),
+  ]);
+  const games = ids.map((g, gi) => {
+    const [best, day, plays] = hs.slice(gi * 3, gi * 3 + 3);
+    const G = GAMES[g];
+    const rows = keys.map((k, i) => ({ num: i + 1, best: best[k] != null ? Number(best[k]) : null, today: day[k] != null ? Number(day[k]) : null, plays: Number(plays[k]) || 0 }));
+    // 반 안 순위(최고 기록 기준, 같은 기록은 같은 등수)
+    const sorted = rows.filter((r) => r.best != null).sort((a, b) => (G.better === 'low' ? a.best - b.best : b.best - a.best));
+    let rank = 0, prev = null;
+    sorted.forEach((r, i) => { if (r.best !== prev) { rank = i + 1; prev = r.best; } r.rank = rank; });
+    return { id: g, title: TITLES[g] || g, unit: G.unit, better: G.better, rows };
+  });
+  return { cls, date, nicks: keys.map((k, i) => nicks[i] || null), games };
+}
+
 const CQ_KEEP_MS = 20 * 60 * 1000;
 const cqKey = () => `cq:${todayKST()}`;
 async function cquiz(req, res, s, src) {
@@ -100,6 +123,11 @@ export default async function handler(req, res) {
     const game = String(src.game || '');
     // 무게중심 수업 화면 ⑧ 모둠 스피드 퀴즈: 모둠 기록(걸린 시간)을 20분 동안 보여 준다(로그인 없이)
     if (game === 'cquiz') return await cquiz(req, res, s, src);
+    if (req.method === 'GET' && src.all) {
+      if (!(await checkAdmin(req, res, s))) return undefined;
+      if (!CLASSES.includes(src.cls)) return res.status(400).json({ error: '반이 올바르지 않습니다.' });
+      return res.status(200).json(await classRecords(s, src.cls));
+    }
     const G = GAMES[game];
     if (!G) return res.status(400).json({ error: '게임이 올바르지 않습니다.' });
     const t = tokenOf(req);

@@ -106,6 +106,7 @@ export default async function handler(req, res) {
     if (game === 'dungeon' && req.method === 'GET' && src.tower) return res.status(200).json({ tower: await towerToday(s) });
     // 선생님이 게임을 잠근 반은 기록 저장·상자·상점 등 바꾸는 요청을 받지 않는다(보기만 가능)
     if (req.method === 'POST' && t && String((await s.hget('state', `mat:games:${t.cls}`)) ?? '0') !== '1') { // 저장된 값이 없으면 잠김
+      console.log('game post: locked', game, t.cls);
       return res.status(403).json({ code: 'GAME_LOCKED', error: '지금은 게임이 잠겨 있어요. 문제풀이를 먼저 해요!' });
     }
     if (game === 'dungeon' && (src.profile || src.action)) {
@@ -119,11 +120,11 @@ export default async function handler(req, res) {
       return res.status(200).json(await view(s, game, cls, t ? t.num : null));
     }
     if (req.method !== 'POST') return res.status(405).json({ error: '지원하지 않는 요청입니다.' });
-    if (!t) return res.status(401).json({ code: 'LOGIN', error: '비밀번호로 다시 들어와 주세요.' });
+    if (!t) { console.log('game post: no login', game, req.headers['x-student-token'] ? 'bad token' : 'no token'); return res.status(401).json({ code: 'LOGIN', error: '비밀번호로 다시 들어와 주세요.' }); }
     const { cls, num } = t;
 
     const value = Math.round(Number(src.value) * 10) / 10;
-    if (!Number.isFinite(value) || value < G.min || value > G.max) return res.status(400).json({ error: '기록이 올바르지 않습니다.' });
+    if (!Number.isFinite(value) || value < G.min || value > G.max) { console.log('game post: bad value', game, src.value); return res.status(400).json({ error: '기록이 올바르지 않습니다.' }); }
     const date = todayKST();
     const k = who(cls, num);
     const [best, today] = await s.hmget(bestKey(game), k).then(async (b) => [b[0], (await s.hmget(dayKey(game, date), k))[0]]);
@@ -138,6 +139,7 @@ export default async function handler(req, res) {
       const ok = Math.max(0, Math.min(20, Math.round(Number(src.ok)) || 0));
       apple = { ...(await giveGameApples(s, cls, num, ok >= 20 ? 2 : ok >= 16 ? 1 : 0)), ok };
     }
+    console.log('game post: saved', game, cls, num, value);
     return res.status(200).json({ saved: value, newBest, apple, ...(await view(s, game, cls, num)) });
   } catch (e) {
     console.error('game failed', e);

@@ -35,7 +35,15 @@ function createStore(prefix) {
         if (Array.isArray(res)) return res;
         return fields.map((x) => res[x] ?? null);
       },
-      hgetall: async (key) => (await r.hgetall(k(key))) || {},
+      // automaticDeserialization:false면 hgetall은 [필드, 값, 필드, 값…] 배열을 돌려준다 → 객체로 바꾼다(값은 글자 그대로)
+      hgetall: async (key) => {
+        const res = await r.hgetall(k(key));
+        if (!res) return {};
+        if (!Array.isArray(res)) return res;
+        const o = {};
+        for (let i = 0; i + 1 < res.length; i += 2) o[res[i]] = res[i + 1];
+        return o;
+      },
       hset: (key, obj) => r.hset(k(key), obj),
       hdel: (key, ...fields) => r.hdel(k(key), ...fields),
       hincr: async (key, field) => Number(await r.hincrby(k(key), field, 1)),

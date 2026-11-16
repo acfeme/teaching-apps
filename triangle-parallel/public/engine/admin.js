@@ -25,7 +25,7 @@
       <button>입장</button>
       ${msg ? `<div class="err">${esc(msg)}</div>` : ''}
     </form>`;
-    app.querySelector('#f').onsubmit = (e) => { e.preventDefault(); st.pw = app.querySelector('#pw').value; start(); };
+    app.querySelector('#f').onsubmit = (e) => { e.preventDefault(); st.pw = app.querySelector('#pw').value.trim(); start(); };
     app.querySelector('#pw').focus();
   }
 

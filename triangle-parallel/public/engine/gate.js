@@ -9,7 +9,7 @@
   try { if (window.top !== window && window.top.location.host === location.host) return; } catch (e) { /* 다른 사이트 안 */ }
   // /m/lesson → /m/lesson/ (상대 주소의 화면 파일을 찾을 수 있게)
   if (/^\/m\/[a-z0-9-]+$/.test(location.pathname)) { location.replace(location.pathname + '/' + location.search); return; }
-  var isGame = id === 'games';
+  var isGame = /^game-/.test(id); // 게임은 게임마다 따로 잠금(game-match, game-cspeed …)
 
   var CLASSES = ['2-1', '2-2', '2-3', '2-4', '2-A', '2-B', '2-C']; // 2-A·2-B·2-C = 외부 체험용 샘플반
   var CHECK_MS = 15000;
@@ -75,7 +75,7 @@
       if (!isGame) { askClass(); return; }
       // 게임: 반을 모를 때는 모든 반이 열려 있으면 그냥 열고, 한 반이라도 잠겼으면 반을 묻는다
       fetch('/api/material', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
-        var st = (d && d.open && d.open.games) || {};
+        var st = (d && d.open && d.open[id]) || {};
         if (CLASSES.every(function (c) { return st[c]; })) unlock(); else askClass();
       }).catch(function () { unlock(); });
       return;
@@ -89,7 +89,7 @@
         if (x.ok && !cls) { pw = null; askClass(); return; } // 관리자 비밀번호가 바뀐 탭
         if (!x.ok) throw new Error(x.d.error || '');
         show(isGame
-          ? '<div class="ico">🎮🔒</div><h1>지금은 게임이 잠겨 있어요</h1><p><b>' + cls + '반</b>은 선생님이 게임을 잠갔어요.<br>문제풀이를 먼저 하고 오세요! 게임이 열리면 저절로 보여요.</p><button data-change>다른 반이에요</button>'
+          ? '<div class="ico">🎮🔒</div><h1>지금은 이 게임이 잠겨 있어요</h1><p><b>' + cls + '반</b>은 선생님이 이 게임을 잠갔어요.<br>문제풀이를 먼저 하고 오세요! 게임이 열리면 저절로 보여요.</p><button data-change>다른 반이에요</button>'
           : '<div class="ico">🔒</div><h1>아직 열리지 않았어요</h1><p><b>' + cls + '반</b>에는 선생님이 아직 이 자료를 열지 않았어요.<br>선생님이 열어 주시면 저절로 보여요.</p>'
           + '<button data-change>다른 반이에요</button>');
       })

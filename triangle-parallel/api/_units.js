@@ -31,6 +31,7 @@ export function unitFrom(req, res) {
 }
 
 // 선생님이 반별로 열어 줘야 볼 수 있는 수업 자료(public/m/<id>/). 허브 목록(public/engine/units.js)과 id가 같아야 한다.
-// 'games'는 게임 전체 잠금 스위치(수업 자료와 같은 방식). 처음에는 모든 반이 잠김(선생님이 열어 줘야 함).
-export const MATERIALS = ['lesson', 'right-triangle', 'centroid-lesson', 'games'];
+// 게임은 게임마다·반마다 따로 여는 스위치(game-<게임 id>). 처음에는 모두 잠김(선생님이 열어 줘야 기록 저장)
+export const GAME_IDS = ['match', 'shoot', 'right', 'dungeon', 'cspeed'];
+export const MATERIALS = ['lesson', 'right-triangle', 'centroid-lesson', ...GAME_IDS.map((g) => `game-${g}`)];
 export const OPEN_BY_DEFAULT = []; // 처음부터 열려 있게 할 자료 id(지금은 없음)

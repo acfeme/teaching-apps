@@ -1,4 +1,4 @@
-import { CLASSES, MAX_NUMBER, checkAdmin, giveGameApples, noStore, readBody, sameGroup, store, todayKST } from './_lib.js';
+import { CLASSES, MAX_NUMBER, SAMPLE_CLASSES, checkAdmin, giveGameApples, noStore, readBody, sameGroup, store, todayKST } from './_lib.js';
 import { nicksFor, tokenOf } from './_auth.js';
 import { dungeon, parseJson, towerToday } from './_dungeon.js';
 
@@ -65,10 +65,12 @@ async function view(s, game, cls, num) {
 
 // 선생님용: 한 반 학생 전체의 게임별 오늘 기록·최고 기록·한 판 수(번호와 별명 함께). GET ?all=1&cls= (관리자 비밀번호)
 const TITLES = { match: '🃏 닮음비 짝맞추기', shoot: '🎯 닮음 조건 쏘기', right: '👾 직각 몬스터 쪼개기', dungeon: '🗝️ 평행선 던전 탐험', cspeed: '⚖️ 무게중심 스피드 퀴즈' };
+// cls='all'이면 실제 반(2-1~2-4) 전체를 합쳐 순위를 매긴다(체험반은 빼고)
 async function classRecords(s, cls) {
   const date = todayKST();
   const ids = Object.keys(GAMES);
-  const keys = Array.from({ length: MAX_NUMBER }, (_, i) => who(cls, i + 1));
+  const classes = cls === 'all' ? CLASSES.filter((c) => !SAMPLE_CLASSES.includes(c)) : [cls];
+  const keys = classes.flatMap((c) => Array.from({ length: MAX_NUMBER }, (_, i) => who(c, i + 1)));
   const [nicks, ...hs] = await Promise.all([
     s.hmget('nick', ...keys),
     ...ids.flatMap((g) => [s.hgetall(bestKey(g)), s.hgetall(dayKey(g, date)), s.hgetall(playKey(g))]),
@@ -76,14 +78,17 @@ async function classRecords(s, cls) {
   const games = ids.map((g, gi) => {
     const [best, day, plays] = hs.slice(gi * 3, gi * 3 + 3);
     const G = GAMES[g];
-    const rows = keys.map((k, i) => ({ num: i + 1, best: best[k] != null ? Number(best[k]) : null, today: day[k] != null ? Number(day[k]) : null, plays: Number(plays[k]) || 0 }));
-    // 반 안 순위(최고 기록 기준, 같은 기록은 같은 등수)
+    const rows = keys.map((k, i) => {
+      const [c, n] = k.split(':');
+      return { cls: c, num: Number(n), nick: nicks[i] || null, best: best[k] != null ? Number(best[k]) : null, today: day[k] != null ? Number(day[k]) : null, plays: Number(plays[k]) || 0 };
+    });
+    // 순위(최고 기록 기준, 같은 기록은 같은 등수)
     const sorted = rows.filter((r) => r.best != null).sort((a, b) => (G.better === 'low' ? a.best - b.best : b.best - a.best));
     let rank = 0, prev = null;
     sorted.forEach((r, i) => { if (r.best !== prev) { rank = i + 1; prev = r.best; } r.rank = rank; });
     return { id: g, title: TITLES[g] || g, unit: G.unit, better: G.better, rows };
   });
-  return { cls, date, nicks: keys.map((k, i) => nicks[i] || null), games };
+  return { cls, classes, date, games };
 }
 
 const CQ_KEEP_MS = 20 * 60 * 1000;
@@ -125,7 +130,7 @@ export default async function handler(req, res) {
     if (game === 'cquiz') return await cquiz(req, res, s, src);
     if (req.method === 'GET' && src.all) {
       if (!(await checkAdmin(req, res, s))) return undefined;
-      if (!CLASSES.includes(src.cls)) return res.status(400).json({ error: '반이 올바르지 않습니다.' });
+      if (src.cls !== 'all' && !CLASSES.includes(src.cls)) return res.status(400).json({ error: '반이 올바르지 않습니다.' });
       return res.status(200).json(await classRecords(s, src.cls));
     }
     const G = GAMES[game];
@@ -133,7 +138,7 @@ export default async function handler(req, res) {
     const t = tokenOf(req);
     if (game === 'dungeon' && req.method === 'GET' && src.tower) return res.status(200).json({ tower: await towerToday(s) });
     // 선생님이 게임을 잠근 반은 기록 저장·상자·상점 등 바꾸는 요청을 받지 않는다(보기만 가능)
-    if (req.method === 'POST' && t && String((await s.hget('state', `mat:games:${t.cls}`)) ?? '0') !== '1') { // 저장된 값이 없으면 잠김
+    if (req.method === 'POST' && t && String((await s.hget('state', `mat:game-${game}:${t.cls}`)) ?? '0') !== '1') { // 저장된 값이 없으면 잠김
       console.log('game post: locked', game, t.cls);
       return res.status(403).json({ code: 'GAME_LOCKED', error: '지금은 게임이 잠겨 있어요. 문제풀이를 먼저 해요!' });
     }

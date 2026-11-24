@@ -38,7 +38,7 @@
         return `<div class="unit-card is-game admin"><div class="u-icon">${u.icon}</div><div class="u-body"><b>${esc(u.title)}</b><span>${esc(u.desc)}</span>
           <div class="mat-sws">${btns}</div>${u.stages ? '<span class="mat-note">체험 모드: 하트가 줄지 않고, 문제를 넘길 수 있고, 랭킹에 남지 않아요. (비밀번호를 넣은 뒤 눌러요)</span>' : ''}</div></div>`;
       }
-      return `<a class="unit-card is-game" href="${esc(u.url)}"><div class="u-icon">${u.icon}</div><div class="u-body"><b>${esc(u.title)}</b><span>${esc(u.desc)}</span></div><span class="u-tag go">하러 가기 →</span></a>`;
+      return `<a class="unit-card is-game" data-game="${u.id}" href="${esc(u.url)}"><div class="u-icon">${u.icon}</div><div class="u-body"><b>${esc(u.title)}</b><span>${esc(u.desc)}</span></div><span class="u-tag go">하러 가기 →</span></a>`;
     }
     if (u.kind === 'mat') {
       if (isAdmin) {
@@ -65,7 +65,7 @@
       ${isAdmin ? '<div id="login"></div>' : '<div id="meChip" class="me-chip"></div>'}
       <section><h2 class="hub-h2">✏️ 문제풀이</h2><div class="unit-grid">${quiz.map(card).join('')}</div></section>
       ${mats.length ? `<section><h2 class="hub-h2">📚 수업 자료</h2>${isAdmin ? '<p class="hub-note">반마다 눌러서 열고 닫아요. 닫으면 학생 화면이 15초 안에 잠겨요.</p>' : ''}<div class="unit-grid">${mats.map(card).join('')}</div></section>` : ''}
-      ${games.length ? `<section><h2 class="hub-h2 hub-h2-row">🎮 게임 ${window.RANK ? '<button class="g-rank-btn" id="gameRank">🏆 게임 랭킹</button>' : ''}</h2>${isAdmin ? '<div class="game-lock"><b>🔒 게임 잠금</b> <span class="mat-note">잠그면 그 반 학생의 게임 화면이 15초 안에 잠기고 기록도 저장되지 않아요. 문제풀이를 먼저 하게 할 때 써요.</span><div class="mat-sws" data-mat="games"></div></div>' : '<div class="game-lock-note hidden" id="gameLockNote"></div>'}<div class="unit-grid">${games.map(card).join('')}</div></section>` : ''}
+      ${games.length ? `<section><h2 class="hub-h2 hub-h2-row">🎮 게임 ${window.RANK ? '<button class="g-rank-btn" id="gameRank">🏆 게임 랭킹</button>' : ''}</h2>${isAdmin ? '<div class="game-lock"><b>🔒 게임 열기·잠그기</b> <span class="mat-note">게임마다, 반마다 따로 열고 잠가요. 잠그면 그 반 학생의 그 게임 화면이 15초 안에 잠기고 기록도 저장되지 않아요. 문제풀이를 먼저 하게 할 때 써요.</span><div class="mat-sws" data-mat="games"></div></div>' : '<div class="game-lock-note hidden" id="gameLockNote"></div>'}<div class="unit-grid">${games.map(card).join('')}</div></section>` : ''}
       ${link.length ? `<section><h2 class="hub-h2">🔗 바로가기</h2><div class="unit-grid">${link.map(card).join('')}</div></section>` : ''}
       ${isAdmin ? '<section><h2 class="hub-h2">🧺 학생 보관함 현황</h2><div id="garden"></div></section><section><h2 class="hub-h2">🎮 학생 게임 기록</h2><div id="grec"></div></section><section><h2 class="hub-h2">🔐 학생 별명·비밀번호</h2><div id="nicks"></div></section>' : ''}
       ${soon.length ? `<section><h2 class="hub-h2">🌱 곧 열려요</h2><div class="unit-grid">${soon.map(card).join('')}</div></section>` : ''}
@@ -133,38 +133,54 @@
     });
   }
 
-  // 게임 전체 잠금: 관리자는 반별 스위치, 학생은 우리 반이 잠겼으면 안내
+  // 게임 잠금: 관리자는 게임 × 반 스위치 표(칸 하나, 게임 줄 전체, 반 칸 전체, 모든 게임 전체). 학생은 잠긴 게임 카드에 자물쇠
+  const gst = (g) => mat?.[`game-${g}`] || {};
   function paintGameLock() {
-    const st = mat?.games || {};
+    const ids = group('game').map((u) => u.id);
     if (isAdmin) {
       const box = app.querySelector('[data-mat="games"]');
       if (!box) return;
       if (!pw || !mat) { box.innerHTML = '<span class="mat-note">비밀번호를 넣으면 잠그고 열 수 있어요.</span>'; return; }
-      const openN = CLASSES.filter((c) => st[c]).length;
-      box.innerHTML = CLASSES.map((c) => `<button class="mat-sw ${st[c] ? 'on' : ''}" data-cls="${c}" aria-pressed="${st[c] ? 'true' : 'false'}">${c}반 <b>${st[c] ? '열림' : '잠김'}</b></button>`).join('')
-        + `<button class="mat-all lock-all" data-all="${openN ? '0' : '1'}">${openN ? '🔒 모든 반 게임 잠그기' : '🔓 모든 반 게임 열기'}</button>`;
-      box.querySelectorAll('.mat-sw').forEach((b) => { b.onclick = () => setMat('games', b.dataset.cls, !st[b.dataset.cls]); });
-      box.querySelector('.mat-all').onclick = (e) => setMat('games', 'all', e.currentTarget.dataset.all === '1');
+      const anyOpen = ids.some((g) => CLASSES.some((c) => gst(g)[c]));
+      const allOpen = ids.every((g) => CLASSES.every((c) => gst(g)[c]));
+      const colOpen = (c) => ids.every((g) => gst(g)[c]);
+      const rowOpen = (g) => CLASSES.every((c) => gst(g)[c]);
+      const title = (g) => { const u = units.find((x) => x.id === g); return u ? `${u.icon} ${esc(u.title)}` : g; };
+      box.innerHTML = `<div class="gl-top"><button class="mat-all lock-all" data-allg="1" ${allOpen ? 'disabled' : ''}>🔓 모든 게임 열기 (모든 반)</button><button class="mat-all lock-all" data-allg="0" ${anyOpen ? '' : 'disabled'}>🔒 모든 게임 잠그기 (모든 반)</button></div>
+        <div class="table-wrap"><table class="g-table gl-table"><thead><tr><th>게임</th>${CLASSES.map((c) => `<th><button class="gl-col ${colOpen(c) ? 'on' : ''}" data-col="${c}" title="${c}반 모든 게임 ${colOpen(c) ? '잠그기' : '열기'}">${c}반<small>${colOpen(c) ? '모두 잠그기' : '모두 열기'}</small></button></th>`).join('')}<th>모든 반</th></tr></thead>
+        <tbody>${ids.map((g) => `<tr><td class="left"><b>${title(g)}</b></td>${CLASSES.map((c) => `<td><button class="mat-sw gl-sw ${gst(g)[c] ? 'on' : ''}" data-g="${g}" data-cls="${c}" aria-pressed="${gst(g)[c] ? 'true' : 'false'}">${gst(g)[c] ? '열림' : '잠김'}</button></td>`).join('')}<td><button class="mat-all" data-row="${g}">${rowOpen(g) ? '모두 잠그기' : '모두 열기'}</button></td></tr>`).join('')}</tbody></table></div>`;
+      box.querySelectorAll('.gl-sw').forEach((x) => { x.onclick = () => setMat(`game-${x.dataset.g}`, x.dataset.cls, !gst(x.dataset.g)[x.dataset.cls]); });
+      box.querySelectorAll('[data-row]').forEach((x) => { x.onclick = () => setMat(`game-${x.dataset.row}`, 'all', !rowOpen(x.dataset.row)); });
+      box.querySelectorAll('[data-col]').forEach((x) => { x.onclick = () => setMat('games-all', x.dataset.col, !colOpen(x.dataset.col)); });
+      box.querySelectorAll('[data-allg]').forEach((x) => { x.onclick = () => setMat('games-all', 'all', x.dataset.allg === '1'); });
       return;
     }
     const note = app.querySelector('#gameLockNote');
     if (!note || !mat) return;
     const m = window.ME && window.ME.get();
-    const locked = m ? !st[m.cls] : CLASSES.every((c) => !st[c]);
-    note.textContent = locked ? '🔒 지금은 게임이 잠겨 있어요. 문제풀이를 먼저 해요!' : '';
-    note.classList.toggle('hidden', !locked);
-    app.querySelectorAll('.unit-card.is-game').forEach((c) => c.classList.toggle('is-locked', locked));
+    // 반을 알면 우리 반 기준, 모르면 어느 반이라도 열려 있으면 열림으로
+    const isOpen = (g) => (m ? !!gst(g)[m.cls] : CLASSES.some((c) => gst(g)[c]));
+    const openN = ids.filter(isOpen).length;
+    note.textContent = openN ? '' : '🔒 지금은 게임이 잠겨 있어요. 문제풀이를 먼저 해요!';
+    note.classList.toggle('hidden', openN > 0);
+    app.querySelectorAll('.unit-card.is-game[data-game]').forEach((c) => {
+      const open = isOpen(c.dataset.game);
+      c.classList.toggle('is-locked', !open);
+      const tag = c.querySelector('.u-tag');
+      if (tag) { tag.textContent = open ? '하러 가기 →' : '🔒 잠김'; tag.classList.toggle('go', open); }
+    });
   }
 
   async function setMat(id, cls, value) {
     const prev = JSON.parse(JSON.stringify(mat));
-    (cls === 'all' ? CLASSES : [cls]).forEach((c) => { mat[id][c] = value; });
+    const ids = id === 'games-all' ? group('game').map((u) => `game-${u.id}`) : [id];
+    ids.forEach((i) => { mat[i] = mat[i] || {}; (cls === 'all' ? CLASSES : [cls]).forEach((c) => { mat[i][c] = value; }); });
     matBusy = true;
     paintMat();
     try {
       const d = await api('/api/material', { method: 'POST', body: JSON.stringify({ id, cls, value }) });
       mat = d.open;
-      toast(id === 'games' ? `게임 · ${cls === 'all' ? '모든 반' : `${cls}반`} ${value ? '열었어요' : '잠갔어요'}` : `${units.find((u) => u.id === id).title} · ${cls === 'all' ? '모든 반' : `${cls}반`} ${value ? '열었어요' : '닫았어요'}`);
+      toast(/^game/.test(id) ? `${id === 'games-all' ? '모든 게임' : (units.find((u) => `game-${u.id}` === id) || {}).title || '게임'} · ${cls === 'all' ? '모든 반' : `${cls}반`} ${value ? '열었어요' : '잠갔어요'}` : `${units.find((u) => u.id === id).title} · ${cls === 'all' ? '모든 반' : `${cls}반`} ${value ? '열었어요' : '닫았어요'}`);
     } catch (e) {
       mat = prev;
       toast(`바꾸지 못했어요: ${e.message}`);
@@ -237,32 +253,47 @@
   }
 
   // ---- 학생 게임 기록(반 → 게임별 번호·별명·오늘·최고·순위·한 판 수) ----
-  let recCls = CLASSES[0], recGame = 'cspeed', recData = null;
+  let recCls = 'all', recGame = 'cspeed', recData = null, recSort = 'num'; // 반 보기: 'num' 번호순, 'rank' 랭킹순
   async function paintGameRec(reload = true) {
     const box = app.querySelector('#grec');
     if (!box) return;
     if (!pw) { box.innerHTML = '<div class="empty">비밀번호를 넣으면 볼 수 있어요.</div>'; return; }
     if (reload || !recData || recData.cls !== recCls) {
-      box.innerHTML = `<div class="g-tabs">${CLASSES.map((c) => `<button class="g-tab ${c === recCls ? 'on' : ''}" data-c="${c}">${c}반</button>`).join('')}</div><div class="empty">불러오는 중…</div>`;
+      box.innerHTML = '<div class="empty">불러오는 중…</div>';
       try { recData = await api(`/api/game?all=1&cls=${encodeURIComponent(recCls)}`); } catch (e) {
         if (e.status === 401) { pw = ''; setPw(''); paintLogin('비밀번호가 바뀌었어요. 다시 넣어 주세요.'); paintMat(); paintGarden(); paintGameRec(); paintNicks(); return; }
         box.innerHTML = `<div class="msg">${esc(e.message)}</div>`; return;
       }
     }
-    const d = recData, g = d.games.find((x) => x.id === recGame) || d.games[0];
+    const d = recData, g = d.games.find((x) => x.id === recGame) || d.games[0], all = d.cls === 'all';
+    const byRank = all || recSort === 'rank';
     const fmt = (v) => (v == null ? '<span class="g-dim">—</span>' : `<b>${v}</b>${g.unit}`);
-    const rows = g.rows.filter((r) => d.nicks[r.num - 1] || r.plays || r.best != null);
+    const medal = (r) => (r === 1 ? '🥇' : r === 2 ? '🥈' : r === 3 ? '🥉' : '');
+    // 반 하나: 비밀번호를 정했거나 게임을 한 학생을 번호 순으로 / 전체: 기록이 있는 학생을 순위 순으로
+    // 랭킹순: 기록 있는 학생을 순위대로(반 보기에서는 아직 안 한 학생을 맨 아래에) / 번호순: 비밀번호를 정했거나 게임을 한 학생을 번호대로
+    const rankSort = (x, y) => (x.rank || 9999) - (y.rank || 9999) || x.cls.localeCompare(y.cls) || x.num - y.num;
+    const rows = all ? g.rows.filter((r) => r.best != null).sort(rankSort)
+      : g.rows.filter((r) => r.nick || r.plays || r.best != null).sort(byRank ? rankSort : (x, y) => x.num - y.num);
     const played = g.rows.filter((r) => r.plays > 0).length, today = g.rows.filter((r) => r.today != null).length;
-    const body = rows.length ? rows.map((r) => `<tr><td>${r.num}번</td><td class="left">${esc(d.nicks[r.num - 1] || '')}</td><td>${fmt(r.today)}</td><td>${fmt(r.best)}</td><td>${r.rank ? `${r.rank}등` : '<span class="g-dim">—</span>'}</td><td>${r.plays || '<span class="g-dim">0</span>'}</td></tr>`).join('')
-      : '<tr><td colspan="6"><div class="empty">아직 비밀번호를 정한 학생이 없어요.</div></td></tr>';
-    box.innerHTML = `<div class="g-tabs">${CLASSES.map((c) => `<button class="g-tab ${c === recCls ? 'on' : ''}" data-c="${c}">${c}반</button>`).join('')}</div>
+    const head = all ? '<th>순위</th><th>반</th><th>번호</th><th>별명</th><th>최고 기록</th><th>오늘 기록</th><th>한 판 수</th>'
+      : byRank ? '<th>반 순위</th><th>번호</th><th>별명</th><th>최고 기록</th><th>오늘 기록</th><th>한 판 수</th>'
+      : '<th>번호</th><th>별명</th><th>오늘 기록</th><th>최고 기록</th><th>반 순위</th><th>한 판 수</th>';
+    const body = !rows.length ? `<tr><td colspan="7"><div class="empty">${all ? '아직 이 게임 기록이 없어요.' : '아직 비밀번호를 정한 학생이 없어요.'}</div></td></tr>`
+      : rows.map((r) => (all
+        ? `<tr><td><b>${medal(r.rank)} ${r.rank}등</b></td><td>${r.cls}반</td><td>${r.num}번</td><td class="left">${esc(r.nick || '')}</td><td>${fmt(r.best)}</td><td>${fmt(r.today)}</td><td>${r.plays}</td></tr>`
+        : byRank ? `<tr><td>${r.rank ? `<b>${medal(r.rank)} ${r.rank}등</b>` : '<span class="g-dim">아직 안 함</span>'}</td><td>${r.num}번</td><td class="left">${esc(r.nick || '')}</td><td>${fmt(r.best)}</td><td>${fmt(r.today)}</td><td>${r.plays || '<span class="g-dim">0</span>'}</td></tr>`
+        : `<tr><td>${r.num}번</td><td class="left">${esc(r.nick || '')}</td><td>${fmt(r.today)}</td><td>${fmt(r.best)}</td><td>${r.rank ? `${r.rank}등` : '<span class="g-dim">—</span>'}</td><td>${r.plays || '<span class="g-dim">0</span>'}</td></tr>`)).join('');
+    const tabs = [['all', '🏫 전체'], ...CLASSES.map((c) => [c, `${c}반`])];
+    box.innerHTML = `<div class="g-tabs">${tabs.map(([c, l]) => `<button class="g-tab ${c === recCls ? 'on' : ''}" data-c="${c}">${l}</button>`).join('')}</div>
       <div class="g-tabs">${d.games.map((x) => `<button class="g-tab ${x.id === g.id ? 'on' : ''}" data-g="${x.id}">${esc(x.title)}</button>`).join('')} <button class="g-tab" data-r>🔄 새로고침</button></div>
-      <p class="hub-note">${esc(g.title)} · 오늘 한 학생 <b>${today}명</b> · 한 번이라도 한 학생 <b>${played}명</b> · ${g.better === 'low' ? '기록이 짧을수록' : '점수가 높을수록'} 높은 순위 · 반 순위는 최고 기록 기준</p>
-      <div class="table-wrap"><table class="g-table"><thead><tr><th>번호</th><th>별명</th><th>오늘 기록</th><th>최고 기록</th><th>반 순위</th><th>한 판 수</th></tr></thead><tbody>${body}</tbody></table></div>
-      <p class="hub-note">비밀번호를 정한 학생과 게임을 한 학생만 보여요. 오늘 기록은 오늘 가장 좋은 기록이에요. 이 표는 선생님 화면에만 보여요.</p>`;
+      ${all ? '' : `<div class="g-tabs"><button class="g-tab ${recSort === 'num' ? 'on' : ''}" data-s="num">🔢 번호순</button><button class="g-tab ${recSort === 'rank' ? 'on' : ''}" data-s="rank">🏆 랭킹순</button></div>`}
+      <p class="hub-note">${esc(g.title)} · ${all ? `<b>전체 랭킹</b>(${d.classes.map((c) => `${c}반`).join('·')}, 체험반 제외) · ` : ''}오늘 한 학생 <b>${today}명</b> · 한 번이라도 한 학생 <b>${played}명</b> · ${g.better === 'low' ? '기록이 짧을수록' : '점수가 높을수록'} 높은 순위 · 순위는 최고 기록 기준</p>
+      <div class="table-wrap"><table class="g-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>
+      <p class="hub-note">${all ? '게임 기록이 있는 학생만 순위대로 보여요.' : '비밀번호를 정한 학생과 게임을 한 학생만 보여요.'} 오늘 기록은 오늘 가장 좋은 기록이에요. 이 표는 선생님 화면에만 보여요.</p>`;
     box.querySelectorAll('[data-c]').forEach((b) => { b.onclick = () => { recCls = b.dataset.c; paintGameRec(); }; });
     box.querySelectorAll('[data-g]').forEach((b) => { b.onclick = () => { recGame = b.dataset.g; paintGameRec(false); }; });
     box.querySelector('[data-r]').onclick = () => paintGameRec();
+    box.querySelectorAll('[data-s]').forEach((b) => { b.onclick = () => { recSort = b.dataset.s; paintGameRec(false); }; });
   }
 
   // ---- 학생: 지금 로그인한 별명과 나가기 ----

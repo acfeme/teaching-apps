@@ -358,3 +358,12 @@ body.garden-open { overflow: hidden; }
 .game-lock .lock-all { font-weight: 800; }
 .game-lock-note { background: #fff1ec; border: 2px solid #f0b48a; color: #8d2f17; border-radius: 12px; padding: 8px 12px; margin: 0 0 12px; font-weight: 800; }
 .unit-card.is-game.is-locked { opacity: .55; }
+
+/* 게임 × 반 잠금 표 */
+.gl-top { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.gl-top .mat-all:disabled { opacity: .4; }
+.gl-table td, .gl-table th { vertical-align: middle; padding: 6px; }
+.gl-table .gl-sw { min-height: 40px; padding: 0 10px; font-size: 15px; width: 100%; }
+.gl-col { background: none; border: 0; font: inherit; font-weight: 800; cursor: pointer; color: var(--ink, #1c2230); }
+.gl-col small { display: block; font-weight: 600; font-size: 12px; color: var(--brand-dark); text-decoration: underline; }
+.gl-table .mat-all { min-height: 40px; font-size: 14px; white-space: nowrap; }

@@ -1,0 +1,2660 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<script>window.VC_MODE = 1;</script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>모둠 수학 8단원</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+/* 칠판(초록) + 학습지(흰 종이) — 교실 그대로 */
+:root{
+  --bg:#eef2ee; --paper:#ffffff; --ink:#1b2420; --muted:#5a6a61; --line:#d6dfd8;
+  --board:#24553f; --board2:#1b4532; --board-ink:#f2f7f1; --chalk:#f0c24f;
+  --ok:#23804e; --ok-bg:#e1f2e7; --bad:#be4a33; --bad-bg:#fbe8e2; --wait:#8a6a12; --wait-bg:#fbf0d2;
+  --focus:#2a6fdb; --card-shadow:0 1px 2px rgba(20,40,30,.08),0 4px 14px rgba(20,40,30,.06);
+  --f-display:'Jua','Noto Sans KR',system-ui,sans-serif;
+  --f-body:'Noto Sans KR',system-ui,-apple-system,'Malgun Gothic',sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121815; --paper:#1b231f; --ink:#e7eee9; --muted:#9db0a5; --line:#2e3b34;
+  --board:#1d4733; --board2:#163a29; --board-ink:#eef5ef; --chalk:#f0c24f;
+  --ok:#5cc58a; --ok-bg:#183a27; --bad:#f08a72; --bad-bg:#3d1f18; --wait:#e8c65e; --wait-bg:#3a3014;
+  --focus:#7aa7ff; --card-shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121815; --paper:#1b231f; --ink:#e7eee9; --muted:#9db0a5; --line:#2e3b34;
+  --board:#1d4733; --board2:#163a29; --board-ink:#eef5ef; --chalk:#f0c24f;
+  --ok:#5cc58a; --ok-bg:#183a27; --bad:#f08a72; --bad-bg:#3d1f18; --wait:#e8c65e; --wait-bg:#3a3014;
+  --focus:#7aa7ff; --card-shadow:0 1px 2px rgba(0,0,0,.4); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.wrap{max-width:760px;margin:0 auto;padding-block:18px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wide{max-width:1280px}
+.board{background:var(--board);color:var(--board-ink);border-bottom:6px solid #7a5a36}
+.board .wrap{padding-block:14px;display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;justify-content:space-between}
+.board h1{font-family:var(--f-display);font-weight:400;font-size:1.5rem;margin:0;letter-spacing:.01em}
+.board h1 small{color:var(--chalk);font-size:.95rem;margin-left:8px}
+.who{font-size:.95rem;opacity:.95}
+.who b{color:var(--chalk);font-weight:700}
+.bar{height:8px;background:var(--board2);border-radius:99px;overflow:hidden;flex-basis:100%}
+.bar i{display:block;height:100%;background:var(--chalk);transition:width .4s}
+.demo{background:var(--wait-bg);color:var(--wait);font-size:.9rem;padding:10px 14px;border-radius:10px;margin-bottom:14px}
+.demo a{color:inherit;font-weight:700}
+.jumprow{margin-top:10px;gap:8px}
+.jumprow label{font-size:.9rem}
+.jumprow select{flex:1 1 220px;min-width:0;padding:8px 10px;font-size:.95rem;border-color:var(--chalk)}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:22px;box-shadow:var(--card-shadow);display:grid;gap:14px}
+.stack{display:grid;gap:16px}
+.eyebrow{font-size:.82rem;font-weight:700;color:var(--muted);letter-spacing:.04em}
+.eyebrow .tag{display:inline-block;background:var(--board);color:var(--board-ink);border-radius:6px;padding:1px 8px;margin-right:6px;font-weight:500}
+.q{font-size:1.12rem;margin:0}
+.q small{display:block;color:var(--muted);font-size:.88rem;margin-top:4px}
+h2{font-family:var(--f-display);font-weight:400;font-size:1.6rem;margin:0;text-wrap:balance}
+h3{font-size:1.02rem;margin:0}
+.muted{color:var(--muted)}
+label{font-weight:700;font-size:.95rem}
+.field{display:grid;gap:6px}
+input[type=text],input[type=number],select,textarea{width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:10px;background:var(--paper);font-size:1.05rem}
+input:focus,select:focus,textarea:focus{border-color:var(--board);outline:none}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row > input{flex:1 1 160px;min-width:0}
+.btn{appearance:none;border:0;border-radius:10px;padding:12px 20px;font-weight:700;background:var(--board);color:var(--board-ink);cursor:pointer;font-size:1rem}
+.btn:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line)}
+.btn.chalk{background:var(--chalk);color:#2b2205}
+.btn.small{padding:6px 12px;font-size:.88rem}
+.btn.danger{background:var(--bad);color:#fff}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;border:2px solid var(--line);background:var(--paper);border-radius:10px;padding:12px 14px;cursor:pointer}
+.opt:hover{border-color:var(--board)}
+.fb{border-radius:10px;padding:12px 14px;font-weight:500}
+.fb.ok{background:var(--ok-bg);color:var(--ok)}
+.fb.bad{background:var(--bad-bg);color:var(--bad)}
+.fb.wait{background:var(--wait-bg);color:var(--wait)}
+.steps{display:grid;gap:8px;margin:0;padding:0;list-style:none;counter-reset:st}
+.steps li{counter-increment:st;display:grid;grid-template-columns:30px 1fr;gap:10px;align-items:start;background:var(--bg);border-radius:10px;padding:10px 12px}
+.steps li::before{content:counter(st);width:26px;height:26px;border-radius:50%;background:var(--board);color:var(--board-ink);display:grid;place-items:center;font-size:.85rem;font-weight:700}
+.piece{border:2px dashed var(--chalk);background:var(--wait-bg);border-radius:12px;padding:14px 16px}
+.piece + .piece{margin-top:8px}
+.piece .lab{font-size:.78rem;font-weight:700;color:var(--wait);letter-spacing:.05em}
+.collab{border-left:5px solid var(--chalk);padding-left:14px;display:grid;gap:10px}
+.members{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.mem{border:2px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:2px;background:var(--paper)}
+.mem.on{border-color:var(--ok);background:var(--ok-bg)}
+.mem .nm{font-weight:700}
+.mem .st{font-size:.85rem;color:var(--muted)}
+.mem.on .st{color:var(--ok)}
+.digit{font-family:var(--f-display);font-size:4.2rem;line-height:1;color:var(--board);background:var(--wait-bg);border:3px solid var(--chalk);border-radius:16px;width:110px;height:110px;display:grid;place-items:center;margin:0 auto}
+.codein{font-size:1.8rem !important;letter-spacing:.5em;text-align:center;font-family:var(--f-display)}
+.order{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.order li{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;border-radius:8px;background:var(--bg)}
+.chk{display:flex;gap:8px;flex-wrap:wrap}
+.chk label{display:flex;gap:6px;align-items:center;border:2px solid var(--line);border-radius:8px;padding:6px 12px;font-weight:500;cursor:pointer}
+.tree{font-family:ui-monospace,Consolas,monospace;font-size:.95rem;background:var(--bg);border-radius:10px;padding:12px 14px;white-space:pre-wrap}
+.done-hero{text-align:center;display:grid;gap:10px;padding:30px 20px}
+.big-ok{font-family:var(--f-display);font-size:2.4rem;color:var(--ok)}
+table{border-collapse:collapse;width:100%;font-size:.92rem;font-variant-numeric:tabular-nums}
+th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
+.scroll{overflow-x:auto}
+/* 교사 화면 */
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px}
+.gcard{background:var(--paper);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:var(--card-shadow);display:flex;flex-direction:column}
+.ghead{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;gap:8px}
+.ghead h3{font-family:var(--f-display);font-weight:400;font-size:1.5rem}
+.gstat{font-family:var(--f-display);font-size:1.6rem;padding:2px 14px;border-radius:10px}
+.gstat.ok{background:var(--ok);color:#fff}
+.gstat.no{background:var(--bad-bg);color:var(--bad)}
+.gsub{font-size:.85rem;color:var(--muted);padding:0 16px 8px}
+.mrow{display:grid;grid-template-columns:1fr auto;gap:4px 10px;padding:10px 16px;border-top:1px solid var(--line);align-items:center}
+.mrow .nm{font-weight:700}
+.mrow .pg{font-size:.85rem;color:var(--muted);grid-column:1}
+.pill{font-size:.8rem;font-weight:700;border-radius:99px;padding:3px 10px;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.no{background:var(--bad-bg);color:var(--bad)}
+.pill.wait{background:var(--wait-bg);color:var(--wait)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;grid-column:1 / -1}
+.lockscreen{position:fixed;inset:0;z-index:100;background:rgba(20,10,10,.62);display:grid;place-items:center;padding:20px max(16px,env(safe-area-inset-left,0px))}
+.lockbox{background:var(--paper);color:var(--ink);border-radius:16px;padding:28px 24px;max-width:460px;width:100%;text-align:center;display:grid;gap:12px;border:4px solid var(--mark);box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.lockbox h2{color:var(--mark)}
+.lockbox p{margin:0}
+.warn-mark{width:64px;height:64px;border-radius:50%;background:var(--mark);color:#fff;font-family:var(--f-display);font-size:2.6rem;display:grid;place-items:center;margin:0 auto;animation:warnpulse 1s ease-in-out infinite alternate}
+@keyframes warnpulse{from{transform:scale(1)}to{transform:scale(1.08)}}
+.warn-who{font-size:1.15rem;font-weight:700;color:var(--mark-ink)}
+.warnbox .btn{justify-self:center}
+.leavebadge{display:inline-block;margin:6px auto 0;padding:10px 22px;border-radius:14px;font-size:1.35rem;font-weight:700;border:3px solid}
+.leavebadge.ok{color:var(--ok,#1b7f4b);border-color:currentColor;background:#eefaf2}
+.leavebadge.bad{color:#c0392b;border-color:currentColor;background:#fdeeee}
+.leavenote{font-size:.8rem;opacity:.85}
+.warnstrip{position:fixed;left:0;right:0;bottom:0;z-index:90;background:var(--mark);color:#fff;font-weight:700;text-align:center;padding:8px max(16px,env(safe-area-inset-left,0px)) calc(8px + env(safe-area-inset-bottom,0px))}
+.talert{border:3px solid var(--mark);background:var(--mark-bg);margin-bottom:14px}
+.talert h3{color:var(--mark-ink)}
+.trow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 0;border-bottom:1px solid var(--line)}
+.watchchk{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:.88rem}
+.ttab td,.ttab th{white-space:nowrap}
+.lkrow{background:var(--mark-bg)}
+/* 해결해요: 아기자기한 풀이 */
+.buddy{display:flex;gap:12px;align-items:flex-start}
+.buddy svg{flex:0 0 auto;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.bd-face{fill:#ffd66b;stroke:#c9962a;stroke-width:2}
+.bd-eye{fill:#3a2a12}.bd-shine{fill:#fff}
+.bd-cheek{fill:#ff9b9b;opacity:.7}
+.bd-smile{fill:none;stroke:#3a2a12;stroke-width:2.4;stroke-linecap:round}
+.bd-top{stroke:#c9962a;stroke-width:2.4;stroke-linecap:round}.bd-ball{fill:#ff8a8a}
+.bubble{position:relative;background:var(--paper);border:2px solid var(--chalk);border-radius:16px;padding:10px 14px;font-weight:500;line-height:1.5;flex:1 1 auto;min-width:0}
+.bubble::before{content:"";position:absolute;left:-9px;top:16px;border:8px solid transparent;border-right-color:var(--chalk);border-left:0}
+.pvis-pic .vis{background:linear-gradient(180deg,var(--wait-bg),var(--bg))}
+.pstep{border-radius:16px}
+.pstep.done{border-style:dashed}
+.pstep .sn{display:inline-flex;align-items:center;gap:6px}
+.cheer{display:inline-flex;gap:2px;margin-right:6px;color:var(--chalk)}
+.cheer i{font-style:normal;animation:twinkle .7s ease-out both}
+.cheer i:nth-child(2){animation-delay:.1s}.cheer i:nth-child(3){animation-delay:.2s}
+@keyframes twinkle{from{transform:scale(0) rotate(-40deg);opacity:0}60%{transform:scale(1.5)}to{transform:none;opacity:1}}
+.g2 .dcell{display:inline-grid;place-items:center;cursor:default;font-weight:500}
+.g2 th{font-weight:700;font-size:.85rem}
+.g2c{font-size:.75rem}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.88rem;align-items:center}
+.legend span{display:inline-flex;gap:6px;align-items:center}
+.legend i.dcell{width:20px;height:16px;display:inline-block;border-radius:4px}
+.areasvg{width:100%;height:auto}
+.ar-cell{fill:var(--paper);stroke:var(--line);stroke-width:1}
+.ar-ta{fill:var(--mark);opacity:.75}
+.ar-tb{fill:var(--g1);stroke:var(--mark);stroke-width:2;stroke-dasharray:5 3;opacity:.9}
+.ar-lab{fill:var(--ink);font-size:12px;font-weight:700;text-anchor:middle;dominant-baseline:middle}
+.ar-sub{fill:var(--muted);font-size:11px;text-anchor:middle}
+.lg-ta,.lg-tb{width:20px;height:14px;display:inline-block;border-radius:3px}
+.lg-ta{background:var(--mark);opacity:.75}.lg-tb{background:var(--g1);border:2px dashed var(--mark)}
+.bars{display:grid;gap:8px}
+.barrow{display:grid;grid-template-columns:80px 1fr 48px;gap:8px;align-items:center}
+.bt{height:22px;background:var(--bg);border-radius:99px;overflow:hidden}
+.bt i{display:block;height:100%;background:var(--g0f);border-radius:99px;opacity:.55}
+.barrow.hl .bt i{background:var(--mark);opacity:.85}
+.barrow.hl .bn,.barrow.hl .bv{color:var(--mark-ink);font-weight:700}
+.half{stroke:var(--mark);stroke-dasharray:5 4;stroke-width:2}
+.freq{fill:none;stroke:var(--g0f);stroke-width:2.5}
+.talk{display:grid;gap:8px}
+.say{border-radius:14px;padding:8px 12px;border:2px solid var(--line)}
+.say.ok{border-color:var(--ok);background:var(--ok-bg)}
+.say.no{border-color:var(--mark);background:var(--mark-bg)}
+.okx tr.yes td,.okx tr.yes th,.mv tr.yes td{background:var(--mark-bg);color:var(--mark-ink);font-weight:700}
+.cal td.wed{background:var(--mark);color:#fff;font-weight:700}
+.cal td.sat{background:var(--g1);color:var(--mark-ink);outline:2px dashed var(--mark);outline-offset:-3px;font-weight:700}
+.cal th.hlc{color:var(--mark)}
+.plist{display:grid;gap:10px}
+.prow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.plab{font-weight:700;border-radius:99px;padding:3px 12px;font-size:.9rem}
+.plab.ta{background:var(--mark);color:#fff}
+.plab.tb{background:var(--g1);color:var(--mark-ink);border:2px dashed var(--mark)}
+.pair{font-variant-numeric:tabular-nums;font-weight:700;border-radius:10px;padding:4px 10px;font-size:1.02rem}
+.pair.ta{background:var(--mark-bg);color:var(--mark-ink);border:2px solid var(--mark)}
+.pair.tb{background:var(--g1);color:var(--mark-ink);border:2px dashed var(--mark)}
+.pcount{font-weight:700;color:var(--board)}
+.hubsec{grid-column:1 / -1;margin:8px 0 0;font-size:1.05rem}
+.hubcard.prac{border-left:5px solid var(--chalk)}
+.tablab{align-self:center;font-size:.85rem;min-width:70px}
+.pchips{display:flex;flex-wrap:wrap;gap:6px}
+.pchip{min-width:44px;padding:6px 8px;border-radius:8px;border:2px solid var(--line);background:var(--paper);font-weight:700;font-size:.85rem;cursor:pointer;color:var(--ink)}
+.pchip.cur{border-color:var(--board);box-shadow:0 0 0 3px var(--focus)}
+.pchip.ok{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+.pchip.sol{background:var(--wait-bg);border-color:var(--wait);color:var(--wait)}
+.pchip:disabled,.pchip.lockd{opacity:.45;cursor:not-allowed}
+.pchip.now{border-color:var(--board);border-width:3px}
+.stepnav{padding:12px 16px;display:grid;gap:8px;margin-bottom:12px}
+.stepnav-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.stepnav-lab{font-size:.82rem;font-weight:700;min-width:84px;color:var(--muted,#666)}
+.fracin{display:inline-grid;grid-template-rows:auto 3px auto;gap:4px;justify-items:center;vertical-align:middle}
+.fracin input{width:84px;text-align:center;font-size:1.15rem;padding:6px}
+.fracin .fbar{width:96px;height:3px;background:var(--ink);border-radius:2px}
+.ansrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.pstep{border:2px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;gap:8px;background:var(--paper)}
+.pstep.done{border-color:var(--ok);background:var(--ok-bg)}
+.pstep .sn{font-weight:700;color:var(--board)}
+.pstep .after{color:var(--ok);font-weight:700}
+.ptab{border-collapse:collapse;width:auto}
+.ptab th,.ptab td{border:1px solid var(--line);padding:6px 10px;text-align:center}
+.ptab caption{font-weight:700;margin-bottom:4px}
+.cal td,.cal th{min-width:38px}
+.dk{fill:var(--paper);stroke:var(--board);stroke-width:3}
+.dkl{stroke:var(--board);stroke-width:1.5}
+.dkt{fill:var(--ink);font-size:16px;font-weight:700;text-anchor:middle}
+.nl{stroke:var(--ink);stroke-width:2}
+.np{fill:var(--mark)}
+.pbar{height:10px;border-radius:99px;background:var(--line);overflow:hidden;min-width:80px}
+.pbar i{display:block;height:100%;background:var(--ok)}
+.hubgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-top:16px}
+.hubcard{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;gap:10px;box-shadow:var(--card-shadow);align-content:start}
+.hubcard.off{opacity:.6}
+.hubcard h3{font-family:var(--f-display);font-weight:400;font-size:1.35rem}
+.hubno{font-family:var(--f-display);font-size:2rem;color:var(--board);line-height:1}
+.hdrbtn{background:transparent;color:var(--board-ink);border:1px solid rgba(255,255,255,.5);border-radius:8px;padding:2px 10px;font-size:.85rem;cursor:pointer}
+.chtabs .tool{font-size:1rem}
+.openpanel{margin-bottom:16px}
+.opentab{width:auto}
+.opentab th,.opentab td{text-align:center;padding:4px 6px}
+.clstabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.mrow.away{opacity:.55}
+.joinrow > .field{flex:1 1 140px}
+.linkbtn{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:.82rem;margin-left:auto;padding:4px}
+.gfoot{margin-top:auto;padding:10px 16px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap}
+.summary{display:flex;gap:18px;flex-wrap:wrap;align-items:baseline}
+.summary b{font-family:var(--f-display);font-size:2rem;font-weight:400}
+/* 그림 풀이 */
+:root{--g0:#dce8ff;--g0f:#1d4c99;--g1:#ffe2c7;--g1f:#94440a;--g2:#e6dbff;--g2f:#553599;--ball1:#5ea3ff;--ball2:#2459b3}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--g0:#1f3357;--g0f:#bcd3ff;--g1:#4a2c12;--g1f:#ffcf9f;--g2:#352a55;--g2f:#d6c8ff}}
+:root[data-theme="dark"]{--g0:#1f3357;--g0f:#bcd3ff;--g1:#4a2c12;--g1f:#ffcf9f;--g2:#352a55;--g2f:#d6c8ff}
+.vis{display:grid;gap:12px;background:var(--bg);border-radius:12px;padding:14px;min-width:0}
+.vis.live{border:2px solid var(--chalk)}
+.vis.solved{pointer-events:none}
+.vis.solved .vis-title,.vis.solved .row{display:none}
+.vis-badge{justify-self:start;background:var(--chalk);color:#2b2205;font-size:.78rem;font-weight:700;border-radius:6px;padding:2px 10px}
+.vis-title{font-weight:700;color:var(--ink)}
+.vis h4{margin:0 0 6px;font-size:.95rem;display:flex;justify-content:space-between;gap:8px}
+.toks{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.tok{border:2px solid var(--line);background:var(--paper);border-radius:12px;padding:6px;display:grid;place-items:center;min-width:56px;min-height:56px}
+button.tok{cursor:pointer}
+button.tok:hover{border-color:var(--board)}
+.tok.sel{border-color:var(--chalk);background:var(--wait-bg);transform:translateY(-2px)}
+.tok.right{border-color:var(--ok);background:var(--ok-bg)}
+.tok.wrong{border-color:var(--bad);background:var(--bad-bg)}
+.die-b{fill:var(--paper);stroke:var(--ink);stroke-width:5}
+.die-p{fill:var(--ink)}
+.ball{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:900;font-size:1.1rem;color:#fff;background:radial-gradient(circle at 35% 30%,var(--ball1),var(--ball2))}
+.timechip{font-variant-numeric:tabular-nums;font-weight:700;font-size:1.05rem;padding:4px 8px}
+.card-tok{width:44px;height:60px;border-radius:8px;border:2px solid var(--ink);background:var(--paper);display:grid;place-items:center;font-family:var(--f-display);font-size:1.6rem}
+.person{width:44px;height:44px;border-radius:50%;background:var(--board);color:var(--board-ink);display:grid;place-items:center;font-family:var(--f-display);font-size:1.3rem}
+.bundle{display:inline-flex;gap:4px;padding:4px;border:3px solid var(--chalk);border-radius:99px;background:var(--wait-bg)}
+.mg{display:flex;gap:12px;flex-wrap:wrap}
+.mg > *{flex:1 1 200px;min-width:0}
+.mg-box{border:2px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--paper);display:grid;gap:6px;align-content:start}
+.mg-box.skip{opacity:.45}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:4px 12px;font-size:.92rem;font-weight:500;background:var(--g0);color:var(--g0f)}
+.chip.g1{background:var(--g1);color:var(--g1f)}
+.chip.g2{background:var(--g2);color:var(--g2f)}
+.chip .n{background:var(--ink);color:var(--paper);border-radius:99px;font-size:.75rem;padding:0 7px;font-weight:700}
+.pop{animation:pop .35s both}
+@keyframes pop{from{transform:scale(.6);opacity:0}to{transform:none;opacity:1}}
+.eq{font-family:var(--f-display);font-size:1.45rem;color:var(--board);font-weight:400}
+.fb.ok .eq{color:var(--ok)}
+.gtab{width:auto;border-collapse:separate;border-spacing:4px}
+.gtab th,.gtab td{border:0;padding:0;text-align:center}
+.gcell{min-width:96px;min-height:42px;border:2px dashed var(--line);border-radius:8px;background:var(--paper);cursor:pointer;font-size:.88rem;padding:4px 8px}
+.gcell.fill{border:2px solid var(--ok);background:var(--ok-bg);color:var(--ok);font-weight:700}
+.roads{width:100%;max-width:600px;height:auto}
+.road{fill:none;stroke:var(--line);stroke-width:7;stroke-linecap:round;transition:stroke .2s}
+.road.sel{stroke:var(--chalk)}
+.road.on{stroke:var(--ok)}
+.hit{fill:none;stroke:transparent;stroke-width:24;cursor:pointer}
+.rn{fill:var(--board)}
+.rl{fill:var(--muted);font-size:15px;font-weight:700;text-anchor:middle}
+.rp{fill:var(--ink);font-size:16px;font-weight:700;text-anchor:middle}
+.keypic{width:100%;max-width:360px;height:auto}
+.k-body{fill:var(--chalk);stroke:var(--ink);stroke-width:3}
+.k-hole{fill:var(--bg);stroke:var(--ink);stroke-width:3}
+.k-lab{fill:var(--ink);font-size:20px;font-weight:700;text-anchor:middle}
+.tree-ul{list-style:none;margin:0;padding-left:26px;border-left:2px solid var(--line)}
+.tree-ul.tree-root{padding-left:0;border-left:0;display:grid;gap:4px}
+.tree-ul li{position:relative;margin:5px 0}
+.tree-ul .tree-ul li::before{content:"";position:absolute;left:-26px;top:17px;width:22px;border-top:2px solid var(--line)}
+.node{display:inline-flex;gap:6px;align-items:center;border:2px solid var(--line);background:var(--paper);border-radius:8px;padding:4px 12px;font-weight:700;cursor:pointer}
+.node.open{border-color:var(--board)}
+.node small,.leaf small{font-weight:400;color:var(--muted)}
+.leaf{display:inline-flex;gap:6px;align-items:center;border-radius:8px;padding:3px 12px;background:var(--ok-bg);color:var(--ok);animation:pop .3s both}
+.htree{width:100%;height:auto;display:block}
+.ht-h{fill:var(--ink);font-size:15px;font-weight:700;text-anchor:middle}
+.ht-hr{fill:var(--mark)}
+.ht-n{fill:var(--g0f);font-size:24px;font-family:var(--f-display);text-anchor:middle}
+.ht-n2{fill:var(--g1f)}
+.ht-l{stroke:var(--g0f);stroke-width:2.5;stroke-linecap:round}
+.ht-a{stroke:var(--mark);stroke-width:3.5;stroke-linecap:round}
+.ht-ah{fill:var(--mark)}
+.ht-r{fill:var(--mark);font-size:24px;font-family:var(--f-display)}
+.ht-in{animation:htfade .45s both}
+@keyframes htfade{from{opacity:0}to{opacity:1}}
+.sheet-h{font-family:var(--f-display);font-weight:400;font-size:1.35rem;margin:22px 0 10px}
+.sheet-h .muted{font-family:var(--f-body);font-size:.9rem}
+.sheet-card + .sheet-card{margin-top:12px}
+.tree2{display:flex;flex-wrap:wrap;gap:8px 28px;align-items:flex-start}
+.tree2 > div{flex:0 1 auto;min-width:0}
+.also{justify-self:start;font-family:var(--f-display);font-size:1.15rem;color:var(--mark);border:2px solid var(--mark);border-radius:8px;padding:2px 12px;background:var(--mark-bg)}
+.memo{border-left:5px solid var(--mark);background:var(--mark-bg);color:var(--ink);border-radius:8px;padding:10px 14px;font-size:1.1rem;font-weight:700;line-height:1.7}
+.memo-lab{display:block;font-size:.78rem;font-weight:700;color:var(--mark-ink);letter-spacing:.04em}
+.bigbtn{font-size:1.25rem;padding:16px 34px;border-radius:14px}
+.note-tools{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;margin-top:12px;background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:8px 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;box-shadow:var(--card-shadow)}
+.tool{border:2px solid var(--line);border-radius:8px;background:var(--paper);padding:6px 12px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.tool.on{border-color:var(--ink);box-shadow:0 0 0 3px var(--focus)}
+.swatch{width:16px;height:16px;border-radius:50%;display:inline-block}
+.nq-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.note-card .q{font-size:1rem}
+.pad{border:2px solid #cfd8d2;border-radius:10px;overflow:hidden;background-color:#fff;background-image:linear-gradient(#e7ede9 1px,transparent 1px),linear-gradient(90deg,#e7ede9 1px,transparent 1px);background-size:24px 24px}
+.pad canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}
+.eqin{flex:1 1 200px;min-width:0}
+.pt{display:grid;gap:14px}
+.pt-row{display:grid;grid-template-columns:auto 1fr;gap:0 18px;align-items:center}
+.pt-root{font-weight:700;font-size:1rem}
+.pt-kids{display:grid;gap:6px;border-left:3px solid var(--g0f);padding-left:18px;min-width:0}
+.pt-kid{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.pt-kid::before{content:"";position:absolute;left:-18px;top:50%;width:14px;border-top:3px solid var(--g0f)}
+.pt-arrow{color:var(--muted)}
+.pt-res{display:inline-flex;align-items:center;gap:4px;font-weight:700}
+.pt-res .n{background:var(--ink);color:var(--paper);border-radius:99px;font-size:.75rem;padding:0 7px;margin-right:2px}
+.pair-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.dgrid{width:auto;border-collapse:separate;border-spacing:3px}
+.dgrid th,.dgrid td{border:0;padding:0;text-align:center}
+.dcell{width:46px;height:36px;border:2px solid var(--line);border-radius:6px;background:var(--paper);cursor:pointer;font-size:.8rem;font-variant-numeric:tabular-nums}
+.dcell.ta,.brush.ta{background:var(--g0);color:var(--g0f);border-color:var(--g0f)}
+.dcell.tb,.brush.tb{background:var(--g1);color:var(--g1f);border-color:var(--g1f)}
+.dcell.miss{outline:3px solid var(--bad)}
+.brush{border:2px solid transparent}
+.brush.on,[data-b].on{box-shadow:0 0 0 3px var(--focus)}
+/* 그림 풀이에서 '고른 것' 표시는 붉은색으로 확실하게 */
+:root{--mark:#d62020;--mark-bg:#ffe0e0;--mark-ink:#a10f0f}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--mark:#ff5a5a;--mark-bg:#4d1a1a;--mark-ink:#ffc2c2}}
+:root[data-theme="dark"]{--mark:#ff5a5a;--mark-bg:#4d1a1a;--mark-ink:#ffc2c2}
+.vis .tok.sel,.vis .tok.right{border:4px solid var(--mark);background:var(--mark-bg);box-shadow:0 0 0 3px var(--mark-bg)}
+.vis .tok.right .timechip{color:var(--mark-ink)}
+.vis .road.on,.vis .road.sel{stroke:var(--mark);stroke-width:9}
+.vis .gcell.fill{border:3px solid var(--mark);background:var(--mark-bg);color:var(--mark-ink)}
+.vis .leaf{background:var(--mark-bg);color:var(--mark-ink);border:2px solid var(--mark)}
+.vis .bundle{border-color:var(--mark);background:var(--mark-bg)}
+.vis .dcell.ta{background:var(--mark);color:#fff;border-color:var(--mark);font-weight:700}
+.vis .dcell.tb{background:var(--mark-bg);color:var(--mark-ink);border:3px dashed var(--mark);font-weight:700}
+.vis [data-line] .chip,.vis [data-list] .chip{outline:2px solid var(--mark);outline-offset:1px}
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important}}
+</style>
+</head>
+<body>
+<header class="board"><div class="wrap" id="hdr"><h1>모둠 수학 <small>8단원 경우의 수와 확률</small></h1></div></header>
+<main class="wrap" id="app"><p class="muted">불러오는 중…</p></main>
+<script>
+// ===== 공통 데이터 로직 (서버 Code.gs 와 데모 모드가 똑같이 사용) =====
+var TEACHER_PIN = null; // 학생 화면에는 비밀번호 없음
+
+// 학생 id = '반-번호' (예: '2반-15'), 모둠 key = '반-모둠' (예: '2반-3')
+function core_(db, op, a, now) {
+  db.s = db.s || {};
+  db.g = db.g || {};
+  a = a || {};
+  var T = { ts: {}, tg: {}, ds: {}, dg: {} };
+  function cmp(x, y) {
+    var p = String(x).split('-'), q = String(y).split('-');
+    if (p.length > 1 && q.length > 1 && p[0] !== q[0]) return p[0] < q[0] ? -1 : 1;
+    var nx = Number(p[p.length - 1]), ny = Number(q[q.length - 1]);
+    return (nx - ny) || (x < y ? -1 : x > y ? 1 : 0);
+  }
+  function lab(g) { var p = String(g).split('-'); return p.length > 1 ? p[0] + ' ' + p[1] + '모둠' : g + '모둠'; }
+  function joined(g) {
+    var r = [];
+    for (var id in db.s) if (String(db.s[id].g) === String(g)) r.push(id);
+    return r.sort(cmp);
+  }
+  function membersOf(g) {
+    var grp = db.g[g];
+    if (grp && grp.started) return grp.members.filter(function (id) { return !!db.s[id]; });
+    return joined(g);
+  }
+  // TEACHER_PIN 이 null = 학생 기기 안에서만 도는 데모·미리보기 (비밀번호 검사 없음)
+  function teacher() { if (TEACHER_PIN !== null && String(a.pin) !== String(TEACHER_PIN)) throw new Error('PIN'); }
+  function setPath(o, path, v) {
+    var ks = String(path).split('.');
+    for (var i = 0; i < ks.length - 1; i++) {
+      if (typeof o[ks[i]] !== 'object' || o[ks[i]] === null) o[ks[i]] = {};
+      o = o[ks[i]];
+    }
+    o[ks[ks.length - 1]] = v;
+  }
+  function grpOf(g) {
+    if (!db.g[g]) { db.g[g] = { g: String(g), started: false, members: [] }; T.tg[g] = 1; }
+    return db.g[g];
+  }
+  function startIfReady(g) {
+    var grp = grpOf(g);
+    if (grp.started) return;
+    var j = joined(g);
+    if (j.length >= 2 && j.length <= 4 && j.every(function (id) { return db.s[id].ready; })) start(g, j);
+  }
+  function start(g, ids) {
+    var grp = grpOf(g);
+    grp.started = true; grp.members = ids; grp.t = now; T.tg[g] = 1;
+    ids.forEach(function (id) { if (db.s[id].st === 'wait') { db.s[id].st = 'tb'; T.ts[id] = 1; } });
+  }
+
+  switch (op) {
+    case 'join': {
+      var cls = String(a.cls || '').trim(), no = Number(a.no), name = String(a.name || '').trim(), gn = String(a.gn || '');
+      if (!cls) return { res: { ok: false, msg: '반을 고르세요.' }, T: T };
+      if (!(no >= 1)) return { res: { ok: false, msg: '번호를 고르세요.' }, T: T };
+      if (!name) return { res: { ok: false, msg: '이름을 입력하세요.' }, T: T };
+      if (!gn) return { res: { ok: false, msg: '모둠을 고르세요.' }, T: T };
+      var id = cls + '-' + no, g = cls + '-' + gn;
+      var s = db.s[id];
+      if (s && s.name !== name) return { res: { ok: false, msg: cls + ' ' + no + '번은 다른 이름으로 이미 들어와 있어요. 반과 번호를 다시 확인하세요.' }, T: T };
+      if (s && String(s.g) !== g) {
+        var old = db.g[s.g];
+        if (old && old.started && old.members.indexOf(id) >= 0)
+          return { res: { ok: false, msg: '이미 ' + lab(s.g) + '에서 활동 중이에요. ' + lab(s.g) + '으로 들어오세요.' }, T: T };
+      }
+      var grp = grpOf(g);
+      if (!s) {
+        s = db.s[id] = { id: id, cls: cls, no: no, name: name, g: g, gn: gn, ready: false, st: 'wait', tb: 0, ws: 0, ph: 'q',
+          lg: {}, dg: {}, cl: {}, paper: false, t0: now, bot: !!a.bot };
+      } else {
+        s.g = g; s.gn = gn;
+      }
+      s.away = false;   // 빼기(결석 처리)했던 학생이 다시 들어오면 자동으로 복귀
+      if (grp.started && grp.members.indexOf(id) < 0) {
+        // 모둠이 이미 시작한 뒤에 들어온 학생: 모둠이 아직 1단계(교과서)면 정식 모둠원, 이미 2단계면 혼자 진행
+        var ahead = grp.members.some(function (m) { return db.s[m] && (db.s[m].st === 'ws' || db.s[m].st === 'done'); });
+        s.late = ahead;
+        grp.members.push(id); grp.members.sort(cmp); T.tg[g] = 1;
+        if (s.st === 'wait') s.st = 'tb';
+      }
+      if (a.bot) s.ready = true;
+      T.ts[id] = 1;
+      if (a.bot) startIfReady(g);
+      return { res: { ok: true, me: s }, T: T };
+    }
+    case 'ready': {
+      var s2 = db.s[a.id];
+      if (!s2) return { res: { ok: false }, T: T };
+      s2.ready = !!a.v; T.ts[a.id] = 1;
+      startIfReady(s2.g);
+      return { res: { ok: true }, T: T };
+    }
+    case 'group': {
+      var gg = String(a.g), mine = db.s[a.id], al = [];
+      // 같은 반에서 다른 창으로 이동해 잠긴 학생 (학생 화면에는 누구인지 보내지 않음: 시각과 '나인지'만)
+      if (mine && mine.cls) for (var ia in db.s) { var x = db.s[ia]; if (x.lk && x.cls === mine.cls) al.push({ t: x.lkt, me: x.id === mine.id }); }
+      return { res: { ok: true, group: db.g[gg] || null, members: membersOf(gg).map(function (i) { return db.s[i]; }),
+        me: mine || null, alerts: al, now: now }, T: T };
+    }
+    case 'pdone': {
+      // 해결해요 완료 기록 (문제별 기록은 모으지 않고 '다 풀었다'만)
+      var pid = String(a.cls || '').trim() + '-' + Number(a.no);
+      if (!a.cls || !(Number(a.no) >= 1)) return { res: { ok: false }, T: T };
+      var ps = db.s[pid] || { id: pid, cls: String(a.cls), no: Number(a.no), lg: {}, st: 'wait', g: '', gn: '' };
+      ps.name = String(a.name || ps.name || ''); ps.pc = Number(a.pc) || 0; ps.pp = ps.pc; ps.done = ps.done || now; ps.lv = Number(a.lv) || 0;
+      db.s[pid] = ps; T.ts[pid] = 1;
+      return { res: { ok: true }, T: T };
+    }
+    case 'me': {
+      // 해결해요(개인 학습): 내 기록만
+      return { res: { ok: true, me: db.s[a.id] || null, now: now }, T: T };
+    }
+    case 'upd': {
+      var s3 = db.s[a.id];
+      if (!s3) return { res: { ok: false, gone: true }, T: T };
+      var p = a.patch || {};
+      for (var k in p) setPath(s3, k, p[k]);
+      T.ts[a.id] = 1;
+      return { res: { ok: true }, T: T };
+    }
+    case 't_all': teacher(); return { res: { ok: true, s: db.s, g: db.g, now: now }, T: T };
+    case 't_paper': {
+      teacher();
+      if (db.s[a.id]) { db.s[a.id].paper = !!a.v; T.ts[a.id] = 1; }
+      return { res: { ok: true }, T: T };
+    }
+    case 't_start': {
+      teacher();
+      var js = joined(String(a.g));
+      if (js.length >= 1 && !(db.g[a.g] && db.g[a.g].started)) start(String(a.g), js);
+      return { res: { ok: true }, T: T };
+    }
+    case 't_unlock': {
+      // 이탈로 잠긴 학생 해제
+      teacher();
+      if (db.s[a.id]) { db.s[a.id].lk = false; T.ts[a.id] = 1; }
+      return { res: { ok: true }, T: T };
+    }
+    case 't_away': {
+      // 모둠에서 빼기(결석 처리): 기록은 그대로 두고 숫자 모으기·의견에서만 빠짐
+      teacher();
+      if (db.s[a.id]) { db.s[a.id].away = !!a.v; T.ts[a.id] = 1; }
+      return { res: { ok: true }, T: T };
+    }
+    case 't_resetGroup': {
+      teacher();
+      joined(String(a.g)).forEach(function (i) { delete db.s[i]; T.ds[i] = 1; });
+      delete db.g[a.g]; T.dg[a.g] = 1;
+      return { res: { ok: true }, T: T };
+    }
+    case 't_resetClass': {
+      teacher();
+      var c = String(a.cls);
+      for (var i2 in db.s) if (db.s[i2].cls === c) { delete db.s[i2]; T.ds[i2] = 1; }
+      for (var g2 in db.g) if (g2.indexOf(c + '-') === 0) { delete db.g[g2]; T.dg[g2] = 1; }
+      return { res: { ok: true }, T: T };
+    }
+    case 't_resetAll': {
+      teacher();
+      for (var i1 in db.s) T.ds[i1] = 1;
+      for (var g1 in db.g) T.dg[g1] = 1;
+      db.s = {}; db.g = {};
+      return { res: { ok: true }, T: T };
+    }
+  }
+  throw new Error('unknown op ' + op);
+}
+
+
+// ===================== 문제 데이터 =====================
+// 1단계: 교과서 (238~241쪽, 해결해요 제외) — 개인이 쉽게 답 맞히기
+var TB = [
+  {k:'t1', page:'238쪽 확인해요', q:'주사위 한 개를 던질 때, <b>짝수의 눈이 나온다</b>는 사건의 경우의 수는?', a:3, hint:'짝수의 눈을 모두 적어 보세요. 2, 4, …', exp:'짝수의 눈: 2, 4, 6 → <b>3</b>가지'},
+  {k:'t2', page:'238쪽 확인해요', q:'주사위 한 개를 던질 때, <b>5의 약수의 눈이 나온다</b>는 사건의 경우의 수는?', a:2, hint:'5를 나누어떨어지게 하는 수는?', exp:'5의 약수: 1, 5 → <b>2</b>가지'},
+  {k:'t3', page:'238쪽 문제 1 (1)', q:'1부터 6까지의 자연수가 각각 적힌 공 6개가 들어 있는 주머니에서 공 한 개를 꺼낼 때, <b>소수가 적힌 공이 나오는</b> 경우의 수는?', a:3, hint:'소수는 약수가 1과 자기 자신뿐인 수예요. 1은 소수가 아니에요.', exp:'소수: 2, 3, 5 → <b>3</b>가지'},
+  {k:'t4', page:'238쪽 문제 1 (2)', q:'같은 주머니에서 <b>3의 배수가 적힌 공이 나오는</b> 경우의 수는?', a:2, hint:'1~6 중 3으로 나누어떨어지는 수는?', exp:'3의 배수: 3, 6 → <b>2</b>가지'},
+  {k:'t5', page:'239쪽 함께해요 1', q:'가방 가게에 백팩 3가지와 크로스 백 2가지가 있다. 이 중에서 <b>한 가지를 구매하는</b> 경우의 수는?', a:5, hint:'하나만 사요. 백팩을 사면 크로스 백은 안 사요.', exp:'둘 중 하나만 → 더하기: 3 + 2 = <b>5</b>'},
+  {k:'t6', page:'239쪽 문제 2', q:'어느 방과 후 학교에는 예술 수업 4가지, 체육 수업 5가지가 있다. <b>예술 수업 또는 체육 수업 중 한 가지</b>를 선택하는 경우의 수는?', a:9, hint:'"또는", 한 가지만 → 더할까, 곱할까?', exp:'4 + 5 = <b>9</b>'},
+  {k:'t7', page:'240쪽 함께해요 2', q:'와플 가게에 크림 2가지와 과일 3가지가 있다. <b>크림과 과일을 각각 한 가지씩</b> 선택하여 와플을 주문하는 경우의 수는?', a:6, hint:'크림 하나마다 과일을 3가지씩 고를 수 있어요.', exp:'크림 2가지 각각에 과일 3가지 → 2 × 3 = <b>6</b>'},
+  {k:'t8', page:'240쪽 문제 4', q:'매표소에서 온실까지 가는 길은 2가지, 온실에서 은행나무 숲까지 가는 길은 4가지이다. 매표소에서 <b>온실을 거쳐</b> 은행나무 숲까지 가는 경우의 수는?', a:8, hint:'첫 번째 길 각각에 대하여 두 번째 길을 고를 수 있어요.', exp:'2 × 4 = <b>8</b>'},
+  {k:'t9', page:'241쪽 예제 1', q:'1, 2, 3, 4가 각각 적힌 4장의 카드 중에서 두 장을 뽑아 만들 수 있는 <b>두 자리 자연수</b>는 모두 몇 개?', a:12, hint:'십의 자리 4가지, 일의 자리는 십의 자리 숫자를 뺀 나머지.', exp:'십의 자리 4가지 × 일의 자리 3가지 = <b>12</b>'},
+  {k:'t10', page:'241쪽 문제 5', q:'0, 1, 2, 3이 각각 적힌 4장의 카드 중에서 두 장을 뽑아 만들 수 있는 <b>두 자리 자연수</b>는 모두 몇 개?', a:9, hint:'십의 자리에는 0이 올 수 없어요!', exp:'십의 자리 1, 2, 3 → 3가지, 일의 자리는 0을 포함한 나머지 3가지 → 3 × 3 = <b>9</b>'}
+];
+
+// 2단계: 학습지 1~2쪽. code:true 인 문제는 끝나면 모둠 숫자 모으기
+var WS = [
+  {k:'c1', kind:'mc', lab:'용어 정리', sec:'첫 번째 · 용어 정리', q:'<b>사건</b>이란 무엇일까?',
+   opts:['동일한 조건에서 반복할 수 있는 실험이나 관찰의 결과','어떤 사건이 일어나는 가짓수','반드시 일어나는 일만을 뜻하는 말'], a:0,
+   exp:'주사위 한 개를 던질 때 "짝수의 눈이 나온다"처럼, 같은 조건에서 반복할 수 있는 실험이나 관찰의 결과를 <b>사건</b>이라고 해요.'},
+  {k:'c2', kind:'mc', lab:'용어 정리', sec:'첫 번째 · 용어 정리', q:'<b>경우의 수</b>란 무엇일까?',
+   opts:['실험을 반복한 횟수','사건이 일어나는 가짓수','사건이 일어날 가능성의 크기'], a:1,
+   exp:'사건이 일어나는 가짓수를 그 사건의 <b>경우의 수</b>라고 해요. 예: 짝수의 눈 → 2, 4, 6 → 3가지'},
+  {k:'chk', kind:'free', lab:'확인', sec:'첫 번째 · 확인',
+   q:'한 개의 주사위를 던질 때 일어날 수 있는 <b>사건 2가지</b>를 쓰고, 각 사건이 일어나는 경우의 수를 적어 보자.<small><b>모둠에서 논의 후 작성합니다.</b> 모둠원 모두의 답이 일치하지 않으면 넘어가지 않아요.</small>',
+   exp:'예: "3의 배수의 눈이 나온다" → 3, 6 → 2가지 / "4보다 큰 눈이 나온다" → 5, 6 → 2가지. 모둠 친구가 쓴 사건과 비교해 보세요.'},
+  {k:'w1', kind:'num', code:false, lab:'두 번째 1번', sec:'두 번째 · 모둠과 해결하기 1',
+   q:'A중학교 학생들은 방과 후 활동으로 아래 프로그램 중에서 한 가지를 선택하여 신청할 수 있다. 연성이가 선택할 수 있는 경우의 수는?',
+   a:7,
+   steps:['예술 프로그램은 몇 가지? → <b>4가지</b>','체육 프로그램은 몇 가지? → <b>3가지</b>','예술과 체육을 동시에 고를 수 있나요? → <b>아니요.</b> 한 가지만 신청하니까 두 사건은 동시에 일어나지 않아요.','동시에 일어나지 않으면 <b>더해요</b>: 4 + 3 = <b>7</b>']},
+  {k:'w2', kind:'num', code:false, lab:'두 번째 2번', sec:'두 번째 · 모둠과 해결하기 2',
+   q:'박물관 3곳, 미술관 3곳, 전통시장 2곳 중 한 곳에서 체험 학습을 하려고 한다. 이때 <b>미술관 또는 전통시장</b> 중 한 곳에서 체험 학습을 하는 경우의 수는?',
+   a:5, steps:['박물관은 묻지 않았어요. 미술관과 전통시장만 봐요.','미술관 <b>3곳</b>, 전통시장 <b>2곳</b>','한 곳만 가니까 두 사건은 동시에 일어나지 않아요 → 더하기','3 + 2 = <b>5</b>']},
+  {k:'w3', kind:'num', code:true, lab:'두 번째 3번', sec:'두 번째 · 모둠과 해결하기 3',
+   q:'이번 추석에 우리 가족은 송편을 만들기 위해 멥쌀, 쑥, 흑미, 단호박으로 만든 4종류의 반죽과 깨, 녹두로 만든 2종류의 소를 준비하였다. 반죽 한 종류와 소 한 종류를 선택하여 송편을 만들 수 있는 경우의 수는?',
+   a:8,
+   steps:['반죽은 <b>4종류</b>, 소는 <b>2종류</b>','멥쌀 반죽 → 멥쌀+깨, 멥쌀+녹두 : 2가지','반죽마다 소를 2가지씩 고를 수 있어요 (반죽과 소를 <b>동시에</b> 선택)','4 × 2 = <b>8</b>']},
+  {k:'w4', kind:'num', code:false, lab:'두 번째 4번', sec:'두 번째 · 모둠과 해결하기 4',
+   q:'연성이는 상의를 3벌, 하의를 4벌 갖고 있다. 연성이가 코디해 입을 수 있는 경우의 수는?',
+   a:12, steps:['상의 하나를 정하면, 그 각각에 대하여 하의 4벌 중 하나를 고를 수 있어요','상의와 하의를 <b>동시에</b> 입어요 → 곱하기','3 × 4 = <b>12</b>']},
+  {k:'w5', kind:'num', code:false, lab:'두 번째 5번', sec:'두 번째 · 모둠과 해결하기 5',
+   q:'A, B 2개의 홈이 있는 열쇠를 만들려고 한다. 각 홈은 파인 깊이를 상, 중, 하 3단계 중 한 단계로 선택할 수 있을 때, 만들 수 있는 열쇠의 종류는 모두 몇 가지인가?',
+   a:9, steps:['홈 A의 깊이: 상, 중, 하 → <b>3가지</b>','홈 B의 깊이도 각각 <b>3가지</b>','A와 B를 <b>동시에</b> 정해야 열쇠 하나 → 곱하기','3 × 3 = <b>9</b>']},
+  {k:'s1', kind:'mc', lab:'정리 ❶', sec:'정리',
+   q:'사건 A가 일어나는 경우의 수가 a, 사건 B가 일어나는 경우의 수가 b일 때, <b>사건 A 또는 사건 B</b>가 일어나는 경우의 수는? (단, 두 사건은 동시에 일어나지 않음)',
+   opts:['a + b','a × b','a − b'], a:0, exp:'1번(방과 후), 2번(체험 학습)처럼 둘 중 하나만 일어날 때는 <b>더해요</b>.'},
+  {k:'s2', kind:'mc', lab:'정리 ❷', sec:'정리',
+   q:'<b>사건 A와 사건 B가 동시에</b> 일어나는 경우의 수는?',
+   opts:['a + b','a × b','a ÷ b'], a:1, exp:'3번(송편), 4번(코디), 5번(열쇠)처럼 두 가지를 함께 정할 때는 <b>곱해요</b>.'},
+  {k:'w6', kind:'num', code:true, lab:'세 번째 1번', sec:'세 번째 · 한 번 더 생각해보기 1',
+   q:'0에서 4까지의 수가 각각 적힌 5장의 카드에서 2장을 뽑아 <b>두 자리의 정수</b>를 만들 수 있는 경우의 수는?<small>학습지에는 가지그림을 그려 확인해요.</small>',
+   a:16, steps:['십의 자리에는 0이 올 수 없어요 → 1, 2, 3, 4의 <b>4가지</b>','일의 자리: 십의 자리에 쓴 카드를 뺀 나머지 4장(0 포함) → <b>4가지</b>','예: 십의 자리 1 → 10, 12, 13, 14','4 × 4 = <b>16</b>']},
+  {k:'w7', kind:'num', code:false, lab:'세 번째 2번', sec:'세 번째 · 한 번 더 생각해보기 2',
+   q:'A, B, C, D 4명의 학생이 학급 임원 후보에 올랐다. 네 명의 후보자 중에서 <b>회장 1명, 부회장 1명</b>을 뽑는 경우의 수는?',
+   a:12,
+   steps:['회장이 A → 부회장은 B, C, D (3가지)','회장이 B, C, D일 때도 각각 3가지','회장 4가지, 그 각각에 대하여 부회장 3가지','4 × 3 = <b>12</b>']},
+  {k:'w8', kind:'num', code:false, lab:'세 번째 3번', sec:'세 번째 · 한 번 더 생각해보기 3',
+   q:'같은 4명(A, B, C, D) 중에서 <b>대표 2명</b>을 뽑는 경우의 수는?',
+   a:6, collab:{type:'opinion', prompt:'<b>(대표 2명)</b>을 뽑는 경우와 <b>(회장, 부회장)</b>을 뽑는 경우가 같을까?', choices:['같다','다르다']},
+   steps:['대표 2명은 역할(순서)이 없어요 → (A, B)와 (B, A)는 같은 경우','회장·부회장 12가지 안에서 같은 경우가 2개씩 짝지어 있어요','12 ÷ 2 = <b>6</b> → AB, AC, AD, BC, BD, CD']},
+  {k:'w9', kind:'num', code:true, lab:'세 번째 4번', sec:'세 번째 · 한 번 더 생각해보기 4',
+   q:'A, B, C 세 사람이 <b>한 줄로</b> 늘어서는 모든 경우의 수는?',
+   a:6, steps:['첫째 자리: 3명 중 1명 → 3가지','둘째 자리: 남은 2명 중 1명 → 2가지','셋째 자리: 남은 1명 → 1가지','3 × 2 × 1 = <b>6</b>']},
+  {k:'w10', kind:'num', code:false, lab:'세 번째 5번', sec:'세 번째 · 한 번 더 생각해보기 5',
+   q:'A, B, C, D, E 다섯 사람이 일렬로 줄을 선다. 그런데 B, C는 커플이라(!) 손잡고 떨어질 생각을 안 한다. 이 다섯 명이 일렬로 줄을 설 수 있는 경우의 수는?',
+   a:48, steps:['붙어 있는 B, C를 한 사람 [BC]처럼 묶어요','A, [BC], D, E → 4명이 한 줄: 4 × 3 × 2 × 1 = 24','묶음 안에서 BC, CB 2가지로 바꿔 설 수 있어요','24 × 2 = <b>48</b>']},
+  {k:'w11', kind:'num', code:true, lab:'세 번째 6번', sec:'세 번째 · 한 번 더 생각해보기 6',
+   q:'주사위 2개를 던져 나온 눈의 수의 합이 <b>5가 되거나 10이 되는</b> 경우의 수는?',
+   a:7, steps:['합이 5: (1,4) (2,3) (3,2) (4,1) → 4가지','합이 10: (4,6) (5,5) (6,4) → 3가지','합이 5이면서 동시에 10일 수는 없어요 → 더하기','4 + 3 = <b>7</b>']}
+];
+// 239쪽 문제 3 (비행기·기차 시간표)
+TB.splice(6, 0, {k:'t6b', page:'239쪽 문제 3', q:'다음은 어느 날 비행기와 기차의 출발 시각을 조사한 것이다. 비행기 또는 기차를 이용하여 <b>오전 11시 이전에</b> 출발하는 경우의 수는?', a:6,
+  hint:'11:00보다 빠른 시각만 세어 보세요. 비행기와 기차를 동시에 탈 수는 없어요.', exp:'비행기 07:10, 07:55 → 2가지 / 기차 06:00, 07:40, 09:00, 10:45 → 4가지 → 2 + 4 = <b>6</b>'});
+
+// ===================== 문제별 그림(pic)과 직접 눌러 보는 풀이(vis) =====================
+// pic: 문제와 함께 보이는 그림 (false = 그림 숨김: 정보 나눠 갖기 문제)
+// vis: 풀이에서 학생이 직접 누르며 확인하는 그림
+var KEY_PIC = '<svg viewBox="0 0 360 130" class="keypic" role="img" aria-label="홈이 2개 있는 열쇠">' +
+  '<circle cx="62" cy="58" r="42" class="k-body"/><circle cx="62" cy="58" r="15" class="k-hole"/>' +
+  '<path class="k-body" d="M98,44 H330 V72 H290 V92 H265 V72 H215 V92 H190 V72 H98 Z"/>' +
+  '<text x="202" y="118" class="k-lab">A</text><text x="277" y="118" class="k-lab">B</text></svg>' +
+  '<p class="muted" style="margin:0;font-size:.88rem">홈 A, B의 깊이를 각각 상·중·하 중에서 골라요.</p>';
+var VISMAP = {
+  t1:{vis:{type:'pick', shape:'die', prompt:'짝수의 눈을 모두 눌러 보세요', groups:[{items:['1','2','3','4','5','6'], ans:[1,3,5]}]}},
+  t2:{vis:{type:'pick', shape:'die', prompt:'5의 약수의 눈을 모두 눌러 보세요', groups:[{items:['1','2','3','4','5','6'], ans:[0,4]}]}},
+  t3:{vis:{type:'pick', shape:'ball', prompt:'소수가 적힌 공을 모두 눌러 보세요 (1은 소수가 아니에요)', groups:[{items:['1','2','3','4','5','6'], ans:[1,2,4]}]}},
+  t4:{vis:{type:'pick', shape:'ball', prompt:'3의 배수가 적힌 공을 모두 눌러 보세요', groups:[{items:['1','2','3','4','5','6'], ans:[2,5]}]}},
+  t5:{pic:{type:'merge', groups:[{name:'백팩', items:['백팩 1','백팩 2','백팩 3']},{name:'크로스 백', items:['크로스 백 1','크로스 백 2']}], done:'한 가지만 사니까, 고를 수 있는 가방을 모두 모아 세면 돼요.'}},
+  t6:{pic:{type:'merge', groups:[{name:'예술 수업', items:['예술 1','예술 2','예술 3','예술 4']},{name:'체육 수업', items:['체육 1','체육 2','체육 3','체육 4','체육 5']}], done:'둘 중 한 가지만 → 모아서 세기(더하기)'}},
+  t6b:{vis:{type:'pick', shape:'time', prompt:'오전 11시 이전에 출발하는 시각을 모두 눌러 보세요', groups:[
+    {name:'비행기', items:['07:10','07:55','14:00','16:10'], ans:[0,1]},
+    {name:'기차', items:['06:00','07:40','09:00','10:45','12:10','16:35'], ans:[0,1,2,3]}], done:'비행기와 기차를 동시에 탈 수는 없으니 더해요.'}},
+  t7:{vis:{type:'ptree', rows:{name:'크림', items:['크림 ①','크림 ②']}, cols:{name:'과일', items:['과일 ①','과일 ②','과일 ③']}, done:'크림과 과일을 함께(동시에) 고르니까 곱해요.'}},
+  t8:{vis:{type:'roads', left:2, right:4, lname:['가','나'], rname:['1','2','3','4'], places:['매표소','온실','은행나무 숲']}},
+  t9:{vis:{type:'tree', opts:['1','2','3','4'], depth:2, labels:['십의 자리','일의 자리'], resLabel:'만든 수', prompt:'십의 자리 카드를 눌러 가지를 펼쳐 보세요', eq:'4 × 3 = 12', done:'십의 자리 4가지 각각에 일의 자리가 3가지씩'}},
+  t10:{vis:{type:'tree', opts:['0','1','2','3'], depth:2, noLeadZero:true, labels:['십의 자리','일의 자리'], resLabel:'만든 수', prompt:'십의 자리 카드를 눌러 가지를 펼쳐 보세요 (0은 십의 자리에 못 와요)', eq:'3 × 3 = 9', done:'십의 자리 1, 2, 3 → 3가지, 그 각각에 일의 자리 3가지(0 포함)'}},
+  w1:{pic:{type:'merge', groups:[{name:'예술 방과 후', items:['기타반','사물놀이반','한국무용반','캐리커처반']},{name:'체육 방과 후', items:['농구반','요가반','배드민턴반']}], done:'한 가지만 신청 → 모아 세기(더하기)'}},
+  w2:{pic:{type:'merge', groups:[{name:'박물관', items:['박물관 1','박물관 2','박물관 3'], skip:true},{name:'미술관', items:['미술관 1','미술관 2','미술관 3']},{name:'전통시장', items:['전통시장 1','전통시장 2']}], done:'박물관은 묻지 않았어요. 미술관 또는 전통시장 중 한 곳 → 더하기'}},
+  w3:{vis:{type:'ptree', rows:{name:'반죽', items:['멥쌀','쑥','흑미','단호박']}, cols:{name:'소', items:['깨','녹두']}, done:'반죽과 소를 함께 고르니까 곱해요.'}},
+  w4:{vis:{type:'ptree', rows:{name:'상의', items:['상의 1','상의 2','상의 3']}, cols:{name:'하의', items:['하의 1','하의 2','하의 3','하의 4']}, done:'상의와 하의를 동시에 입으니까 곱해요.'}},
+  w5:{pic:KEY_PIC, vis:{type:'ptree', rows:{name:'홈 A', items:['A 상','A 중','A 하']}, cols:{name:'홈 B', items:['B 상','B 중','B 하']}, join:' · ', done:'두 홈의 깊이를 함께 정해야 열쇠 하나가 돼요.'}},
+  w6:{vis:{type:'tree', opts:['0','1','2','3','4'], depth:2, noLeadZero:true, labels:['십의 자리','일의 자리'], resLabel:'만든 수', prompt:'십의 자리 카드를 눌러 가지를 펼쳐 보세요', eq:'4 × 4 = 16', done:'십의 자리 4가지(0 제외) 각각에 일의 자리 4가지(0 포함)'}},
+  w7:{vis:{type:'tree', shape:'person', opts:['A','B','C','D'], depth:2, labels:['회장','부회장'], join:'·', resLabel:'뽑는 경우', prompt:'회장을 눌러 부회장 가지를 펼쳐 보세요', eq:'4 × 3 = 12'}},
+  w8:{vis:{type:'pairs', opts:['A','B','C','D']}},
+  w9:{vis:{type:'tree', shape:'person', opts:['A','B','C'], depth:3, labels:['첫째','둘째','셋째'], resLabel:'줄 선 순서', prompt:'첫째 자리부터 눌러 가지를 펼쳐 보세요', eq:'3 × 2 × 1 = 6'}},
+  w10:{vis:{type:'bundle', people:['A','B','C','D','E'], tie:[1,2]}},
+  w11:{vis:{type:'dice2', targets:[{sum:5, label:'합이 5', cls:'ta'},{sum:10, label:'합이 10', cls:'tb'}]}}
+};
+TB.concat(WS).forEach(function(it){ var m = VISMAP[it.k]; if (!m) return; it.vis = m.vis; if ('pic' in m) it.pic = m.pic; });
+// ===================== 해결해요 (개인 학습) 문제 =====================
+// type: num(정수) · frac(분수/확률) · mc(하나 고르기) · multi(모두 고르기)
+// steps: 틀렸을 때 따라가는 단계. 각 단계도 중간 답을 입력 (type:'none' 은 읽고 넘어가기)
+var PIC = {
+  menu: '<div class="mg"><div class="mg-box"><h4><span>햄버거</span><span class="muted">4가지</span></h4><div class="toks"><span class="chip">불고기버거</span><span class="chip">새우버거</span><span class="chip">치즈버거</span><span class="chip">치킨버거</span></div></div>' +
+        '<div class="mg-box"><h4><span>사이드 메뉴</span><span class="muted">3가지</span></h4><div class="toks"><span class="chip g1">감자튀김</span><span class="chip g1">치즈스틱</span><span class="chip g1">콘샐러드</span></div></div>' +
+        '<div class="mg-box"><h4><span>음료</span><span class="muted">2가지</span></h4><div class="toks"><span class="chip g2">콜라</span><span class="chip g2">사이다</span></div></div></div>' +
+        '<p class="muted" style="margin:0;font-size:.88rem">* 세트: 햄버거 1개 + 사이드 메뉴 1개 + 음료 1개</p>',
+  disks: '<div class="toks">' + ['A', 'B'].map(function(n, j){
+          var k = j ? 6 : 4, s = '<svg viewBox="0 0 120 130" width="120" role="img" aria-label="원판 ' + n + '"><circle cx="60" cy="60" r="52" class="dk"/>';
+          for (var i = 0; i < k; i++) { var a = (i / k) * 2 * Math.PI - Math.PI / 2, a2 = ((i + .5) / k) * 2 * Math.PI - Math.PI / 2;
+            s += '<line x1="60" y1="60" x2="' + (60 + 52 * Math.cos(a)).toFixed(1) + '" y2="' + (60 + 52 * Math.sin(a)).toFixed(1) + '" class="dkl"/>' +
+                 '<text x="' + (60 + 32 * Math.cos(a2)).toFixed(1) + '" y="' + (66 + 32 * Math.sin(a2)).toFixed(1) + '" class="dkt">' + (i + 1) + '</text>'; }
+          return '<span class="tok">' + s + '<text x="60" y="126" class="dkt">' + n + '</text></svg></span>'; }).join('') + '</div>',
+  goodluck: '<div class="toks">' + 'GOODLUCK'.split('').map(function(c){ return '<span class="card-tok" style="font-size:1.3rem">' + c + '</span>'; }).join('') + '</div>',
+  club: '<div class="scroll"><table class="ptab"><caption>학교스포츠클럽 가입 현황</caption><tr><th>클럽명</th><th>농구</th><th>배드민턴</th><th>탁구</th><th>피구</th><th>합계</th></tr><tr><th>학생 수(명)</th><td>6</td><td>3</td><td>4</td><td>7</td><td>20</td></tr></table></div>',
+  boxes: '<div class="mg"><div class="mg-box"><h4><span>상자 1</span></h4><div class="toks">' + [1, 2, 4, 8].map(function(n){ return '<span class="card-tok">' + n + '</span>'; }).join('') + '</div></div>' +
+         '<div class="mg-box"><h4><span>상자 2</span></h4><div class="toks">' + [1, 2, 3, 6].map(function(n){ return '<span class="card-tok">' + n + '</span>'; }).join('') + '</div></div></div>',
+  numline: (function(){ var s = '<svg viewBox="0 0 420 70" class="roads" style="max-width:420px" role="img" aria-label="수직선 위 원점의 점 P"><line x1="10" y1="40" x2="410" y2="40" class="nl"/>';
+           for (var v = -3; v <= 3; v++) { var x = 210 + v * 55; s += '<line x1="' + x + '" y1="32" x2="' + x + '" y2="48" class="nl"/><text x="' + x + '" y="66" class="dkt">' + v + '</text>'; }
+           return s + '<circle cx="210" cy="40" r="7" class="np"/><text x="210" y="22" class="dkt">P</text></svg>'; })(),
+  calendar: (function(){ var h = '<div class="scroll"><table class="ptab cal"><tr>' + ['일','월','화','수','목','금','토'].map(function(d){ return '<th>' + d + '</th>'; }).join('') + '</tr><tr>';
+            var col = 0; for (var e = 0; e < 5; e++) { h += '<td></td>'; col++; }
+            for (var d = 1; d <= 30; d++) { if (col === 7) { h += '</tr><tr>'; col = 0; } h += '<td>' + d + '</td>'; col++; }
+            while (col < 7) { h += '<td></td>'; col++; } return h + '</tr></table></div>'; })(),
+  balls: '<div class="mg"><div class="mg-box"><h4><span>A 상자</span></h4><div class="toks"><span class="chip">파란 공 5개</span><span class="chip g1">노란 공 3개</span></div></div>' +
+         '<div class="mg-box"><h4><span>B 상자</span></h4><div class="toks"><span class="chip">파란 공 4개</span><span class="chip g1">노란 공 5개</span></div></div></div>'
+};
+
+var PRACTICE = {
+  'P8.1': {of: '8.1', title: '8.1 경우의 수 · 해결해요', page: '교과서 242쪽', items: [
+    {k:'a1', no:'1 (1)', q:'주사위 한 개를 던질 때, <b>5보다 큰 수의 눈</b>이 나오는 경우의 수를 구하시오.', type:'num', a:1,
+     steps:[{t:'주사위의 눈 1, 2, 3, 4, 5, 6 중에서 5보다 큰 수는 몇 개일까?', type:'num', a:1, hint:'5는 빼고, 5보다 큰 수만 세요.', after:'5보다 큰 눈은 6 하나뿐이에요.'}]},
+    {k:'a2', no:'1 (2)', q:'주사위 한 개를 던질 때, <b>2의 배수의 눈</b>이 나오는 경우의 수를 구하시오.', type:'num', a:3,
+     steps:[{t:'주사위의 눈 중 2의 배수(2로 나누어떨어지는 수)는 몇 개일까?', type:'num', a:3, hint:'2, 4, … 를 세어 보세요.', after:'2의 배수: 2, 4, 6 → 3가지'}]},
+    {k:'a3', no:'2', q:'어느 영화관에서는 코미디 영화 5편, SF 영화 2편을 상영하고 있다. 이 영화관에서 <b>코미디 영화 또는 SF 영화 중 한 편</b>을 관람하는 경우의 수를 구하시오.', type:'num', a:7,
+     steps:[{t:'코미디 영화 중 한 편을 보는 경우의 수는?', type:'num', a:5},
+            {t:'SF 영화 중 한 편을 보는 경우의 수는?', type:'num', a:2},
+            {t:'한 편만 보니까 두 사건은 동시에 일어날까?', type:'mc', opts:['동시에 일어나지 않는다 → 더한다', '동시에 일어난다 → 곱한다'], a:0},
+            {t:'그러면 경우의 수는? (5 + 2)', type:'num', a:7}]},
+    {k:'a4', no:'3 (1)', pic:'menu', q:'메뉴판을 보고 주문하려고 한다. <b>햄버거 또는 사이드 메뉴 중 한 가지만</b> 선택하는 경우의 수를 구하시오.', type:'num', a:7,
+     steps:[{t:'햄버거는 몇 가지?', type:'num', a:4}, {t:'사이드 메뉴는 몇 가지?', type:'num', a:3},
+            {t:'한 가지만 고르니까 → 더하기. 4 + 3 = ?', type:'num', a:7}]},
+    {k:'a5', no:'3 (2)', pic:'menu', q:'불고기버거 세트를 주문하려고 한다. <b>사이드 메뉴와 음료를 각각 한 가지씩</b> 선택하는 경우의 수를 구하시오.', type:'num', a:6,
+     steps:[{t:'사이드 메뉴는 몇 가지?', type:'num', a:3}, {t:'음료는 몇 가지?', type:'num', a:2},
+            {t:'사이드 메뉴와 음료를 함께 고르니까?', type:'mc', opts:['더한다', '곱한다'], a:1, after:'사이드 메뉴 하나마다 음료를 2가지씩 고를 수 있어요.'},
+            {t:'3 × 2 = ?', type:'num', a:6}]},
+    {k:'a6', no:'4', q:'자음 ㄱ, ㄴ, ㄷ, ㄹ과 모음 ㅏ, ㅓ, ㅗ, ㅜ, ㅣ 중에서 <b>자음 한 개와 모음 한 개를 짝 지어</b> 글자를 만드는 경우의 수를 구하시오.', type:'num', a:20,
+     steps:[{t:'자음은 몇 개?', type:'num', a:4}, {t:'모음은 몇 개?', type:'num', a:5},
+            {t:'자음과 모음을 함께 고르니까 곱하기. 4 × 5 = ?', type:'num', a:20}]},
+    {k:'a7', no:'5', pic:'disks', q:'4등분, 6등분한 두 원판 A, B에 1부터 4까지, 1부터 6까지의 자연수가 각각 적혀 있다. 두 원판이 각각 돌다가 멈출 때, 두 원판의 각 바늘이 가리킨 수의 합이 <b>5 또는 8</b>인 경우의 수를 구하시오. (단, 바늘이 경계선에 놓이는 경우는 생각하지 않는다.)', type:'num', a:7,
+     steps:[{t:'합이 5인 경우 (A, B)를 모두 세면? 예: (1, 4)', type:'num', a:4, hint:'A는 1~4, B는 1~6이에요.', after:'(1,4) (2,3) (3,2) (4,1) → 4가지'},
+            {t:'합이 8인 경우 (A, B)는 몇 가지?', type:'num', a:3, hint:'A가 1이면 B가 7이어야 해서 안 돼요.', after:'(2,6) (3,5) (4,4) → 3가지'},
+            {t:'합이 5이면서 8일 수는 없으니 더하기. 4 + 3 = ?', type:'num', a:7}]}
+  ]},
+  'P8.2': {of: '8.2', title: '8.2 확률의 뜻 · 해결해요', page: '교과서 246쪽', items: [
+    {k:'b1', no:'1 (1)', pic:'goodluck', q:'영어 단어 GOOD LUCK의 알파벳이 각각 적힌 8장의 카드 중에서 한 장을 뽑을 때, <b>모든 경우의 수</b>를 구하시오.', type:'num', a:8,
+     steps:[{t:'카드는 모두 몇 장?', type:'num', a:8}]},
+    {k:'b2', no:'1 (2)', pic:'goodluck', q:'<b>알파벳 O가 적힌 카드</b>가 나오는 경우의 수를 구하시오.', type:'num', a:2,
+     steps:[{t:'G, O, O, D, L, U, C, K 중 O는 몇 장?', type:'num', a:2}]},
+    {k:'b3', no:'1 (3)', pic:'goodluck', q:'<b>알파벳 O가 적힌 카드가 나올 확률</b>을 구하시오.', type:'frac', a:'1/4',
+     steps:[{t:'모든 경우의 수는?', type:'num', a:8}, {t:'O가 나오는 경우의 수는?', type:'num', a:2},
+            {t:'확률 = (O가 나오는 경우의 수) / (모든 경우의 수). 기약분수로 쓰면?', type:'frac', a:'1/4', after:'2/8 = 1/4'}]},
+    {k:'b4', no:'2', pic:'club', q:'어느 반 학생 20명의 학교스포츠클럽 가입 현황이다. 이 반에서 한 명을 임의로 선택할 때, <b>배드민턴 클럽</b>에 가입한 학생일 확률을 구하시오. (단, 학생들은 1개의 스포츠클럽만 가입할 수 있다.)', type:'frac', a:'3/20',
+     steps:[{t:'모든 경우의 수(반 학생 수)는?', type:'num', a:20}, {t:'배드민턴 클럽 학생 수는?', type:'num', a:3},
+            {t:'구하는 확률은?', type:'frac', a:'3/20'}]},
+    {k:'b5', no:'3', q:'1부터 15까지의 자연수가 각각 적힌 공 15개가 들어 있는 주머니에서 공 한 개를 꺼낼 때, <b>15의 약수</b>가 적힌 공이 나올 확률을 구하시오.', type:'frac', a:'4/15',
+     steps:[{t:'모든 경우의 수는?', type:'num', a:15}, {t:'15의 약수는 몇 개?', type:'num', a:4, after:'1, 3, 5, 15 → 4개'},
+            {t:'구하는 확률은?', type:'frac', a:'4/15'}]},
+    {k:'b6', no:'4', q:'테오와 지우가 가위바위보를 한 번 할 때, <b>지우가 이길 확률</b>을 구하시오.', type:'frac', a:'1/3',
+     steps:[{t:'두 사람이 내는 모든 경우의 수는? (3 × 3)', type:'num', a:9},
+            {t:'지우가 이기는 경우는 몇 가지? (예: 테오 가위, 지우 바위)', type:'num', a:3},
+            {t:'구하는 확률은? (기약분수)', type:'frac', a:'1/3', after:'3/9 = 1/3'}]},
+    {k:'b7', no:'5', q:'두 개의 주사위 A, B를 동시에 던질 때, A에서 나오는 눈의 수를 x, B에서 나오는 눈의 수를 y라고 하자. <b>x + 2y = 9</b>가 될 확률을 구하시오.', type:'frac', a:'1/12',
+     steps:[{t:'모든 경우의 수는? (6 × 6)', type:'num', a:36},
+            {t:'x + 2y = 9 를 만족하는 (x, y)는 몇 가지? y에 1, 2, 3, …을 넣어 보세요.', type:'num', a:3, hint:'y = 1이면 x = 7이라 안 돼요.', after:'(1,4) (3,3) (5,2) → 3가지'},
+            {t:'구하는 확률은? (기약분수)', type:'frac', a:'1/12', after:'3/36 = 1/12'}]},
+    {k:'b8', no:'6', q:'"동전 한 개를 던질 때, 앞면이 나올 확률은 1/2이다."의 의미를 잘못 설명한 친구를 고르시오.<br>제니: 동전을 여러 번 던지면 그중 절반 정도는 앞면이 나온다는 뜻이야.<br>유민: 동전을 9번 던졌을 때 앞면이 4번 나왔다면, 한 번 더 던지면 앞면이 나온다는 의미야.', type:'mc', opts:['제니', '유민'], a:1,
+     why:'<b>유민</b>이 잘못 설명했어요. 확률 1/2은 동전을 여러 번 던질수록 앞면이 나오는 비율이 1/2에 가까워진다는 뜻이에요(제니의 설명이 맞아요). 앞에서 앞면이 4번, 뒷면이 5번 나왔어도 다음 한 번에 앞면이 나올 확률은 여전히 1/2이라서, 앞면이 꼭 나온다고 할 수 없어요.',
+     steps:[{t:'확률 1/2은 던지는 횟수가 많아질수록 앞면이 나오는 상대도수가 1/2에 가까워진다는 뜻이에요.', type:'none'},
+            {t:'앞에서 무엇이 나왔든, 다음에 한 번 더 던질 때 앞면이 나올 확률은?', type:'frac', a:'1/2', after:'매번 1/2이에요. 앞면이 꼭 나온다고 할 수 없어요.'}]}
+  ]},
+  'P8.3': {of: '8.3', title: '8.3 확률의 성질 · 해결해요', page: '교과서 250쪽', items: [
+    {k:'c1', no:'1 (1)', q:'1부터 9까지의 자연수가 각각 적힌 공 9개가 들어 있는 주머니에서 공 한 개를 꺼낼 때, 다음 설명이 옳으면 O, 틀리면 X를 고르시오.<br><b>0이 적힌 공이 나올 확률은 0이다.</b>', type:'mc', opts:['O', 'X'], a:0,
+     steps:[{t:'0이 적힌 공은 몇 개?', type:'num', a:0}, {t:'그러면 확률은? (0/9)', type:'frac', a:'0', after:'절대로 일어나지 않는 사건의 확률은 0이에요.'}]},
+    {k:'c2', no:'1 (2)', q:'같은 주머니에서 <b>홀수가 적힌 공이 나올 확률은 1/2이다.</b> (O / X)', type:'mc', opts:['O', 'X'], a:1,
+     steps:[{t:'1~9 중 홀수는 몇 개?', type:'num', a:5, after:'1, 3, 5, 7, 9'}, {t:'홀수가 나올 확률은?', type:'frac', a:'5/9', after:'5/9 는 1/2 이 아니에요.'}]},
+    {k:'c3', no:'1 (3)', q:'같은 주머니에서 <b>9 이하의 수가 적힌 공이 나올 확률은 1이다.</b> (O / X)', type:'mc', opts:['O', 'X'], a:0,
+     steps:[{t:'9 이하의 수가 적힌 공은 몇 개?', type:'num', a:9}, {t:'확률은? (9/9)', type:'frac', a:'1', after:'반드시 일어나는 사건의 확률은 1이에요.'}]},
+    {k:'c4', no:'2', q:'다음 중 <b>확률이 1인 것</b>을 모두 고르시오.<br>ㄱ. 주사위 한 개를 던질 때, 1 이상의 눈이 나올 확률<br>ㄴ. 서로 다른 두 개의 주사위를 동시에 던질 때, 나온 두 눈의 수의 곱이 36보다 작을 확률<br>ㄷ. 두 사람이 가위바위보를 한 번 할 때, 서로 비길 확률<br>ㄹ. 검은 공만 들어 있는 주머니에서 공 한 개를 꺼낼 때, 검은 공이 나올 확률', type:'multi', opts:['ㄱ', 'ㄴ', 'ㄷ', 'ㄹ'], a:[0, 3],
+     steps:[{t:'ㄱ의 확률은? (주사위 눈은 모두 1 이상)', type:'frac', a:'1'},
+            {t:'ㄴ: 곱이 36보다 작지 않은 경우는 (6, 6) 하나. 그러면 ㄴ의 확률은?', type:'frac', a:'35/36'},
+            {t:'ㄷ: 9가지 중 비기는 경우는 3가지. ㄷ의 확률은?', type:'frac', a:'1/3'},
+            {t:'ㄹ의 확률은?', type:'frac', a:'1', after:'확률이 1인 것은 ㄱ, ㄹ'}]},
+    {k:'c5', no:'3', q:'수진이는 슈크림 붕어빵 4개를 포함하여 모두 15개의 붕어빵을 샀다. 이 중에서 한 개를 선택할 때, <b>슈크림 붕어빵이 아닐 확률</b>을 구하시오.', type:'frac', a:'11/15',
+     steps:[{t:'슈크림 붕어빵일 확률은?', type:'frac', a:'4/15'},
+            {t:'(아닐 확률) = 1 − (일 확률). 1 − 4/15 = ?', type:'frac', a:'11/15'}]},
+    {k:'c6', no:'4', q:'남학생 2명과 여학생 2명 중에서 대표 2명을 뽑을 때, <b>적어도 한 명은 여학생</b>이 뽑힐 확률을 구하시오.', type:'frac', a:'5/6',
+     steps:[{t:'4명 중 대표 2명을 뽑는 경우의 수는? (4 × 3 ÷ 2)', type:'num', a:6},
+            {t:'2명 모두 남학생인 경우의 수는?', type:'num', a:1},
+            {t:'2명 모두 남학생일 확률은?', type:'frac', a:'1/6'},
+            {t:'(적어도 한 명은 여학생) = 1 − (모두 남학생). 구하는 확률은?', type:'frac', a:'5/6'}]},
+    {k:'c7', no:'5', pic:'boxes', q:'숫자 카드가 들어 있는 두 상자에서 각각 카드 한 장을 꺼낼 때, 두 수의 합이 <b>5가 아닐 확률</b>을 구하시오.', type:'frac', a:'7/8',
+     steps:[{t:'모든 경우의 수는? (4 × 4)', type:'num', a:16},
+            {t:'합이 5인 경우는 몇 가지? (상자 1, 상자 2)', type:'num', a:2, after:'(2, 3), (4, 1) → 2가지'},
+            {t:'합이 5일 확률은? (기약분수)', type:'frac', a:'1/8'},
+            {t:'합이 5가 아닐 확률은?', type:'frac', a:'7/8'}]},
+    {k:'c8', no:'6 (1)', pic:'numline', q:'수직선 위의 원점에 점 P가 있다. 주사위를 던져 짝수의 눈이 나오면 오른쪽으로 1칸, 홀수의 눈이 나오면 왼쪽으로 1칸 이동한다. 주사위를 두 번 던질 때, <b>점 P가 −2에 위치할 확률</b>을 구하시오.', type:'frac', a:'1/4',
+     steps:[{t:'−2에 가려면 두 번 모두 어떤 눈이 나와야 할까?', type:'mc', opts:['두 번 모두 홀수', '두 번 모두 짝수', '한 번 짝수, 한 번 홀수'], a:0},
+            {t:'모든 경우의 수는? (6 × 6)', type:'num', a:36},
+            {t:'두 번 모두 홀수인 경우의 수는? (3 × 3)', type:'num', a:9},
+            {t:'구하는 확률은? (기약분수)', type:'frac', a:'1/4'}]},
+    {k:'c9', no:'6 (2)', pic:'numline', q:'같은 규칙으로 주사위를 두 번 던질 때, <b>점 P가 1에 위치할 확률</b>을 구하시오.', type:'frac', a:'0',
+     steps:[{t:'두 번 움직인 뒤 P가 있을 수 있는 위치는?', type:'mc', opts:['−2, 0, 2', '−1, 0, 1', '−2, −1, 0, 1, 2'], a:0, after:'+1+1=2, +1−1=0, −1−1=−2'},
+            {t:'1에 있을 수 없으니 확률은?', type:'frac', a:'0', after:'절대로 일어나지 않는 사건의 확률은 0'}]}
+  ]},
+  'P8.4': {of: '8.4', title: '8.4 확률의 계산 · 해결해요', page: '교과서 255쪽', items: [
+    {k:'d1', no:'1', pic:'calendar', q:'다음 달력에서 하루를 선택할 때, 선택한 날짜가 <b>수요일 또는 토요일</b>일 확률을 구하시오.', type:'frac', a:'3/10',
+     steps:[{t:'이 달은 모두 며칠?', type:'num', a:30}, {t:'수요일은 몇 번?', type:'num', a:4}, {t:'토요일은 몇 번?', type:'num', a:5},
+            {t:'수요일이면서 토요일일 수는 없으니 더하기. 구하는 확률은? (기약분수)', type:'frac', a:'3/10', after:'4/30 + 5/30 = 9/30 = 3/10'}]},
+    {k:'d2', no:'2', q:'두 축구 선수 A, B가 승부차기를 성공할 확률은 각각 5/6, 7/8이다. 두 선수가 각각 한 번씩 승부차기를 했을 때, <b>두 선수 모두 성공할 확률</b>을 구하시오.', type:'frac', a:'35/48',
+     steps:[{t:'A의 성공과 B의 성공은 서로 영향을 끼칠까?', type:'mc', opts:['서로 영향을 끼치지 않는다 → 곱한다', '동시에 일어나지 않는다 → 더한다'], a:0},
+            {t:'5/6 × 7/8 = ?', type:'frac', a:'35/48'}]},
+    {k:'d3', no:'3', q:'서로 다른 두 개의 주사위를 동시에 던질 때, 나오는 두 눈의 수의 <b>차가 3 또는 5</b>일 확률을 구하시오.', type:'frac', a:'2/9',
+     steps:[{t:'모든 경우의 수는?', type:'num', a:36},
+            {t:'차가 3인 경우는 몇 가지? 예: (1, 4), (4, 1)', type:'num', a:6, after:'(1,4)(2,5)(3,6)(4,1)(5,2)(6,3) → 6가지'},
+            {t:'차가 5인 경우는 몇 가지?', type:'num', a:2, after:'(1,6)(6,1) → 2가지'},
+            {t:'구하는 확률은? (기약분수)', type:'frac', a:'2/9', after:'6/36 + 2/36 = 8/36 = 2/9'}]},
+    {k:'d4', no:'4', q:'오지선다형 문제 2개가 있다. 이 두 문제의 답을 임의로 선택할 때, <b>적어도 한 문제를 맞힐 확률</b>을 구하시오. (단, 모든 문제의 정답은 1개이다.)', type:'frac', a:'9/25',
+     steps:[{t:'한 문제를 틀릴 확률은?', type:'frac', a:'4/5'},
+            {t:'두 문제 모두 틀릴 확률은? (4/5 × 4/5)', type:'frac', a:'16/25'},
+            {t:'(적어도 한 문제 맞힘) = 1 − (모두 틀림) = ?', type:'frac', a:'9/25'}]},
+    {k:'d5', no:'5', q:'A 접시에 고기만두 5개, 김치만두 2개가 놓여 있고, B 접시에 고기만두 4개, 김치만두 3개가 놓여 있다. 두 접시에서 만두를 각각 한 개씩 선택할 때, <b>모두 고기만두</b>일 확률을 구하시오.', type:'frac', a:'20/49',
+     steps:[{t:'A 접시에서 고기만두를 고를 확률은?', type:'frac', a:'5/7'}, {t:'B 접시에서 고기만두를 고를 확률은?', type:'frac', a:'4/7'},
+            {t:'두 사건은 서로 영향을 끼치지 않으니 곱하기. 구하는 확률은?', type:'frac', a:'20/49'}]},
+    {k:'d6', no:'6', pic:'balls', q:'A 상자에는 파란 공 5개, 노란 공 3개, B 상자에는 파란 공 4개, 노란 공 5개가 들어 있다. A, B 상자에서 공을 각각 한 개씩 꺼낼 때, <b>두 공이 같은 색</b>일 확률을 구하시오.', type:'frac', a:'35/72',
+     steps:[{t:'두 공이 모두 파란 공일 확률은? (5/8 × 4/9)', type:'frac', a:'20/72', after:'20/72 (= 5/18)'},
+            {t:'두 공이 모두 노란 공일 확률은? (3/8 × 5/9)', type:'frac', a:'15/72', after:'15/72 (= 5/24)'},
+            {t:'둘 다 파랑이면서 둘 다 노랑일 수는 없으니 더하기. 구하는 확률은?', type:'frac', a:'35/72'}]}
+  ]}
+};
+
+// ---------- 문제별 풀이 그림 ----------
+function rng(a, b){ var r = []; for (var i = a; i <= b; i++) r.push(i); return r; }
+function dieRow(){ return rng(1, 6).map(function(n){ return dieSVG(n, 24); }); }
+var CHO = 'ㄱㄲㄴㄷㄸㄹ', JUNG = 'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ';
+function hangul(c, v){ var ci = {'ㄱ':0,'ㄴ':2,'ㄷ':3,'ㄹ':5}[c], vi = JUNG.indexOf(v); return String.fromCharCode(0xAC00 + (ci * 21 + vi) * 28); }
+var RPS = ['가위', '바위', '보'];
+function rpsWin(a, b){ return (a === 0 && b === 2) || (a === 1 && b === 0) || (a === 2 && b === 1); }  // a가 b를 이김
+var PVIS = {
+  a1: {type:'pick', shape:'die', groups:[{items:['1','2','3','4','5','6'], ans:[5]}], done:'5보다 큰 눈은 6 하나뿐!'},
+  a2: {type:'pick', shape:'die', groups:[{items:['1','2','3','4','5','6'], ans:[1,3,5]}], done:'2의 배수: 2, 4, 6'},
+  a3: {type:'pick', shape:'chip', groups:[{name:'코미디', items:['코미디 1','코미디 2','코미디 3','코미디 4','코미디 5'], ans:[0,1,2,3,4]}, {name:'SF', items:['SF 1','SF 2'], ans:[0,1]}], done:'둘 중 한 편만 보니까 모두 모아서 세요.'},
+  a4: {type:'pick', shape:'chip', groups:[{name:'햄버거', items:['불고기버거','새우버거','치즈버거','치킨버거'], ans:[0,1,2,3]}, {name:'사이드 메뉴', items:['감자튀김','치즈스틱','콘샐러드'], ans:[0,1,2]}], done:'둘 중 한 가지만 고르니까 더해요.'},
+  a5: {type:'ptree', rows:{name:'사이드', items:['감자튀김','치즈스틱','콘샐러드']}, cols:{name:'음료', items:['콜라','사이다']}, done:'사이드 메뉴 하나마다 음료가 2가지씩!'},
+  a6: {type:'ptree', rows:{name:'자음', items:['ㄱ','ㄴ','ㄷ','ㄹ']}, cols:{name:'모음', items:['ㅏ','ㅓ','ㅗ','ㅜ','ㅣ']}, resLabel:'만든 글자', resFn:function(p){ return hangul(p[0], p[1]); }, done:'자음 하나마다 글자가 5개씩 생겨요.'},
+  a7: {type:'plist', head:'(A가 가리킨 수, B가 가리킨 수)', groups:[{label:'합이 5', pairs:['(1, 4)','(2, 3)','(3, 2)','(4, 1)']}, {label:'합이 8', pairs:['(2, 6)','(3, 5)','(4, 4)'], cls:'tb'}], eq:'4 + 3 = 7', done:'합이 5이면서 8일 수는 없으니 더해요.'},
+  b1: {type:'pick', shape:'card', groups:[{items:'GOODLUCK'.split(''), ans:[0,1,2,3,4,5,6,7]}], done:'카드 8장 중 한 장 → 8가지'},
+  b2: {type:'pick', shape:'card', groups:[{items:'GOODLUCK'.split(''), ans:[1,2]}], done:'O 카드는 2장'},
+  b3: {type:'pick', shape:'card', groups:[{items:'GOODLUCK'.split(''), ans:[1,2]}], done:'8장 중 2장 → 2/8 = 1/4'},
+  b4: {type:'bars', items:[{n:'농구', v:6}, {n:'배드민턴', v:3, hl:1}, {n:'탁구', v:4}, {n:'피구', v:7}], eq:'3/20', done:'전체 20명 중 배드민턴 3명'},
+  b5: {type:'pick', shape:'ball', groups:[{items:rng(1,15).map(String), ans:[0,2,4,14]}], done:'15의 약수: 1, 3, 5, 15 → 4/15'},
+  b6: {type:'plist', head:'(테오, 지우) — 모두 3 × 3 = 9가지', groups:[{label:'지우가 이김', pairs:['(가위, 바위)','(바위, 보)','(보, 가위)']}], eq:'3/9 = 1/3'},
+  b7: {type:'plist', head:'(x, y) — 모두 6 × 6 = 36가지', groups:[{label:'x + 2y = 9', pairs:['(1, 4)','(3, 3)','(5, 2)']}], eq:'3/36 = 1/12', done:'y = 1이면 x = 7, y = 5이면 x = −1 이라서 안 돼요.'},
+  b8: {type:'html', html:(function(){
+       var pts = [[10,.7],[50,.42],[100,.55],[200,.47],[400,.52],[600,.49],[1000,.502]], W = 320, H = 140;
+       var X = function(n){ return 40 + Math.log(n / 10) / Math.log(100) * (W - 70); }, Y = function(v){ return 20 + (1 - v) * (H - 40); };
+       var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="roads" style="max-width:420px" role="img" aria-label="던진 횟수가 많아질수록 앞면의 상대도수가 1/2에 가까워지는 그래프">';
+       s += '<line x1="40" y1="' + Y(.5) + '" x2="' + (W - 10) + '" y2="' + Y(.5) + '" class="half"/><text x="' + (W - 12) + '" y="' + (Y(.5) - 6) + '" class="ar-sub" style="text-anchor:end">1/2</text>';
+       s += '<polyline points="' + pts.map(function(p){ return X(p[0]).toFixed(1) + ',' + Y(p[1]).toFixed(1); }).join(' ') + '" class="freq"/>';
+       pts.forEach(function(p){ s += '<circle cx="' + X(p[0]).toFixed(1) + '" cy="' + Y(p[1]).toFixed(1) + '" r="4" class="np"/>'; });
+       s += '<text x="40" y="' + (H - 4) + '" class="ar-sub" style="text-anchor:start">던진 횟수 10</text><text x="' + (W - 10) + '" y="' + (H - 4) + '" class="ar-sub" style="text-anchor:end">1000</text><text x="8" y="14" class="ar-sub" style="text-anchor:start">앞면의 상대도수</text></svg>';
+       return s + '<div class="talk"><div class="say ok"><b>제니</b> 여러 번 던지면 절반 정도가 앞면 → 맞아요! 그래프처럼 1/2에 가까워져요.</div><div class="say no"><b>유민</b> 다음 한 번은 꼭 앞면? → 아니에요. 다음 한 번도 확률은 1/2이에요.</div></div>'; })()},
+  c1: {type:'pick', shape:'ball', groups:[{items:rng(1,9).map(String), ans:[]}], done:'0이 적힌 공은 하나도 없어요 → 확률 0 (O)'},
+  c2: {type:'pick', shape:'ball', groups:[{items:rng(1,9).map(String), ans:[0,2,4,6,8]}], done:'홀수 5개 → 5/9 (1/2이 아니라서 X)'},
+  c3: {type:'pick', shape:'ball', groups:[{items:rng(1,9).map(String), ans:[0,1,2,3,4,5,6,7,8]}], done:'모든 공이 9 이하 → 9/9 = 1 (O)'},
+  c4: {type:'html', html:'<div class="scroll"><table class="ptab okx"><tr><th></th><th>확률</th><th>1인가?</th></tr>' +
+       [['ㄱ','6/6 = 1',1],['ㄴ','35/36',0],['ㄷ','3/9 = 1/3',0],['ㄹ','1',1]].map(function(r){ return '<tr class="' + (r[2] ? 'yes' : '') + '"><th>' + r[0] + '</th><td>' + r[1] + '</td><td>' + (r[2] ? '○' : '×') + '</td></tr>'; }).join('') + '</table></div><p class="muted" style="margin:0">반드시 일어나는 사건의 확률은 1 → ㄱ, ㄹ</p>'},
+  c5: {type:'pick', shape:'chip', groups:[{name:'붕어빵 15개', items:['슈크림','슈크림','슈크림','슈크림','팥','팥','팥','팥','팥','팥','팥','팥','팥','팥','팥'], ans:rng(4,14)}], done:'슈크림이 아닌 붕어빵 11개 → 11/15 (= 1 − 4/15)'},
+  c6: {type:'pick', shape:'chip', groups:[{name:'대표 2명을 뽑는 6가지', items:['남1·남2','남1·여1','남1·여2','남2·여1','남2·여2','여1·여2'], ans:[1,2,3,4,5]}], done:'남학생만 뽑히는 1가지를 빼면 5가지 → 5/6 (= 1 − 1/6)'},
+  c7: {type:'plist', head:'(상자 1, 상자 2) — 모두 4 × 4 = 16가지', groups:[{label:'합이 5', pairs:['(2, 3)','(4, 1)'], cls:'tb'}], eq:'1 − 2/16 = 14/16 = 7/8', done:'합이 5가 아닌 경우는 16 − 2 = 14가지'},
+  c8: {type:'html', html:'<div class="scroll"><table class="ptab mv"><tr><th>첫째</th><th>둘째</th><th>위치</th><th>경우의 수</th></tr>' +
+       [['짝 (→1)','짝 (→1)','+2','3 × 3 = 9',0],['짝 (→1)','홀 (←1)','0','9',0],['홀 (←1)','짝 (→1)','0','9',0],['홀 (←1)','홀 (←1)','−2','3 × 3 = 9',1]].map(function(r){ return '<tr class="' + (r[4] ? 'yes' : '') + '"><td>' + r[0] + '</td><td>' + r[1] + '</td><td><b>' + r[2] + '</b></td><td>' + r[3] + '</td></tr>'; }).join('') +
+       '</table></div><p class="muted" style="margin:0">−2에 가는 경우 9가지 → 9/36 = 1/4</p>'},
+  c9: {type:'html', html:'<div class="toks">' + ['−2','0','2'].map(function(p){ return '<span class="card-tok" style="width:64px">' + p + '</span>'; }).join('') + '</div><p class="muted" style="margin:0">두 번 움직이면 −2, 0, 2 중 하나뿐! 1에는 갈 수 없어서 확률 0</p>'},
+  d1: {type:'html', html:(function(){ var h = '<div class="scroll"><table class="ptab cal"><tr>' + ['일','월','화','수','목','금','토'].map(function(d, i){ return '<th class="' + (i === 3 || i === 6 ? 'hlc' : '') + '">' + d + '</th>'; }).join('') + '</tr><tr>', col = 0;
+       for (var e = 0; e < 5; e++) { h += '<td></td>'; col++; }
+       for (var d = 1; d <= 30; d++) { if (col === 7) { h += '</tr><tr>'; col = 0; } h += '<td class="' + (col === 3 ? 'wed' : col === 6 ? 'sat' : '') + '">' + d + '</td>'; col++; }
+       while (col < 7) { h += '<td></td>'; col++; }
+       return h + '</tr></table></div><div class="legend"><span><i class="dcell ta"></i>수요일 4일</span><span><i class="dcell tb"></i>토요일 5일</span></div><div class="fb ok"><span class="eq">4/30 + 5/30 = 9/30 = 3/10</span></div>'; })()},
+  d2: {type:'area', R:6, C:8, rowSeg:[{n:5, lab:'A 성공'}, {n:1, lab:'실패'}], colSeg:[{n:7, lab:'B 성공'}, {n:1, lab:'실패'}], shades:[{r:[0,5], c:[0,7], cls:'ta'}],
+       legend:[['ta','두 선수 모두 성공 → 5 × 7 = 35칸']], eq:'35/48', done:'전체 6 × 8 = 48칸 중 35칸'},
+  d3: {type:'plist', head:'(A의 눈, B의 눈) — 모두 36가지', groups:[{label:'차가 3', pairs:['(1, 4)','(2, 5)','(3, 6)','(4, 1)','(5, 2)','(6, 3)']}, {label:'차가 5', pairs:['(1, 6)','(6, 1)'], cls:'tb'}], eq:'6/36 + 2/36 = 8/36 = 2/9', done:'차가 3이면서 5일 수는 없으니 더해요.'},
+  d4: {type:'area', R:5, C:5, rowSeg:[{n:1, lab:'1번 맞힘'}, {n:4, lab:'틀림'}], colSeg:[{n:1, lab:'맞힘'}, {n:4, lab:'2번 틀림'}], shades:[{r:[1,5], c:[1,5], cls:'tb'}, {r:[0,1], c:[0,5], cls:'ta'}, {r:[1,5], c:[0,1], cls:'ta'}],
+       legend:[['tb','둘 다 틀림 16칸'],['ta','적어도 하나 맞힘 9칸']], eq:'1 − 16/25 = 9/25'},
+  d5: {type:'area', R:7, C:7, rowSeg:[{n:5, lab:'A 고기'}, {n:2, lab:'김치'}], colSeg:[{n:4, lab:'B 고기'}, {n:3, lab:'김치'}], shades:[{r:[0,5], c:[0,4], cls:'ta'}],
+       legend:[['ta','모두 고기만두 → 5 × 4 = 20칸']], eq:'20/49', done:'전체 7 × 7 = 49칸'},
+  d6: {type:'area', R:8, C:9, rowSeg:[{n:5, lab:'A 파랑'}, {n:3, lab:'노랑'}], colSeg:[{n:4, lab:'B 파랑'}, {n:5, lab:'노랑'}], shades:[{r:[0,5], c:[0,4], cls:'ta'}, {r:[5,8], c:[4,9], cls:'tb'}],
+       legend:[['ta','둘 다 파랑 20칸'],['tb','둘 다 노랑 15칸']], eq:'20/72 + 15/72 = 35/72', done:'전체 8 × 9 = 72칸'}
+};
+for (var pch in PRACTICE) PRACTICE[pch].items.forEach(function(it){ if (PVIS[it.k]) it.vis = PVIS[it.k]; });
+
+var GROUP_COUNT = 8; // 모둠 수
+var CLASSES = ['1반','2반','3반','4반','A반','B반','C반'];
+var NO_MAX = 35;     // 번호 목록 끝
+
+// ===================== 저장소 연결 =====================
+var GAS = (typeof google !== 'undefined' && google.script && google.script.run) ? true : false;
+var PREVIEW = false;   // 교사 미리보기(?view=preview): 실제 기록에 저장하지 않고 이 브라우저 안에서만
+// Vercel판(닮음 탐구 교실 사이트): 문제 풀이·진행 위치는 학생 기기에만, 서버에는 '시작 / 1단계 완료 / 완료'와 이탈 횟수만
+var VC = (typeof window !== 'undefined' && !!window.VC_MODE);
+function DEMO(){ return LOCAL() && (!VC || PREVIEW); }   // 데모·미리보기 전용 기능(가상 친구, 아무 문제로 이동)
+var VC_OPENMAP = {};
+function vcFetchOpen(cls){
+  return fetch('/api/prob?op=open&cls=' + encodeURIComponent(cls), {cache: 'no-store'}).then(function(r){ return r.json(); })
+    .then(function(j){ if (j && j.open) VC_OPENMAP[cls] = j.open; }).catch(function(){});
+}
+function vcSend(body, tries){
+  tries = tries || 0;
+  return fetch('/api/prob', {method: 'POST', cache: 'no-store', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)})
+    .then(function(r){ if (r.status >= 500 || r.status === 429) throw new Error('busy'); SAVE_FAIL = false; return r.json().catch(function(){ return {}; }); })
+    .catch(function(){
+      SAVE_FAIL = tries >= 2; saveWarn();
+      return new Promise(function(res){ setTimeout(res, Math.min(2000 * (tries + 1), 15000)); }).then(function(){ return vcSend(body, tries + 1); });
+    });
+}
+// 수업(8.1) 진행 단계가 바뀔 때만 서버에 알림 (같은 단계는 다시 보내지 않음)
+function vcReport(ch, st){
+  if (!VC || PREVIEW || !PROFILE) return;
+  var key = 'mm8-rep:' + PROFILE.cls + '-' + Number(PROFILE.no) + ':' + ch;
+  if (lsGet(key) === st) return;
+  lsSet(key, st);
+  PENDING++;
+  vcSend({op: 'rec', ch: ch, cls: PROFILE.cls, no: Number(PROFILE.no), name: PROFILE.name, st: st, lv: leaveCount()})
+    .then(function(){ PENDING--; saveWarn(); }, function(){ PENDING--; saveWarn(); });
+}
+function LOCAL(){ return !GAS || PREVIEW; }
+// 8단원 소단원 목록 (ready:false = 아직 내용 준비 중)
+var CHAPTERS = [
+  {id:'8.1', title:'경우의 수', ready:true},
+  {id:'8.2', title:'확률의 뜻', ready:false},
+  {id:'8.3', title:'확률의 성질', ready:false},
+  {id:'8.4', title:'확률의 계산', ready:false}
+];
+var CH = '8.1';        // 지금 들어가 있는 단원
+function isPractice(ch){ return !!ch && ch.charAt(0) === 'P'; }
+var PRACTICES = ['P8.1', 'P8.2', 'P8.3', 'P8.4'];   // 해결해요 (개인 학습)
+function chInfo(ch){
+  if (isPractice(ch)) return {id: ch, title: '해결해요', ready: true};
+  for (var i = 0; i < CHAPTERS.length; i++) if (CHAPTERS[i].id === ch) return CHAPTERS[i]; return CHAPTERS[0];
+}
+function allChs(){ return CHAPTERS.map(function(c){ return c.id; }).concat(PRACTICES); }
+var DKEY = 'mm8-demo';
+var memDb = {};
+function demoLoad(ch){ try{ return JSON.parse(localStorage.getItem(DKEY + ':' + ch) || '{}'); }catch(e){ return memDb[ch] || {}; } }
+function demoSave(ch, db){ var d = {s:db.s, g:db.g}; try{ localStorage.setItem(DKEY + ':' + ch, JSON.stringify(d)); }catch(e){ memDb[ch] = d; } }
+function localOpenMap(){ try{ return JSON.parse(localStorage.getItem(DKEY + ':open') || '{}'); }catch(e){ return memDb.open || {}; } }
+function isOpenFor(map, cls, ch){ var m = map[cls] || {}; return (ch in m) ? !!m[ch] : ch === '8.1'; }
+function pwLoad(){ try { return JSON.parse(localStorage.getItem(DKEY + ':pw') || '{}'); } catch(e){ return memDb.pw || {}; } }
+function pwStore(o){ try { localStorage.setItem(DKEY + ':pw', JSON.stringify(o)); } catch(e){ memDb.pw = o; } }
+function pwHashL(id, pin){ var s = 'mm8|' + id + '|' + pin, h = 5381; for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return 'L' + h.toString(36); }
+function pwCheckL(a){
+  if (VC && !PREVIEW) return {ok: true};   // Vercel판: 기록이 기기에만 있어 비밀번호 없음
+  var id = (a.cls && a.no) ? a.cls + '-' + Number(a.no) : String(a.id || ''), pin = String(a.pw || '');
+  if (!id || !/^\d{4}$/.test(pin)) return {ok: false, pwbad: true, msg: '비밀번호는 숫자 4자리예요.'};
+  var reg = pwLoad(), h = pwHashL(id, pin);
+  if (!reg[id]) return {ok: true, setNew: true, id: id, h: h};
+  return reg[id] === h ? {ok: true} : {ok: false, pwbad: true, msg: '반·번호·이름 또는 비밀번호가 맞지 않아요.'};
+}
+function lkLoad(){ try { return JSON.parse(localStorage.getItem(DKEY + ':lk') || '{"L":{},"C":{}}'); } catch(e){ return memDb.lk || {L:{}, C:{}}; } }
+function lkStore(o){ try { localStorage.setItem(DKEY + ':lk', JSON.stringify(o)); } catch(e){ memDb.lk = o; } }
+function lkInfo(reg, id){ var cls = String(id || '').split('-')[0], al = []; for (var k in reg.L) if (reg.L[k].cls === cls) al.push({t: reg.L[k].t, me: k === id}); return {alerts: al, lk: !!reg.L[id], lkn: reg.C[id] || 0}; }
+function withLk(res, id){ var i = lkInfo(lkLoad(), id); res.alerts = i.alerts; res.lk = i.lk; res.lkn = i.lkn; return res; }
+// 데모·미리보기: 서버(Code.gs)와 같은 일을 이 브라우저 안에서
+function localCall(op, a){
+  if (op === 'hub') {
+    var map = (VC && !PREVIEW) ? VC_OPENMAP : localOpenMap(), id = a.cls + '-' + Number(a.no), prog = {}, open = {}, conflict = false;
+    allChs().forEach(function(ch){
+      open[ch] = PREVIEW ? true : isOpenFor(map, a.cls, ch);
+      var st = (demoLoad(ch).s || {})[id];
+      if (st && st.name !== String(a.name || '').trim()) conflict = true;
+      prog[ch] = st ? {st: st.st, tb: st.tb, ws: st.ws, paper: !!st.paper, pc: st.pc || 0, pp: st.pp || 0} : null;
+    });
+    if (conflict) return withLk({ok: true, open: open, prog: {}, conflict: true}, id);
+    var pc = pwCheckL(a);
+    if (!pc.ok) return {ok: false, pwbad: true, msg: pc.msg};
+    if (pc.setNew) { var rg0 = pwLoad(); rg0[pc.id] = pc.h; pwStore(rg0); }
+    return withLk({ok: true, open: open, prog: prog, conflict: false, pwNew: !!pc.setNew}, id);
+  }
+  if (op === 't_pwreset') { if (TEACHER_PIN !== null && String(a.pin) !== String(TEACHER_PIN)) throw new Error('PIN'); var rg1 = pwLoad(); delete rg1[a.id]; pwStore(rg1); return {ok: true}; }
+  if (op === 't_pwlist') { var rg2 = pwLoad(), has = {}; for (var kk in rg2) has[kk] = 1; return {ok: true, has: has}; }
+  if ({join:1, ready:1, upd:1, group:1, me:1}[op] && !a.bot) {
+    var rid = (a.cls && a.no) ? a.cls + '-' + Number(a.no) : String(a.id || ''), rec = (demoLoad(a.ch).s || {})[rid];
+    if (!(rec && rec.bot)) { var pk = pwCheckL(a); if (!pk.ok || pk.setNew) return {ok: false, pwbad: true, msg: pk.msg || '반·번호·이름 또는 비밀번호가 맞지 않아요.'}; }
+  }
+  if (op === 'lock') {
+    var reg = lkLoad(), lid = a.cls + '-' + Number(a.no);
+    if (!reg.L[lid]) { reg.L[lid] = {t: Date.now(), cls: a.cls, no: Number(a.no), name: a.name, ch: a.ch || ''}; reg.C[lid] = (reg.C[lid] || 0) + 1; lkStore(reg); }
+    return {ok: true};
+  }
+  if (op === 't_unlock') { if (TEACHER_PIN !== null && String(a.pin) !== String(TEACHER_PIN)) throw new Error('PIN'); var r2 = lkLoad(); delete r2.L[a.id]; lkStore(r2); return {ok: true}; }
+  if (op === 't_hub' || op === 't_open') {
+    if (TEACHER_PIN !== null && String(a.pin) !== String(TEACHER_PIN)) throw new Error('PIN');
+    var m = localOpenMap();
+    if (op === 't_open') { m[a.cls] = m[a.cls] || {}; m[a.cls][a.ch] = !!a.v; try { localStorage.setItem(DKEY + ':open', JSON.stringify(m)); } catch(e){ memDb.open = m; } }
+    var res = {}; CLASSES.forEach(function(c){ res[c] = {}; allChs().forEach(function(x){ res[c][x] = isOpenFor(m, c, x); }); });
+    return {ok: true, open: res};
+  }
+  var db = demoLoad(a.ch); var out = core_(db, op, a, Date.now()); demoSave(a.ch, db);
+  if (op === 'group' || op === 'me') return withLk(out.res, a.id);
+  if (op === 't_all') { var rg = lkLoad(); out.res.locks = rg.L; out.res.lkc = rg.C; }
+  return out.res;
+}
+function call(op, a){
+  a = Object.assign({}, a || {});   // 넘겨받은 객체(PROFILE 등)를 바꾸지 않도록 복사
+  if (!a.ch) a.ch = CH;
+  if (PROFILE && PROFILE.pw && a.pin == null && a.pw == null) a.pw = PROFILE.pw;
+  if (GAS && !PREVIEW) return new Promise(function(res, rej){ google.script.run.withSuccessHandler(res).withFailureHandler(rej).api(op, a); });
+  return new Promise(function(res, rej){
+    setTimeout(function(){
+      try { res(JSON.parse(JSON.stringify(localCall(op, a)))); }
+      catch(e){ rej(e); }
+    }, 80);
+  });
+}
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+
+// ===================== 공통 도우미 =====================
+var $ = function(s){ return document.querySelector(s); };
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+// 한글 입력기의 전각 숫자(０-９)·전각 쉼표/빼기도 일반 숫자로 바꿔서 읽기
+function toAscii(v){ return String(v == null ? '' : v).replace(/[０-９]/g, function(c){ return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/，/g, ',').replace(/[－−]/g, '-'); }
+function num(v){ var m = toAscii(v).replace(/,/g,'').match(/-?\d+/); return m ? Number(m[0]) : NaN; }
+function askNumber(){ var fb = $('#fb'); if (fb) fb.innerHTML = '<div class="fb wait">숫자로 입력해 주세요. (예: 7)</div>'; }
+function byId(a, b){
+  var ca = CLASSES.indexOf(a.cls), cb = CLASSES.indexOf(b.cls);
+  if (ca !== cb) return ca - cb;
+  return (Number(a.no) - Number(b.no)) || (a.id < b.id ? -1 : 1);
+}
+function gLab(g){ var p = String(g).split('-'); return p.length > 1 ? p[0] + ' ' + p[1] + '모둠' : g + '모둠'; }
+function sLab(s){ return (s.no ? s.no + '번 ' : '') + s.name; }
+function setPath(o, path, v){ var ks = path.split('.'); for (var i=0;i<ks.length-1;i++){ if (typeof o[ks[i]] !== 'object' || o[ks[i]] === null) o[ks[i]] = {}; o = o[ks[i]]; } o[ks[ks.length-1]] = v; }
+function demoBanner(extra){
+  if (!DEMO()) return '';
+  var head = PREVIEW
+    ? '<b>교사 미리보기</b> · 학생 기록에는 저장되지 않아요. 대기실에서 <b>가상 친구</b>를 추가하면 모둠 활동도 볼 수 있어요.'
+    : '<b>데모 모드</b> · 이 브라우저 안에서만 저장돼요. 탭을 여러 개 열어 여러 학생처럼 써 보거나, 대기실에서 <b>가상 친구</b>를 추가해 보세요. ' +
+      '교사 화면: <a href="?view=teacher" target="_blank">새 탭으로 열기</a> (데모에서는 비밀번호 칸에 아무거나 넣어도 열려요)';
+  var watch = (LEAVE_WATCH && !PREVIEW && me) ? '<label class="watchchk"><input type="checkbox" id="watchchk"' + (WATCH ? ' checked' : '') + '> 이탈 감지 (데모에서 탭을 오가며 시험할 때는 끄세요)</label>' : '';
+  return '<div class="demo">' + head + (extra || '') + navHTML() + watch + '</div>';
+}
+// 데모·미리보기 전용: 원하는 문제로 바로 이동
+function navHTML(){
+  if (!me || isPractice(CH)) return '';
+  var cur = me.st === 'tb' ? 'tb:' + me.tb : me.st === 'ws' ? 'ws:' + me.ws : me.st === 'done' ? 'done' : '';
+  function opt(v, t){ return '<option value="' + v + '"' + (v === cur ? ' selected' : '') + '>' + t + '</option>'; }
+  return '<div class="row jumprow"><label for="jump">문제 바로 가기</label><select id="jump">' +
+    (cur ? '' : '<option value="">고르세요</option>') +
+    '<optgroup label="1단계 · 교과서">' + TB.map(function(it, i){ return opt('tb:' + i, (i + 1) + '. ' + esc(it.page)); }).join('') + '</optgroup>' +
+    '<optgroup label="2단계 · 학습지">' + WS.map(function(it, i){ return opt('ws:' + i, (i + 1) + '. ' + esc(it.lab)); }).join('') + '</optgroup>' +
+    opt('done', '완료 화면') + '</select></div>';
+}
+function jumpTo(v){
+  var p = {ph: 'q'};
+  if (v === 'done') { p.st = 'done'; p.done = Date.now(); }
+  else { var a = v.split(':'); if (a[0] === 'tb') { p.st = 'tb'; p.tb = Number(a[1]); } else { p.st = 'ws'; p.ws = Number(a[1]); } }
+  function go(){ save(p); render(); window.scrollTo(0, 0); }
+  if (started()) return go();
+  call('t_start', {g: me.g}).then(function(){ return call('group', {g: me.g, id: me.id}); }).then(function(r){ G = r; go(); });
+}
+document.addEventListener('change', function(e){ if (e.target && e.target.id === 'watchchk') { WATCH = e.target.checked; return; } if (e.target && e.target.id === 'jump' && e.target.value && DEMO()) jumpTo(e.target.value); });
+// 답 입력 폼(#f)은 화면이 바뀌어도 끊기지 않도록 페이지 전체에서 한 번만 받는다
+function onSubmit(fn){ UI.submit = fn; }
+document.addEventListener('submit', function(e){
+  if (!e.target || e.target.id !== 'f') return;
+  e.preventDefault();
+  if (UI.submit) UI.submit(e);
+});
+
+// ===================== 그림 풀이 위젯 =====================
+var VISREG = {}, visSeq = 0;
+function dieSVG(n, size){
+  var P = {1:[[50,50]],2:[[28,28],[72,72]],3:[[28,28],[50,50],[72,72]],4:[[28,28],[72,28],[28,72],[72,72]],5:[[28,28],[72,28],[50,50],[28,72],[72,72]],6:[[28,24],[72,24],[28,50],[72,50],[28,76],[72,76]]};
+  return '<svg viewBox="0 0 100 100" width="' + (size || 44) + '" height="' + (size || 44) + '" role="img" aria-label="주사위 ' + n + '"><rect x="5" y="5" width="90" height="90" rx="18" class="die-b"/>' +
+    P[n].map(function(p){ return '<circle cx="' + p[0] + '" cy="' + p[1] + '" r="9" class="die-p"/>'; }).join('') + '</svg>';
+}
+function tokInner(shape, label){
+  if (shape === 'die') return dieSVG(Number(label), 42);
+  if (shape === 'ball') return '<span class="ball">' + esc(label) + '</span>';
+  if (shape === 'card') return '<span class="card-tok">' + esc(label) + '</span>';
+  if (shape === 'person') return '<span class="person">' + esc(label) + '</span>';
+  return '<span class="timechip">' + esc(label) + '</span>';
+}
+function tokHTML(shape, label, live, i, gi){
+  return live ? '<button type="button" class="tok" data-g="' + gi + '" data-i="' + i + '">' + tokInner(shape, label) + '</button>'
+              : '<span class="tok">' + tokInner(shape, label) + '</span>';
+}
+function visBlock(v, live){
+  if (!v) return '';
+  if (typeof v === 'string') return '<div class="vis">' + v + '</div>';
+  var uid = 'v' + (++visSeq); VISREG[uid] = v;
+  var solved = live === 'solved';
+  return '<div class="vis' + (live ? ' live' : '') + (solved ? ' solved' : '') + '" id="' + uid + '"' + (live ? ' data-live="1"' : '') + '>' +
+    (live ? '<div class="vis-badge">' + (solved ? (v.type === 'plist' ? '숫자쌍으로 세기' : '그림 풀이') : '직접 눌러 보며 이해하기') + '</div>' : '') + VIS[v.type].html(v, !!live) + '</div>';
+}
+// 그림 풀이: 학생이 누르지 않아도 자동으로 눌러진 상태(정답)가 펼쳐짐
+var AUTO = {ptree:['[data-all]'], pick:['[data-show]'], merge:['[data-go]'], grid:['[data-all]'], roads:['[data-all]'], tree:['[data-all]'], pairs:['[data-go]'], bundle:['[data-tie]','[data-flip]'], dice2:['[data-show]']};
+function visBindAll(){
+  Array.prototype.forEach.call(document.querySelectorAll('.vis[data-live]'), function(el){
+    if (el.dataset.bound) return; el.dataset.bound = '1';
+    var v = VISREG[el.id]; if (VIS[v.type].bind) VIS[v.type].bind(v, el);
+    if (el.classList.contains('solved')) (AUTO[v.type] || []).forEach(function(sel){ var b = el.querySelector(sel); if (b) b.click(); });
+  });
+}
+function solvedVis(it){ return it.vis ? visBlock(it.vis, 'solved') : ''; }
+function picOf(it){ if (it.pic === false) return ''; if (it.pic) return visBlock(it.pic, false); return it.vis ? visBlock(it.vis, false) : ''; }
+function okMsg(el, html){ el.querySelector('[data-msg]').innerHTML = '<div class="fb ok">' + html + '</div>'; }
+function boxes(groups, live){
+  return '<div class="mg">' + groups.map(function(g, gi){
+    return '<div class="mg-box' + (g.skip && live ? ' skip' : '') + '"><h4><span>' + esc(g.name) + '</span><span class="muted">' + g.items.length + '개' + (g.skip && live ? ' · 묻지 않음' : '') + '</span></h4>' +
+      '<div class="toks">' + g.items.map(function(x){ return '<span class="chip g' + gi + '">' + esc(x) + '</span>'; }).join('') + '</div></div>';
+  }).join('') + '</div>';
+}
+function treeKids(v, path){
+  if (path.length >= v.depth) return [];
+  return v.opts.filter(function(o){ if (path.indexOf(o) >= 0) return false; if (!path.length && v.noLeadZero && o === '0') return false; return true; });
+}
+var HT_COMPACT = false;   // 필기 화면에서는 가지그림을 촘촘하게
+var HT_ROOTS = null;      // 첫 칸 중 일부만 그릴 때 (필기 화면에서 두 줄로 나눠 그리기)
+function hTree(v){
+  var P = v.type === 'ptree', M = v.type === 'merge';
+  var MG = M ? v.groups.filter(function(g){ return !g.skip; }) : null;
+  var kidsOf = P ? function(path){ return path.length === 0 ? v.rows.items : path.length === 1 ? v.cols.items : []; }
+    : M ? function(path){ if (path.length === 0) return MG.map(function(g){ return g.name; }); if (path.length === 1) { for (var q = 0; q < MG.length; q++) if (MG[q].name === path[0]) return MG[q].items; } return []; }
+    : function(path){ var k = treeKids(v, path); return (!path.length && HT_ROOTS) ? k.filter(function(o){ return HT_ROOTS.indexOf(o) >= 0; }) : k; };
+  var labels = v.labels || (P ? [v.rows.name, v.cols.name] : M ? ['종류', '고르는 것'] : []);
+  var J = v.join == null ? (P ? ' + ' : '') : v.join, D = (P || M) ? 2 : v.depth, FS = 24;
+  // 글자 길이에 맞춰 칸 간격과 가지 끝 위치를 정함 (한글 1칸, 영문·숫자·기호 0.6칸)
+  function tw(t){ var w = 0; String(t).split('').forEach(function(c){ w += /[ㄱ-힣①-⑳]/.test(c) ? 1 : (c === ' ' ? 0.3 : 0.62); }); return w * FS; }
+  var maxW = [], maxR = 0;
+  (function scan(path){ var k = kidsOf(path); if (!k.length) { maxR = Math.max(maxR, M ? tw('99') : tw(v.resFn ? v.resFn(path) : path.join(J))); return; }
+    k.forEach(function(o){ var d = path.length; maxW[d] = Math.max(maxW[d] || 0, tw(o), labels[d] ? tw(labels[d]) * 0.65 : 0); scan(path.concat(o)); }); })([]);
+  var colX = [10 + maxW[0] / 2];
+  for (var i = 1; i < D; i++) colX.push(colX[i - 1] + maxW[i - 1] / 2 + 74 + maxW[i] / 2);
+  var ax1 = colX[D - 1] + maxW[D - 1] / 2 + 12, ax2 = ax1 + 48, rx = ax2 + 12, rowH = HT_COMPACT ? 30 : 38, y = 58, g = 0, items = [], total = 0;
+  function rec(path){
+    var kids = kidsOf(path);
+    if (!kids.length) { var yy = y; y += rowH; total++; items.push({k:'arrow', g:g, y:yy}); items.push({k:'res', g:g, y:yy, t:M ? String(total) : (v.resFn ? v.resFn(path) : path.join(J))}); return yy; }
+    var ys = [];
+    kids.forEach(function(o){
+      var p = path.concat(o), cy = rec(p);
+      ys.push(cy); items.push({k:'node', g:g, d:p.length - 1, x:colX[p.length - 1], y:cy, t:o});
+      if (!path.length) { g++; y += HT_COMPACT ? 8 : 16; }
+    });
+    var my = (ys[0] + ys[ys.length - 1]) / 2, d = path.length;
+    if (d) kids.forEach(function(o, j){ items.push({k:'line', g:g, x1:colX[d - 1] + tw(path[d - 1]) / 2 + 7, y1:my, x2:colX[d] - tw(o) / 2 - 7, y2:ys[j]}); });
+    return my;
+  }
+  rec([]);
+  var W = rx + maxR + 12, H = y - (HT_COMPACT ? 8 : 16) + 6;
+  var s = '<svg viewBox="0 0 ' + Math.round(W) + ' ' + H + '" class="htree" style="max-width:' + Math.round(W * (HT_COMPACT ? 0.75 : 1.45)) + 'px" role="img" aria-label="가지그림">';
+  labels.forEach(function(l, li){ if (li < D) s += '<text class="ht-h" x="' + colX[li] + '" y="24">' + esc(l) + '</text>'; });
+  s += '<text class="ht-h ht-hr" x="' + (rx + maxR / 2) + '" y="24">' + esc(v.resLabel || (M ? '번호' : '만든 경우')) + '</text>';
+  for (var gi = 0; gi < g; gi++) {
+    s += '<g class="ht-in" style="animation-delay:' + (gi * 0.45) + 's">';
+    items.forEach(function(it){
+      if (it.g !== gi) return;
+      if (it.k === 'line') s += '<line class="ht-l" x1="' + it.x1 + '" y1="' + it.y1 + '" x2="' + it.x2 + '" y2="' + it.y2 + '"/>';
+      else if (it.k === 'node') s += '<text class="ht-n' + ((P || M) && it.d === 1 ? ' ht-n2' : '') + '" x="' + it.x + '" y="' + (it.y + 8) + '">' + esc(it.t) + '</text>';
+      else if (it.k === 'arrow') s += '<line class="ht-a" x1="' + ax1 + '" y1="' + it.y + '" x2="' + (ax2 - 9) + '" y2="' + it.y + '"/><path class="ht-ah" d="M' + ax2 + ',' + it.y + ' l-12,-7 v14 z"/>';
+      else s += '<text class="ht-r" x="' + rx + '" y="' + (it.y + 8) + '">' + esc(it.t) + '</text>';
+    });
+    s += '</g>';
+  }
+  return {svg: s + '</svg>', total: total, groups: g};
+}
+function treeCount(v, path){ var k = treeKids(v, path); if (!k.length) return 1; return k.reduce(function(s, o){ return s + treeCount(v, path.concat(o)); }, 0); }
+
+var VIS = {
+  // 조건에 맞는 것 골라 누르기
+  pick: {
+    html: function(v, live){
+      var h = live && v.prompt ? '<div class="vis-title">' + v.prompt + '</div>' : '';
+      h += '<div class="mg">' + v.groups.map(function(g, gi){
+        return '<div class="pk-g">' + (g.name ? '<h4>' + esc(g.name) + (live ? ' <span class="cnt" data-cnt="' + gi + '">0개</span>' : '') + '</h4>' : '') +
+          '<div class="toks">' + g.items.map(function(x, i){ return tokHTML(v.shape, x, live, i, gi); }).join('') + '</div></div>';
+      }).join('') + '</div>';
+      if (live) h += (v.groups[0].name ? '' : '<div class="muted">고른 개수: <b data-cnt="0">0</b>개</div>') +
+        '<div class="row"><button type="button" class="btn small" data-chk>확인</button><button type="button" class="btn small ghost" data-show>정답 보기</button></div><div data-msg></div>';
+      return h;
+    },
+    bind: function(v, el){
+      function counts(){ v.groups.forEach(function(g, gi){ var c = el.querySelector('[data-cnt="' + gi + '"]'); if (c) c.textContent = el.querySelectorAll('.tok.sel[data-g="' + gi + '"]').length + (c.tagName === 'B' ? '' : '개'); }); }
+      el.addEventListener('click', function(e){
+        var t = e.target.closest('button.tok');
+        if (t) { t.classList.toggle('sel'); t.classList.remove('right', 'wrong'); counts(); return; }
+        var chk = e.target.closest('[data-chk]'), show = e.target.closest('[data-show]');
+        if (!chk && !show) return;
+        var allOk = true;
+        v.groups.forEach(function(g, gi){ g.items.forEach(function(x, i){
+          var b = el.querySelector('.tok[data-g="' + gi + '"][data-i="' + i + '"]'), isAns = g.ans.indexOf(i) >= 0, sel = b.classList.contains('sel');
+          if (isAns !== sel) allOk = false;
+          b.classList.remove('right', 'wrong');
+          if (show) { b.classList.toggle('sel', isAns); if (isAns) b.classList.add('right'); }
+          else { if (sel && isAns) b.classList.add('right'); if (sel && !isAns) b.classList.add('wrong'); }
+        }); });
+        counts();
+        var nums = v.groups.map(function(g){ return g.ans.length; }), tot = nums.reduce(function(a, b){ return a + b; }, 0);
+        var eq = nums.length > 1 ? nums.join(' + ') + ' = ' + tot : tot + '가지';
+        if (show || allOk) okMsg(el, (allOk && !show ? '잘 골랐어요! ' : '') + '<span class="eq">' + eq + '</span>' + (v.done ? '<br>' + v.done : ''));
+        else el.querySelector('[data-msg]').innerHTML = '<div class="fb bad">' + (el.querySelector('.tok.wrong') ? '빨간 테두리는 조건에 맞지 않아요. ' : '아직 못 찾은 것이 있어요. ') + '다시 골라 보거나 정답 보기를 눌러요.</div>';
+      });
+    }
+  },
+  // 두 묶음을 모아 한 줄로 세기 (더하기)
+  merge: {
+    html: function(v, live){
+      return live ? '<div data-tree></div><div class="row"><button type="button" class="btn small" data-go>가지 그리기</button></div><div data-msg></div>' : boxes(v.groups, false);
+    },
+    bind: function(v, el){
+      el.querySelector('[data-go]').addEventListener('click', function(){
+        var r = hTree(v), parts = v.groups.filter(function(g){ return !g.skip; }).map(function(g){ return g.items.length; });
+        el.querySelector('[data-tree]').innerHTML = r.svg;
+        el.querySelector('[data-msg]').innerHTML = '';
+        setTimeout(function(){ okMsg(el, '둘 중 한 가지만 고르니까 가지 끝을 모두 세요 → <span class="eq">' + parts.join(' + ') + ' = ' + r.total + '</span>' + (v.done ? '<br>' + v.done : '')); }, r.groups * 450 + 300);
+      });
+    }
+  },
+  // 가로×세로 표 채우기 (곱하기)
+  grid: {
+    html: function(v, live){
+      if (!live) return boxes([v.rows, v.cols], false);
+      return '<div class="vis-title">' + (v.prompt || '빈칸을 눌러 짝을 하나씩 만들어 보세요') + '</div><div class="scroll"><table class="gtab"><thead><tr><th class="muted">' + esc(v.rows.name) + ' ＼ ' + esc(v.cols.name) + '</th>' +
+        v.cols.items.map(function(c){ return '<th><span class="chip g1">' + esc(c) + '</span></th>'; }).join('') + '</tr></thead><tbody>' +
+        v.rows.items.map(function(r, ri){ return '<tr><th><span class="chip g0">' + esc(r) + '</span></th>' + v.cols.items.map(function(c, ci){ return '<td><button type="button" class="gcell" data-r="' + ri + '" data-c="' + ci + '">?</button></td>'; }).join('') + '</tr>'; }).join('') +
+        '</tbody></table></div><div class="row"><button type="button" class="btn small" data-all>모두 채우기</button><span class="muted">채운 칸: <b data-n>0</b>개</span></div><div data-msg></div>';
+    },
+    bind: function(v, el){
+      var R = v.rows.items.length, C = v.cols.items.length;
+      function fill(b){
+        if (b.classList.contains('fill')) return;
+        b.classList.add('fill', 'pop'); b.textContent = v.rows.items[b.dataset.r] + (v.join || ' + ') + v.cols.items[b.dataset.c];
+        var n = el.querySelectorAll('.gcell.fill').length; el.querySelector('[data-n]').textContent = n;
+        if (n === R * C) okMsg(el, esc(v.rows.name) + ' ' + R + '가지 각각에 ' + esc(v.cols.name) + ' ' + C + '가지씩 → <span class="eq">' + R + ' × ' + C + ' = ' + (R * C) + '</span>' + (v.done ? '<br>' + v.done : ''));
+      }
+      el.addEventListener('click', function(e){
+        var b = e.target.closest('.gcell'); if (b) return fill(b);
+        if (e.target.closest('[data-all]')) Array.prototype.forEach.call(el.querySelectorAll('.gcell:not(.fill)'), function(x, i){ setTimeout(function(){ fill(x); }, i * 110); });
+      });
+    }
+  },
+  // 동시에 고르기(곱하기): 첫 번째 것마다 두 번째 것이 가지로 뻗는 그림
+  ptree: {
+    html: function(v, live){
+      if (!live) return boxes([v.rows, v.cols], false);
+      return '<div data-tree></div><div class="row"><button type="button" class="btn small" data-all>가지 그리기</button></div><div data-msg></div>';
+    },
+    bind: function(v, el){
+      el.querySelector('[data-all]').addEventListener('click', function(){
+        var r = hTree(v), R = v.rows.items.length, C = v.cols.items.length;
+        el.querySelector('[data-tree]').innerHTML = r.svg;
+        el.querySelector('[data-msg]').innerHTML = '';
+        setTimeout(function(){ okMsg(el, esc(v.rows.name) + ' ' + R + '가지 각각에 ' + esc(v.cols.name) + ' ' + C + '가지씩 가지가 뻗어요 → <span class="eq">' + R + ' × ' + C + ' = ' + (R * C) + '</span>' + (v.done ? '<br>' + v.done : '')); }, r.groups * 450 + 300);
+      });
+    }
+  },
+  // 길 그림: 앞 길 하나 + 뒤 길 하나 고르기
+  roads: {
+    html: function(v, live){
+      function offs(n, span){ var a = []; for (var i = 0; i < n; i++) a.push(n === 1 ? 0 : -span + 2 * span * i / (n - 1)); return a; }
+      var X = [70, 300, 530], Y = 112, s = '<svg viewBox="0 0 600 240" class="roads" role="img" aria-label="' + v.places.join(', ') + ' 사이의 길">';
+      [[0, offs(v.left, 60), v.lname, 'L'], [1, offs(v.right, 82), v.rname, 'R']].forEach(function(seg){
+        var x1 = X[seg[0]], x2 = X[seg[0] + 1], mx = (x1 + x2) / 2;
+        seg[1].forEach(function(o, i){
+          var d = 'M' + x1 + ',' + Y + ' Q' + mx + ',' + (Y + o * 2) + ' ' + x2 + ',' + Y;
+          s += '<path class="road" data-s="' + seg[3] + '" data-i="' + i + '" d="' + d + '"/>';
+          if (live) s += '<path class="hit" data-s="' + seg[3] + '" data-i="' + i + '" d="' + d + '"/>';
+          s += '<text class="rl" x="' + mx + '" y="' + (Y + o + (o < 0 ? -9 : 22)) + '">' + seg[2][i] + '</text>';
+        });
+      });
+      X.forEach(function(x, i){ s += '<circle class="rn" cx="' + x + '" cy="' + Y + '" r="13"/><text class="rp" x="' + x + '" y="232">' + esc(v.places[i]) + '</text>'; });
+      s += '</svg>';
+      if (!live) return s;
+      return '<div class="vis-title">' + esc(v.places[0]) + '→' + esc(v.places[1]) + ' 길 하나, ' + esc(v.places[1]) + '→' + esc(v.places[2]) + ' 길 하나를 차례로 눌러 보세요</div>' + s +
+        '<div class="row"><button type="button" class="btn small" data-all>모든 길 차례로 보기</button><span class="muted">찾은 길: <b data-n>0</b>가지</span></div><div class="toks" data-list></div><div data-msg></div>';
+    },
+    bind: function(v, el){
+      var selL = null, found = {}, total = v.left * v.right;
+      function mark(s, i, cls, on){ var p = el.querySelector('.road[data-s="' + s + '"][data-i="' + i + '"]'); if (p) p.classList.toggle(cls, on); }
+      function clearAll(cls){ Array.prototype.forEach.call(el.querySelectorAll('.road.' + cls), function(p){ p.classList.remove(cls); }); }
+      function add(l, r){
+        var key = v.lname[l] + '-' + v.rname[r];
+        clearAll('on'); clearAll('sel'); mark('L', l, 'on', true); mark('R', r, 'on', true);
+        if (!found[key]) { found[key] = 1; el.querySelector('[data-list]').insertAdjacentHTML('beforeend', '<span class="chip g0 pop">길 ' + key + '</span>'); }
+        var n = Object.keys(found).length; el.querySelector('[data-n]').textContent = n;
+        if (n === total) okMsg(el, '앞 길 ' + v.left + '가지 각각에 뒤 길 ' + v.right + '가지씩 → <span class="eq">' + v.left + ' × ' + v.right + ' = ' + total + '</span>');
+        else el.querySelector('[data-msg]').innerHTML = '';
+      }
+      el.addEventListener('click', function(e){
+        var h = e.target.closest('.hit');
+        if (h) {
+          var i = Number(h.dataset.i);
+          if (h.dataset.s === 'L') { selL = i; clearAll('sel'); clearAll('on'); mark('L', i, 'sel', true); }
+          else if (selL === null) el.querySelector('[data-msg]').innerHTML = '<div class="fb wait">먼저 왼쪽(' + esc(v.places[0]) + '→' + esc(v.places[1]) + ') 길을 골라요.</div>';
+          else { add(selL, i); selL = null; }
+          return;
+        }
+        if (e.target.closest('[data-all]')) {
+          var k = 0;
+          for (var l = 0; l < v.left; l++) for (var r = 0; r < v.right; r++) (function(l, r, k){ setTimeout(function(){ add(l, r); }, k * 450); })(l, r, k++);
+        }
+      });
+    }
+  },
+  // 가지그림 펼치기
+  tree: {
+    html: function(v, live){
+      if (!live) return '<div class="toks">' + v.opts.map(function(o){ return tokHTML(v.shape || 'card', o, false); }).join('') + '</div>';
+      return '<div data-tree></div><div class="row"><button type="button" class="btn small" data-all>가지 그리기</button></div><div data-msg></div>';
+    },
+    // 교과서식 가로 가지그림: 십의 자리 → 일의 자리(파란색) → 만든 수(빨간색)
+    bind: function(v, el){
+      el.querySelector('[data-all]').addEventListener('click', function(){
+        var r = hTree(v);
+        el.querySelector('[data-tree]').innerHTML = r.svg;
+        el.querySelector('[data-msg]').innerHTML = '';
+        setTimeout(function(){ okMsg(el, '만든 경우는 모두 ' + r.total + '가지 <span class="eq">' + (v.eq || r.total + '가지') + '</span>' + (v.done ? '<br>' + v.done : '')); }, r.groups * 450 + 300);
+      });
+    }
+  },
+  // 회장·부회장 12가지 → 대표 2명 6가지
+  pairs: {
+    html: function(v, live){
+      if (!live) return '<div class="toks">' + v.opts.map(function(o){ return tokHTML('person', o, false); }).join('') + '</div>';
+      var list = [];
+      v.opts.forEach(function(a){ v.opts.forEach(function(b){ if (a !== b) list.push('<span class="chip g0">회장 ' + a + ' · 부회장 ' + b + '</span>'); }); });
+      return '<div class="vis-title">회장·부회장을 뽑는 ' + list.length + '가지</div><div class="toks" data-list>' + list.join('') + '</div>' +
+        '<div class="row"><button type="button" class="btn small" data-go>대표 2명으로 보면? 같은 것끼리 짝 짓기</button></div><div data-msg></div>';
+    },
+    bind: function(v, el){
+      el.querySelector('[data-go]').addEventListener('click', function(){
+        var rows = [], k = 0;
+        v.opts.forEach(function(a, i){ v.opts.forEach(function(b, j){ if (i < j) { k++;
+          rows.push('<div class="pair-row pop" style="animation-delay:' + (k * 0.15) + 's"><span class="chip g0">회장 ' + a + ' · 부회장 ' + b + '</span><span class="chip g1">회장 ' + b + ' · 부회장 ' + a + '</span><span class="muted">→</span><b>대표 ' + a + ', ' + b + '</b></div>'); } }); });
+        el.querySelector('[data-list]').outerHTML = '<div class="stack" data-list style="gap:6px">' + rows.join('') + '</div>';
+        setTimeout(function(){ okMsg(el, '대표는 역할이 없어서 두 개가 한 경우예요. <span class="eq">' + (k * 2) + ' ÷ 2 = ' + k + '</span>'); }, k * 150 + 300);
+      });
+    }
+  },
+  // B, C 묶어서 줄 서기
+  bundle: {
+    html: function(v, live){
+      var line = v.people.map(function(p, i){
+        if (i === v.tie[0]) return '<span class="bundle">' + tokInner('person', p) + tokInner('person', v.people[v.tie[1]]) + '</span>';
+        if (i === v.tie[1]) return '';
+        return tokInner('person', p);
+      }).join('');
+      if (!live) return '<div class="toks">' + line + '</div><p class="muted" style="margin:0;font-size:.88rem">B와 C는 손을 잡고 늘 붙어 있어요.</p>';
+      return '<div class="vis-title">버튼을 차례로 눌러 보세요</div><div class="toks" data-line>' + v.people.map(function(p){ return tokInner('person', p); }).join('') + '</div>' +
+        '<div class="row"><button type="button" class="btn small" data-tie>① B와 C를 한 묶음으로</button><button type="button" class="btn small" data-mix disabled>② 줄 바꿔 서 보기</button><button type="button" class="btn small" data-flip disabled>③ 묶음 안에서 자리 바꾸기</button></div><div data-msg></div>';
+    },
+    bind: function(v, el){
+      var units = null, inner = null, flipped = false, mixes = 0;
+      function draw(){
+        el.querySelector('[data-line]').innerHTML = units.map(function(u){
+          return u === '*' ? '<span class="bundle pop">' + inner.map(function(p){ return tokInner('person', p); }).join('') + '</span>' : tokInner('person', u);
+        }).join('');
+      }
+      function msg(){
+        var h = '묶음을 한 사람으로 보면 4명이 한 줄 → <span class="eq">4 × 3 × 2 × 1 = 24</span>';
+        if (flipped) h += '<br>묶음 안에서 BC, CB 2가지씩 → <span class="eq">24 × 2 = 48</span>';
+        okMsg(el, h);
+      }
+      el.addEventListener('click', function(e){
+        if (e.target.closest('[data-tie]')) {
+          inner = [v.people[v.tie[0]], v.people[v.tie[1]]];
+          units = v.people.filter(function(p, i){ return i !== v.tie[1]; }).map(function(p, i){ return i === v.tie[0] ? '*' : p; });
+          draw(); msg(); el.querySelector('[data-mix]').disabled = false; el.querySelector('[data-flip]').disabled = false;
+        } else if (e.target.closest('[data-mix]')) {
+          for (var i = units.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = units[i]; units[i] = units[j]; units[j] = t; }
+          mixes++; draw();
+        } else if (e.target.closest('[data-flip]')) {
+          inner.reverse(); flipped = true; draw(); msg();
+        }
+      });
+    }
+  },
+  // 주사위 2개 6×6 표 칠하기
+  dice2: {
+    html: function(v, live){
+      if (!live) return '<div class="toks"><span class="tok">' + dieSVG(2, 50) + '</span><span class="tok">' + dieSVG(5, 50) + '</span></div><p class="muted" style="margin:0;font-size:.88rem">주사위 2개를 동시에 던져요.</p>';
+      var h = '<div class="vis-title">붓을 고른 뒤, 두 눈의 합이 맞는 칸을 칠해 보세요</div><div class="row">' +
+        v.targets.map(function(t, i){ return '<button type="button" class="btn small brush ' + t.cls + (i === 0 ? ' on' : '') + '" data-b="' + i + '">' + esc(t.label) + ' 칠하기</button>'; }).join('') +
+        '<button type="button" class="btn small ghost" data-b="-1">지우개</button></div><div class="scroll"><table class="dgrid"><thead><tr><th>A＼B</th>';
+      for (var b = 1; b <= 6; b++) h += '<th>' + dieSVG(b, 26) + '</th>';
+      h += '</tr></thead><tbody>';
+      for (var a = 1; a <= 6; a++) { h += '<tr><th>' + dieSVG(a, 26) + '</th>'; for (var c = 1; c <= 6; c++) h += '<td><button type="button" class="dcell" data-a="' + a + '" data-c="' + c + '">' + a + ',' + c + '</button></td>'; h += '</tr>'; }
+      return h + '</tbody></table></div><div class="row"><button type="button" class="btn small" data-chk>확인</button><button type="button" class="btn small ghost" data-show>정답 보기</button></div><div data-msg></div>';
+    },
+    bind: function(v, el){
+      var brush = 0;
+      function target(a, c){ for (var i = 0; i < v.targets.length; i++) if (a + c === v.targets[i].sum) return i; return -1; }
+      function paint(btn, i){ v.targets.forEach(function(t){ btn.classList.remove(t.cls); }); btn.classList.remove('miss'); btn.dataset.t = i; if (i >= 0) btn.classList.add(v.targets[i].cls); }
+      el.addEventListener('click', function(e){
+        var bb = e.target.closest('[data-b]');
+        if (bb) { brush = Number(bb.dataset.b); Array.prototype.forEach.call(el.querySelectorAll('[data-b]'), function(x){ x.classList.toggle('on', x === bb); }); return; }
+        var d = e.target.closest('.dcell');
+        if (d) { paint(d, Number(d.dataset.t) === brush ? -1 : brush); return; }
+        var chk = e.target.closest('[data-chk]'), show = e.target.closest('[data-show]');
+        if (!chk && !show) return;
+        var ok = true, cnt = v.targets.map(function(){ return 0; });
+        Array.prototype.forEach.call(el.querySelectorAll('.dcell'), function(c){
+          var want = target(Number(c.dataset.a), Number(c.dataset.c)), have = c.dataset.t === undefined ? -1 : Number(c.dataset.t);
+          if (show) { paint(c, want); have = want; }
+          if (want !== have) { ok = false; c.classList.add('miss'); }
+          if (want >= 0) cnt[want]++;
+        });
+        if (ok) okMsg(el, v.targets.map(function(t, i){ return (i === 0 ? '진한 빨강 ' : '점선 빨강 ') + t.label + ': ' + cnt[i] + '가지'; }).join(' / ') + '<br>두 사건은 동시에 일어나지 않으니 더해요. <span class="eq">' + cnt.join(' + ') + ' = ' + cnt.reduce(function(a, b){ return a + b; }, 0) + '</span>');
+        else el.querySelector('[data-msg]').innerHTML = '<div class="fb bad">빨간 테두리 칸을 다시 확인해 보세요. (칠해야 하는데 안 칠했거나, 잘못 칠한 칸)</div>';
+      });
+    }
+  }
+};
+
+// ===================== 학생 화면 =====================
+var me = null;        // 내 기록 (내 화면이 기준)
+var G = null;         // 모둠 정보 {group, members}
+var UI = {};          // 화면 안에서만 쓰는 임시 상태
+var lastKey = '';
+var wq = Promise.resolve();
+// 저장: 서버가 바쁘거나 인터넷이 잠깐 끊겨도 저장될 때까지 다시 보냄 (예전에는 한 번 실패하면 그대로 사라졌음)
+var PENDING = 0, SAVE_FAIL = false;
+function sendUpd(id, patch, tries){ return sendOp('upd', {id:id, patch:patch}, tries); }
+function sendOp(op, args, tries){
+  return call(op, args).then(function(r){
+    if (r && r.ok === false && !r.gone && !r.pwbad) throw new Error('not saved');
+    SAVE_FAIL = false; return r;
+  }).catch(function(){
+    SAVE_FAIL = tries >= 2; saveWarn();
+    return new Promise(function(res){ setTimeout(res, Math.min(2000 * (tries + 1), 10000)); }).then(function(){ return sendOp(op, args, tries + 1); });
+  });
+}
+function saveWarn(){
+  var el = document.getElementById('savewarn');
+  if (!el) { el = document.createElement('div'); el.id = 'savewarn'; el.className = 'warnstrip'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+  el.hidden = !(SAVE_FAIL && PENDING > 0);
+  el.textContent = '저장 중이에요… 창을 닫지 말고 잠깐 기다려 주세요.';
+}
+window.addEventListener('beforeunload', function(e){ if (PENDING > 0) { e.preventDefault(); e.returnValue = ''; } });
+var pollTimer = null;
+
+// ---------- 해결해요: 기록은 학생 기기에만. 다 풀었을 때 '완료' 한 번만 서버로 ----------
+var HUBPROG = {};   // 단원 목록에서 받은 서버 기록 (예전 진행 위치 이어받기용)
+function pKey(ch){ return 'mm8-pme:' + PROFILE.cls + '-' + Number(PROFILE.no) + ':' + ch; }
+function pLoad(ch){ try { return JSON.parse(lsGet(pKey(ch)) || 'null'); } catch(e){ return null; } }
+function pStore(){ if (me && isPractice(CH) && !PREVIEW) lsSet(pKey(CH), JSON.stringify(me)); }
+function pEnter(ch){
+  var id = PROFILE.cls + '-' + Number(PROFILE.no), m = pLoad(ch);
+  if (!m || m.name !== PROFILE.name) {
+    m = {id: id, cls: PROFILE.cls, no: Number(PROFILE.no), name: PROFILE.name, pp: 0, pc: 0, lg: {}};
+    var pr = HUBPROG[ch], items = PRACTICE[ch].items;
+    if (pr && pr.pp) { for (var i = 0; i < Math.min(pr.pp, items.length); i++) m.lg[items[i].k] = {d: 1, f: 0, s: 1}; m.pp = Math.min(pr.pp, items.length); m.pc = m.pp; }
+    if (pr && pr.pc >= items.length) m.sent = 1;
+  }
+  return m;
+}
+function pSave(patch){
+  var N = PRACTICE[CH].items.length;
+  if (!PREVIEW) { var lvn = leaveCount(); if (lvn !== (me.lv || 0)) me.lv = lvn; }
+  Object.keys(patch).forEach(function(k){ setPath(me, k, patch[k]); });
+  pStore();
+  if ((me.pc || 0) >= N && !me.sent && !PREVIEW) {
+    me.sent = 'sending'; pStore();
+    var ch = CH;
+    PENDING++;
+    wq = wq.then(function(){ return VC ? vcSend({op: 'rec', ch: ch, cls: PROFILE.cls, no: Number(PROFILE.no), name: PROFILE.name, st: 'done', lv: me.lv || 0}) : sendOp('pdone', {ch: ch, cls: PROFILE.cls, no: PROFILE.no, name: PROFILE.name, pc: N, lv: me.lv || 0}, 0); })
+      .then(function(){ PENDING--; if (me && CH === ch) { me.sent = 1; pStore(); } else { var m = pLoad(ch); if (m) { m.sent = 1; lsSet(pKey(ch), JSON.stringify(m)); } } saveWarn(); }, function(){ PENDING--; saveWarn(); });
+  }
+  return wq;
+}
+function save(patch){
+  if (me && isPractice(CH)) return pSave(patch);
+  if (me && VC && !PREVIEW) { var nst = Object.assign({}, me, patch).st; vcReport(CH, nst === 'done' ? 'done' : nst === 'ws' ? 's1' : 'start'); }
+  if (me && !PREVIEW) { var lvn = leaveCount(); if (lvn !== (me.lv || 0)) patch.lv = lvn; }   // 이탈 횟수는 따로 보내지 않고 저장할 때 같이 보냄
+  Object.keys(patch).forEach(function(k){ setPath(me, k, patch[k]); });
+  var id = me.id;
+  PENDING++;
+  wq = wq.then(function(){ return sendUpd(id, patch, 0); }).then(function(){ PENDING--; saveWarn(); }, function(){ PENDING--; saveWarn(); });
+  return wq;
+}
+var SOLO = true;   // 개별 풀기: 모둠 대기·나눠 갖기·의견 모으기 없이 각자 바로 풀기 (false = 모둠 활동)
+function members(){
+  if (SOLO) return me ? [me] : [];
+  if (!G || !G.members) return me ? [me] : [];
+  return G.members.map(function(m){ return (me && m.id === me.id) ? me : m; }).sort(byId);
+}
+function gateMembers(){
+  if (me && (me.late || me.away)) return [me];
+  return members().filter(function(m){ return m.id === me.id || (!m.late && !m.away); });
+}
+function myIndex(){ var ms = members(); for (var i=0;i<ms.length;i++) if (ms[i].id === me.id) return i; return 0; }
+function started(){ return SOLO || !!(G && G.group && G.group.started); }
+function totalSteps(){ return TB.length + WS.length; }
+function posStep(){ if (!me) return 0; if (me.st === 'tb') return me.tb; if (me.st === 'ws') return TB.length + me.ws; if (me.st === 'done') return totalSteps(); return 0; }
+
+function header(){
+  var h = '<h1>모둠 수학 <small>' + (me ? esc(isPractice(CH) ? CH.slice(1) + ' 해결해요' : CH + ' ' + chInfo(CH).title) : '8단원 경우의 수와 확률') + '</small></h1>';
+  if (!me && PROFILE) h += '<div class="who">' + esc(PROFILE.cls + ' ' + PROFILE.no + '번 ' + PROFILE.name) + ' <button class="hdrbtn" id="hdr-out" type="button">다른 학생으로</button></div>';
+  if (me) {
+    h += '<div class="who"><button class="hdrbtn" id="hdr-hub" type="button">단원 목록</button> ' + (isPractice(CH) ? '<b>개인 학습</b>' : '<b>' + esc(gLab(me.g)) + '</b>') + ' · ' + esc(sLab(me)) + (PREVIEW ? '' : ' <span class="leavenote">· 다른 탭·창으로 가면 이탈 횟수가 기록돼요</span>') + '</div>';
+    if (isPractice(CH)) { var PN = PRACTICE[CH].items.length; h += '<div class="bar" aria-label="진행도"><i style="width:' + Math.round((me.pc || 0) / PN * 100) + '%"></i></div>'; }
+    else if (me.st !== 'wait') h += '<div class="bar" aria-label="진행도"><i style="width:' + Math.round(posStep() / totalSteps() * 100) + '%"></i></div>';
+  }
+  $('#hdr').innerHTML = h;
+  var hb = $('#hdr-hub'); if (hb) hb.addEventListener('click', leaveChapter);
+  var ho = $('#hdr-out'); if (ho) ho.addEventListener('click', function(){ PROFILE = null; saveCur(null); stopHub(); render(); });
+}
+
+function screenKey(){
+  if (!me) return 'join';
+  if (isPractice(CH)) return 'P|' + (me.pp || 0);
+  return [me.st, me.tb, me.ws, me.ph, started() ? 1 : 0, RVW == null ? '' : 'R' + RVW].join('|');
+}
+
+// ---------- 문제 번호판: 이미 푼 문제는 다시 보기, 아직 안 푼 문제로는 못 감 ----------
+var RVW = null;   // 다시 보고 있는 문제 (전체 순서 번호), null = 지금 풀 문제
+function stepItem(i){ return i < TB.length ? {it: TB[i], tb: true, n: i + 1} : {it: WS[i - TB.length], tb: false, n: i - TB.length + 1}; }
+function stepLabel(i){ var x = stepItem(i); return x.tb ? x.it.page : x.it.lab; }
+function stepNavHTML(){
+  var cur = posStep(), total = totalSteps(), msg = UI.navMsg || '';
+  function chips(from, to){
+    var h = '';
+    for (var i = from; i < to; i++) {
+      var x = stepItem(i), c = 'pchip' + (i < cur ? ' ok' : '') + ((RVW == null ? i === cur : i === RVW) ? ' cur' : '') + (i > cur ? ' lockd' : '') + (i === cur ? ' now' : '');
+      h += '<button type="button" class="' + c + '" data-step="' + i + '" title="' + esc(stepLabel(i)) + '">' + x.n + '</button>';
+    }
+    return h;
+  }
+  return '<section class="card stepnav" role="navigation" aria-label="문제 번호"><div class="stepnav-row"><span class="stepnav-lab">1단계 교과서</span><div class="pchips">' + chips(0, TB.length) + '</div></div>' +
+    '<div class="stepnav-row"><span class="stepnav-lab">2단계 학습지</span><div class="pchips">' + chips(TB.length, total) + '</div></div>' +
+    '<p class="muted" style="margin:0;font-size:.85rem">초록 번호는 이미 푼 문제라 다시 볼 수 있어요.</p>' +
+    '<div id="navmsg">' + msg + '</div></section>';
+}
+function addStepNav(){
+  if (!me || isPractice(CH) || !chInfo(CH).ready || me.st === 'wait') return;
+  var app = $('#app'); if (!app || app.querySelector('.stepnav')) return;
+  var demo = app.querySelector('.demo');
+  if (demo) demo.insertAdjacentHTML('afterend', stepNavHTML()); else app.insertAdjacentHTML('afterbegin', stepNavHTML());
+}
+document.addEventListener('click', function(e){
+  var b = e.target.closest && e.target.closest('[data-step]'); if (!b || !me) return;
+  var i = Number(b.dataset.step), cur = posStep();
+  if (i > cur) {
+    var m = $('#navmsg'); if (m) m.innerHTML = '<div class="fb bad">아직 답을 적지 않았어요. 지금 문제를 먼저 풀어야 다음 문제로 갈 수 있어요.</div>';
+    return;
+  }
+  RVW = (i === cur) ? null : i;
+  render(); window.scrollTo(0, 0);
+});
+function renderReview(i){
+  var x = stepItem(i), it = x.it, l = (me.lg && me.lg[it.k]) || {};
+  var ans = it.kind === 'mc' ? (it.a + 1) + '. ' + it.opts[it.a] : it.kind === 'free' ? '' : String(it.a);
+  var mine = '';
+  if (it.kind === 'free') { var v = (me.cl && me.cl[it.k]) || l; mine = v && v.e1 ? esc(v.e1) + ' → ' + esc(v.n1) + '<br>' + esc(v.e2) + ' → ' + esc(v.n2) : ''; }
+  var rec = x.tb ? (l.ok ? '바로 맞힘' : l.n ? '풀이 보고 해결' : '') : (l.f ? '바로 맞힘' : (l.a !== undefined || l.s !== undefined) ? '풀이 보고 해결' : '');
+  var pieces = (it.collab && it.collab.type === 'pieces') ? '<div class="collab"><h3>정보 카드</h3>' + it.collab.pieces.map(function(p){ return '<div class="piece"><div class="lab">정보</div>' + p + '</div>'; }).join('') + '</div>' : '';
+  $('#app').innerHTML = demoBanner() + '<section class="card"><div class="eyebrow"><span class="tag">다시 보기</span>' + (x.tb ? '1단계 · 교과서 ' : '2단계 · 학습지 ') + esc(stepLabel(i)) + '</div>' +
+    pieces + '<p class="q">' + it.q + '</p>' + (it.kind === 'mc' || it.kind === 'free' ? '' : picOf(it)) +
+    (ans ? '<div class="fb ok">정답: <b>' + esc(ans) + '</b>' + (rec ? ' · 내 기록: ' + rec : '') + '</div>' : '') +
+    (mine ? '<div class="fb ok">내가 적은 답<br>' + mine + '</div>' : '') +
+    (it.exp ? '<div class="fb wait" style="margin-top:8px">풀이: ' + it.exp + '</div>' : '') + (it.kind === 'mc' || it.kind === 'free' ? '' : solvedVis(it)) +
+    '<div class="row" style="margin-top:12px"><button class="btn" id="rvback">지금 풀 문제로 돌아가기</button></div></section>';
+  visBindAll();
+  $('#rvback').addEventListener('click', function(){ RVW = null; render(); window.scrollTo(0, 0); });
+}
+
+function render(){
+  renderMain();
+  addStepNav();
+}
+function renderMain(){
+  lastKey = screenKey();
+  UI = {};
+  header();
+  if (!me) return PROFILE ? renderHub() : renderJoin();
+  if (isPractice(CH)) return renderPractice();
+  if (!chInfo(CH).ready) return renderSoon();
+  if (SOLO && me.st === 'wait') { save({st: 'tb', tb: me.tb || 0}); }
+  if (me.st === 'wait' || !started()) return renderWait();
+  if (RVW != null && RVW < posStep()) return renderReview(RVW);
+  RVW = null;
+  if (me.st === 'tb') return renderTB();
+  if (me.st === 'ws') return renderWS();
+  if (me.st === 'done') { var no = null; try { no = sessionStorage.getItem('mm81-noteopen'); } catch(e){} return no ? renderNote() : renderDone(); }
+}
+
+// ---------- 입장 ----------
+function renderJoin(msg){
+  var saved = {}; try { saved = JSON.parse(lsGet('mm81-me') || '{}'); } catch(e){}
+  function sel(id, ph, list, cur){ return '<select id="' + id + '"><option value="">' + ph + '</option>' + list.map(function(o){ return '<option value="' + o[0] + '"' + (String(cur) === String(o[0]) ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>'; }
+  var nos = [], gs = []; for (var i = 1; i <= NO_MAX; i++) nos.push([i, i + '번']); for (var j = 1; j <= GROUP_COUNT; j++) gs.push([j, j + '모둠']);
+  $('#app').innerHTML = demoBanner() +
+    '<form class="card" id="joinf" autocomplete="off">' +
+    '<h2>' + (VC ? '반, 번호, 이름을 고르고 들어오세요' : '반, 번호, 이름, 모둠을 고르고 들어오세요') + '</h2>' +
+    '<div class="row joinrow"><div class="field"><label for="jcls">반</label>' + sel('jcls', '반 고르기', CLASSES.map(function(c){ return [c, c]; }), saved.cls) + '</div>' +
+    '<div class="field"><label for="jno">번호</label>' + sel('jno', '번호 고르기', nos, saved.no) + '</div></div>' +
+    '<div class="field"><label for="jname">이름</label><input type="text" id="jname" placeholder="이름" value="' + esc(saved.name || '') + '"></div>' +
+    (VC ? '' : '<div class="field"><label for="jg">모둠</label>' + sel('jg', '모둠 고르기', gs, saved.gn) + '</div>' +
+    '<div class="field"><label for="jpw">비밀번호 (숫자 4자리)</label><input type="password" id="jpw" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="처음이면 지금 정해요"></div>') +
+    (msg ? '<div class="fb bad">' + esc(msg) + '</div>' : '') +
+    '<button class="btn" type="submit">들어가기</button>' +
+    (VC ? '<p class="muted" style="margin:0;font-size:.88rem">푼 기록은 이 컴퓨터에 저장돼요. 다음 시간에도 <b>같은 컴퓨터</b>에서 같은 반·번호·이름으로 들어오면 이어서 풀 수 있어요.</p></form>' : '<p class="muted" style="margin:0;font-size:.88rem">처음 들어올 때 정한 비밀번호를 다음 시간에도 똑같이 넣어요. 잊어버리면 선생님께 말해 주세요.</p></form>');
+  $('#joinf').addEventListener('submit', function(e){
+    e.preventDefault();
+    var a = VC ? { cls: $('#jcls').value, no: $('#jno').value, name: $('#jname').value.trim(), gn: '1' }
+               : { cls: $('#jcls').value, no: $('#jno').value, name: $('#jname').value.trim(), gn: $('#jg').value, pw: toAscii($('#jpw').value).trim() };
+    if (!a.cls || !a.no || !a.name || !a.gn) return renderJoin(VC ? '반, 번호, 이름을 모두 골라 주세요.' : '반, 번호, 이름, 모둠을 모두 골라 주세요.');
+    if (!VC && !/^\d{4}$/.test(a.pw)) return renderJoin('비밀번호는 숫자 4자리로 써 주세요.');
+    lsSet('mm81-me', JSON.stringify({cls: a.cls, no: a.no, name: a.name, gn: a.gn}));   // 비밀번호는 기기에 남기지 않음
+    PROFILE = a; saveCur({p: a});
+    render();
+  });
+}
+
+// ---------- 단원 목록 (8.1 ~ 8.4) ----------
+var PROFILE = null;     // {cls, no, name, gn}
+var hubTimer = null;
+function saveCur(o){ try { if (o) sessionStorage.setItem('mm8-cur', JSON.stringify(o)); else sessionStorage.removeItem('mm8-cur'); } catch(e){} }
+function loadCur(){ try { return JSON.parse(sessionStorage.getItem('mm8-cur') || 'null'); } catch(e){ return null; } }
+function stopHub(){ if (hubTimer) clearInterval(hubTimer); hubTimer = null; }
+function renderHub(msg){
+  header();
+  if (!$('#hubgrid')) $('#app').innerHTML = demoBanner() + '<section class="card"><h2>단원을 고르세요</h2><p class="muted" style="margin:0">선생님이 열어 준 단원만 들어갈 수 있어요. 하던 단원은 하던 곳부터 이어서 해요.</p>' +
+    (msg ? '<div class="fb bad">' + esc(msg) + '</div>' : '') + '<div class="fb ok" id="pwnew" hidden>비밀번호를 정했어요! 다음 시간에도 같은 비밀번호로 들어와요.</div></section><div class="hubgrid" id="hubgrid"><p class="muted">불러오는 중…</p></div>';
+  function load(){
+    if (!PROFILE || me) return stopHub();
+    ((VC && !PREVIEW) ? vcFetchOpen(PROFILE.cls) : Promise.resolve()).then(function(){ return call('hub', PROFILE); }).then(function(r){
+      if (!PROFILE || me || !$('#hubgrid')) return;
+      if (r.conflict) { stopHub(); PROFILE = null; saveCur(null); return renderJoin('그 반·번호는 다른 이름으로 이미 들어와 있어요. 반과 번호를 다시 확인하세요.'); }
+      if (r.pwbad) { stopHub(); PROFILE = null; saveCur(null); return renderJoin(r.msg || '비밀번호가 맞지 않아요.'); }
+      if (r.pwNew && $('#pwnew')) $('#pwnew').hidden = false;
+      HUBPROG = r.prog || {};
+      PRACTICES.forEach(function(pid){ var m = pLoad(pid); if (m && m.name === PROFILE.name && (!r.prog[pid] || (r.prog[pid].pc || 0) < (m.pc || 0))) r.prog[pid] = {pc: m.pc || 0, pp: m.pp || 0}; });
+      applyLk(r);
+      $('#hubgrid').innerHTML = '<h3 class="hubsec">모둠 수업</h3>' + CHAPTERS.map(function(c){
+        var pr = r.prog[c.id], open = r.open[c.id], st, btn = '', cls = 'hubcard';
+        if (!c.ready) { st = '<span class="pill wait">준비 중</span>'; cls += ' off'; }
+        else if (!open) { st = '<span class="pill no">잠김</span>'; cls += ' off'; }
+        else if (!pr) { st = '<span class="pill wait">시작 전</span>'; btn = '시작하기'; }
+        else if (pr.st === 'done') { st = '<span class="pill ok">컴퓨터 완료</span>' + (pr.paper ? ' <span class="pill ok">학습지 확인</span>' : ''); btn = '다시 보기'; }
+        else { st = '<span class="pill wait">진행 중</span>'; btn = '이어서 하기'; }
+        return '<article class="' + cls + '"><div class="hubno">' + c.id + '</div><h3>' + esc(c.title) + '</h3><div class="chips">' + st + '</div>' +
+          (btn ? '<button class="btn" data-ch="' + c.id + '">' + btn + '</button>' : '<p class="muted" style="margin:0;font-size:.88rem">' + (!c.ready ? '곧 열려요' : '선생님이 열어 주시면 시작할 수 있어요') + '</p>') + '</article>';
+      }).join('') + '<h3 class="hubsec">해결해요 · 혼자 풀기</h3>' + PRACTICES.map(function(pid){
+        var set = PRACTICE[pid], n = set.items.length, pr = r.prog[pid], open = r.open[pid], st, btn = '', cls = 'hubcard';
+        if (!open) { st = '<span class="pill no">잠김</span>'; cls += ' off'; }
+        else if (!pr) { st = '<span class="pill wait">시작 전 · ' + n + '문제</span>'; btn = '시작하기'; }
+        else if ((pr.pc || 0) >= n) { st = '<span class="pill ok">완료 ' + n + '/' + n + '</span>'; btn = '다시 보기'; }
+        else { st = '<span class="pill wait">' + (pr.pc || 0) + '/' + n + ' 해결</span>'; btn = '이어서 하기'; }
+        return '<article class="' + cls + ' prac"><div class="hubno">' + set.of + '</div><h3>해결해요</h3><div class="muted" style="font-size:.85rem">' + esc(set.page) + '</div><div class="chips">' + st + '</div>' +
+          (btn ? '<button class="btn" data-ch="' + pid + '">' + btn + '</button>' : '<p class="muted" style="margin:0;font-size:.88rem">선생님이 열어 주시면 시작할 수 있어요</p>') + '</article>';
+      }).join('');
+    }).catch(function(){});
+  }
+  if (!hubTimer) {
+    $('#app').addEventListener('click', hubClick);
+    hubTimer = setInterval(load, (GAS || (VC && !PREVIEW)) ? 15000 : 1500);
+  }
+  load();
+}
+function hubClick(e){ var b = e.target.closest && e.target.closest('[data-ch]'); if (b && !me && PROFILE) enterChapter(b.dataset.ch); }
+function enterChapter(ch){
+  stopHub(); $('#app').removeEventListener('click', hubClick);
+  CH = ch;
+  if (isPractice(ch)) { me = pEnter(ch); saveCur({p: PROFILE, ch: ch}); if (me.sent === 'sending') { me.sent = 0; pSave({}); } render(); return; }   // 해결해요는 서버를 거치지 않음
+  call('join', PROFILE).then(function(r){
+    if (r.pwbad) { CH = '8.1'; PROFILE = null; saveCur(null); return renderJoin(r.msg); }
+    if (!r.ok) { CH = '8.1'; return renderHub(r.msg); }
+    me = r.me; saveCur({p: PROFILE, ch: ch});
+    startPolling(); poll(); render();
+  }).catch(function(err){ renderHub('연결이 안 돼요. 다시 눌러 보세요. (' + err + ')'); });
+}
+function leaveChapter(){
+  stopPolling(); me = null; G = null; PV = null; RVW = null; renderAlerts();
+  try { sessionStorage.removeItem('mm81-noteopen'); } catch(e){}
+  saveCur({p: PROFILE}); $('#app').className = 'wrap';
+  $('#app').innerHTML = ''; render();
+}
+function renderSoon(){
+  $('#app').innerHTML = '<section class="card"><h2>' + esc(CH + ' ' + chInfo(CH).title) + '</h2><p>아직 준비 중인 단원이에요.</p><div><button class="btn" id="soonback">단원 목록으로</button></div></section>';
+  $('#soonback').addEventListener('click', leaveChapter);
+}
+
+// ===================== 해결해요: 개인 학습 화면 =====================
+var PV = null;   // 다시 보는 문제 번호 (null = 지금 풀 문제)
+
+// ---------- 풀이 그림 (해결해요용) ----------
+// 표 칠하기: rows × cols, mark(r, c) → 'ta'(진한 빨강) | 'tb'(점선 빨강) | ''
+VIS.grid2 = { html: function(v){
+  var h = '<div class="scroll"><table class="dgrid g2"><thead><tr><th class="muted g2c">' + (v.corner || '') + '</th>' + v.cols.map(function(c){ return '<th>' + c + '</th>'; }).join('') + '</tr></thead><tbody>';
+  v.rows.forEach(function(r, ri){
+    h += '<tr><th>' + r + '</th>';
+    v.cols.forEach(function(c, ci){ var m = v.mark(ri, ci) || ''; h += '<td><span class="dcell ' + m + (m ? ' pop' : '') + '" style="animation-delay:' + ((ri * v.cols.length + ci) * 0.025).toFixed(2) + 's">' + esc(v.cell ? v.cell(ri, ci) : '') + '</span></td>'; });
+    h += '</tr>';
+  });
+  h += '</tbody></table></div>';
+  if (v.legend) h += '<div class="legend">' + v.legend.map(function(l){ return '<span><i class="dcell ' + l[0] + '"></i>' + l[1] + '</span>'; }).join('') + '</div>';
+  return h + (v.eq ? '<div class="fb ok"><span class="eq">' + v.eq + '</span>' + (v.done ? '<br>' + v.done : '') + '</div>' : '');
+}};
+// 넓이 그림: 확률의 곱을 직사각형 넓이로 (rows 줄 × cols 칸 중 칠한 칸)
+VIS.area = { html: function(v){
+  var R = v.R, C = v.C, s = Math.min(28, Math.floor(300 / C)), L = 70, Tp = 34, W = C * s, H = R * s;
+  var g = '<svg viewBox="0 0 ' + (L + W + 8) + ' ' + (Tp + H + 8) + '" class="areasvg" style="max-width:' + (L + W + 8) * 1.3 + 'px" role="img" aria-label="넓이 그림">';
+  var x = L; (v.colSeg || []).forEach(function(sg){ g += '<text x="' + (x + sg.n * s / 2) + '" y="14" class="ar-lab">' + sg.lab + '</text><text x="' + (x + sg.n * s / 2) + '" y="28" class="ar-sub">' + sg.n + '</text>'; x += sg.n * s; });
+  var y = Tp; (v.rowSeg || []).forEach(function(sg){ g += '<text x="' + (L - 8) + '" y="' + (y + sg.n * s / 2) + '" class="ar-lab" style="text-anchor:end">' + sg.lab + ' ' + sg.n + '</text>'; y += sg.n * s; });
+  for (var r = 0; r < R; r++) for (var c = 0; c < C; c++) g += '<rect x="' + (L + c * s) + '" y="' + (Tp + r * s) + '" width="' + s + '" height="' + s + '" class="ar-cell"/>';
+  (v.shades || []).forEach(function(sh, i){ g += '<rect x="' + (L + sh.c[0] * s) + '" y="' + (Tp + sh.r[0] * s) + '" width="' + ((sh.c[1] - sh.c[0]) * s) + '" height="' + ((sh.r[1] - sh.r[0]) * s) + '" class="ar-' + sh.cls + ' pop" style="animation-delay:' + (0.3 + i * 0.4) + 's"/>'; });
+  g += '</svg>';
+  return g + (v.legend ? '<div class="legend">' + v.legend.map(function(l){ return '<span><i class="lg-' + l[0] + '"></i>' + l[1] + '</span>'; }).join('') + '</div>' : '') +
+    (v.eq ? '<div class="fb ok"><span class="eq">' + v.eq + '</span>' + (v.done ? '<br>' + v.done : '') + '</div>' : '');
+}};
+// 막대그래프
+VIS.bars = { html: function(v){
+  var mx = Math.max.apply(null, v.items.map(function(i){ return i.v; }));
+  return '<div class="bars">' + v.items.map(function(i, k){ return '<div class="barrow' + (i.hl ? ' hl' : '') + '"><span class="bn">' + esc(i.n) + '</span><span class="bt"><i class="pop" style="width:' + Math.round(i.v / mx * 100) + '%;animation-delay:' + (k * 0.12) + 's"></i></span><span class="bv">' + i.v + '명</span></div>'; }).join('') + '</div>' +
+    (v.eq ? '<div class="fb ok"><span class="eq">' + v.eq + '</span>' + (v.done ? '<br>' + v.done : '') + '</div>' : '');
+}};
+VIS.html = { html: function(v){ return v.html; } };
+// 숫자쌍 목록: 경우를 (a, b)로 하나씩 적어 세기
+VIS.plist = { html: function(v){
+  var k = 0;
+  return '<div class="plist">' + (v.head ? '<div class="muted" style="font-size:.88rem">' + v.head + '</div>' : '') + v.groups.map(function(g){
+    return '<div class="prow"><span class="plab ' + (g.cls || 'ta') + '">' + g.label + '</span><span class="toks">' +
+      g.pairs.map(function(p){ k++; return '<span class="pair ' + (g.cls || 'ta') + ' pop" style="animation-delay:' + (k * 0.12).toFixed(2) + 's">' + p + '</span>'; }).join('') +
+      '</span><span class="pcount">→ ' + g.pairs.length + '가지</span></div>'; }).join('') + '</div>' +
+    (v.eq ? '<div class="fb ok"><span class="eq">' + v.eq + '</span>' + (v.done ? '<br>' + v.done : '') + '</div>' : '');
+}};
+
+// 풀이 도우미 (말풍선)
+function buddy(msg){
+  return '<div class="buddy"><svg viewBox="0 0 60 60" width="54" height="54" aria-hidden="true"><path d="M30 10 L30 3" class="bd-top"/><circle cx="30" cy="3" r="3" class="bd-ball"/><circle cx="30" cy="34" r="24" class="bd-face"/>' +
+    '<circle cx="21" cy="31" r="3.2" class="bd-eye"/><circle cx="39" cy="31" r="3.2" class="bd-eye"/><circle cx="22" cy="30" r="1" class="bd-shine"/><circle cx="40" cy="30" r="1" class="bd-shine"/>' +
+    '<circle cx="14" cy="39" r="4" class="bd-cheek"/><circle cx="46" cy="39" r="4" class="bd-cheek"/><path d="M23 41 Q30 47 37 41" class="bd-smile"/></svg>' +
+    '<div class="bubble">' + msg + '</div></div>';
+}
+function cheer(){ return '<span class="cheer" aria-hidden="true"><i>★</i><i>★</i><i>★</i></span>'; }
+
+function gcd(a, b){ a = Math.abs(a); b = Math.abs(b); while (b) { var t = a % b; a = b; b = t; } return a || 1; }
+function fracParse(s){
+  s = toAscii(String(s)).replace(/\s/g, ''); if (s === '') return null;
+  var m = s.match(/^(-?\d+)(?:\/(\d+))?$/); if (!m) return null;
+  var n = Number(m[1]), d = m[2] ? Number(m[2]) : 1; return d === 0 ? null : [n, d];
+}
+function ansHTML(type, opts, id){
+  if (type === 'num') return '<input type="text" class="pin-in" id="' + id + '" inputmode="numeric" placeholder="답" autocomplete="off" style="max-width:160px">';
+  if (type === 'frac') return '<span class="fracin"><input type="text" id="' + id + '-n" inputmode="numeric" placeholder="분자" aria-label="분자" autocomplete="off"><span class="fbar"></span><input type="text" id="' + id + '-d" inputmode="numeric" placeholder="분모" aria-label="분모" autocomplete="off"></span><span class="muted" style="font-size:.85rem">0이나 1 같은 정수는 위 칸에만 쓰세요</span>';
+  var multi = type === 'multi';
+  return '<span class="chk">' + opts.map(function(o, i){ return '<label><input type="' + (multi ? 'checkbox' : 'radio') + '" name="' + id + '" value="' + i + '"> ' + esc(o) + '</label>'; }).join('') + '</span>';
+}
+function readAns(type, id){
+  if (type === 'num') { var v = num($('#' + id).value); return isNaN(v) ? null : v; }
+  if (type === 'frac') {
+    var n = toAscii($('#' + id + '-n').value).trim(), d = toAscii($('#' + id + '-d').value).trim();
+    if (n === '' && d === '') return null;
+    if (/\//.test(n) && d === '') return fracParse(n);          // 위 칸에 3/4 처럼 쓴 경우
+    var nn = num(n), dd = d === '' ? 1 : num(d);
+    return (isNaN(nn) || isNaN(dd) || dd === 0) ? null : [nn, dd];
+  }
+  var ch = Array.prototype.map.call(document.querySelectorAll('input[name="' + id + '"]:checked'), function(x){ return Number(x.value); });
+  if (type === 'mc') return ch.length ? ch[0] : null;
+  return ch.length ? ch.sort() : null;
+}
+function checkAns(type, v, a){
+  if (v == null) return false;
+  if (type === 'frac') { var A = fracParse(String(a)); return v[0] * A[1] === A[0] * v[1]; }
+  if (type === 'multi') return JSON.stringify(v) === JSON.stringify(a.slice().sort());
+  return v === a;
+}
+function fmtAns(type, a, opts){
+  if (type === 'mc') return opts[a];
+  if (type === 'multi') return a.map(function(i){ return opts[i]; }).join(', ');
+  return String(a);
+}
+function reduceNote(type, v){
+  if (type !== 'frac' || !v || v[1] === 1) return '';
+  var g = gcd(v[0], v[1]); if (g === 1) return '';
+  var n = v[0] / g, d = v[1] / g;
+  return ' 기약분수로 나타내면 <b>' + (d === 1 ? n : n + '/' + d) + '</b>예요.';
+}
+function practiceDone(lg){ return !!(lg && lg.d); }
+function practiceCount(){ var items = PRACTICE[CH].items, c = 0; items.forEach(function(it){ if (practiceDone(me.lg && me.lg[it.k])) c++; }); return c; }
+
+function renderPractice(){
+  var set = PRACTICE[CH], items = set.items, N = items.length;
+  if (me.pp == null) me.pp = 0;
+  var FREE = DEMO();   // 데모·교사 미리보기: 아무 문제나 이동
+  var idx = (PV != null && (PV <= me.pp || FREE) && PV < N) ? PV : me.pp;
+  if (idx >= N) return renderPracticeDone();
+  var it = items[idx], lg = (me.lg && me.lg[it.k]) || {}, review = practiceDone(lg);
+  header();
+  var chips = '<div class="pchips" role="navigation" aria-label="문제 번호">' + items.map(function(x, i){
+    var l = me.lg && me.lg[x.k], c = 'pchip' + (practiceDone(l) ? (l.f ? ' ok' : ' sol') : '') + (i === idx ? ' cur' : '');
+    return '<button type="button" class="' + c + '" data-pv="' + i + '"' + (i > me.pp && !FREE ? ' disabled' : '') + '>' + esc(x.no) + '</button>';
+  }).join('') + '</div>';
+  $('#app').innerHTML = demoBanner() +
+    '<section class="card" style="margin-bottom:12px"><div class="eyebrow"><span class="tag">개인 학습</span>' + esc(set.title) + ' · ' + esc(set.page) + '</div>' + chips +
+    '<p class="muted" style="margin:0;font-size:.85rem">초록 = 바로 맞힘 · 노랑 = 풀이 보고 해결 · ' + (FREE ? '<b>데모·미리보기: 번호를 눌러 아무 문제로나 이동</b>' : '지난 문제는 눌러서 다시 볼 수 있어요') + '</p></section>' +
+    '<section class="card"><div class="eyebrow">' + esc(it.no) + '번 · ' + (idx + 1) + ' / ' + N + (review ? ' · 다시 보기' : '') + '</div>' +
+    '<p class="q">' + it.q + '</p>' + (it.pic ? '<div class="vis">' + PIC[it.pic] + '</div>' : '') +
+    '<div id="pans"></div><div id="pfb"></div><div id="pvis" class="stack"></div><div id="psteps" class="stack"></div><div id="pnext"></div></section>';
+  Array.prototype.forEach.call(document.querySelectorAll('[data-pv]'), function(b){
+    b.addEventListener('click', function(){ var i = Number(b.dataset.pv); PV = (i === me.pp) ? null : i; renderPractice(); window.scrollTo(0, 0); });
+  });
+
+  function logSave(o){ var cur = (me.lg && me.lg[it.k]) || {}; for (var k in o) cur[k] = o[k]; var p = {}; p['lg.' + it.k] = cur; setPath(me, 'lg.' + it.k, cur); p.pc = practiceCount(); save(p); }
+  function nextBtn(label){
+    $('#pnext').innerHTML = '<div class="row" style="margin-top:12px"><button class="btn" id="pgo">' + (label || '다음 문제') + '</button></div>';
+    $('#pgo').addEventListener('click', goNext);
+  }
+  function goNext(){
+    if (idx === me.pp) { save({pp: me.pp + 1, pc: practiceCount()}); PV = null; }
+    else if (FREE) PV = (idx + 1 < N && idx + 1 !== me.pp) ? idx + 1 : null;
+    else PV = (idx + 1 < me.pp) ? idx + 1 : null;
+    renderPractice(); window.scrollTo(0, 0);
+  }
+  function showVis(msg){
+    if (!$('#pvis').innerHTML) { $('#pvis').innerHTML = buddy(msg) + (it.vis ? '<div class="pvis-pic">' + solvedVis(it) + '</div>' : ''); HT_COMPACT = true; visBindAll(); HT_COMPACT = false; }
+    else { var b = $('#pvis .bubble'); if (b) b.innerHTML = msg; }
+  }
+  function stepAnsText(st){ return st.type === 'none' ? '' : ' <span class="after">→ ' + esc(fmtAns(st.type, st.a, st.opts)) + '</span>'; }
+  function showAll(){
+    showVis(it.vis ? '그림으로 같이 볼까요? 빨갛게 표시된 곳이 답이 되는 경우예요.' : '풀이를 같이 볼까요?');
+    $('#psteps').innerHTML = '<h3>풀이</h3>' + it.steps.map(function(st, i){
+      return '<div class="pstep done"><span class="sn">' + (i + 1) + '단계</span><span>' + st.t + stepAnsText(st) + '</span>' + (st.after ? '<span class="muted">' + st.after + '</span>' : '') + '</div>';
+    }).join('') + '<div class="fb ok">답: <b>' + esc(fmtAns(it.type, it.a, it.opts)) + '</b>' + (it.why ? '<br>' + it.why : '') + '</div>';
+  }
+  // 틀렸을 때: 한 단계씩 중간 답을 쓰며 따라가기
+  function guided(si, wrongs){
+    showVis(si === 0 ? '괜찮아요! ' + (it.vis ? '그림을 보면서 ' : '') + '한 단계씩 같이 풀어 봐요.' : si < it.steps.length ? '좋아요, ' + si + '단계 통과! 다음 단계도 할 수 있어요.' : '거의 다 왔어요! 처음 문제의 답을 써 볼까요?');
+    var html = '<h3>한 단계씩 풀어 봐요</h3>';
+    for (var i = 0; i < si; i++) { var d = it.steps[i]; html += '<div class="pstep done"><span class="sn">' + (i + 1) + '단계 ✓</span><span>' + d.t + stepAnsText(d) + '</span>' + (d.after ? '<span class="muted">' + d.after + '</span>' : '') + '</div>'; }
+    if (si < it.steps.length) {
+      var st = it.steps[si];
+      html += '<div class="pstep"><span class="sn">' + (si + 1) + '단계</span><span>' + st.t + '</span>' +
+        (st.type === 'none' ? '<div><button class="btn small" id="sgo" type="button">알겠어요, 다음 단계</button></div>'
+          : '<form class="ansrow" id="f">' + ansHTML(st.type, st.opts, 'sa') + '<button class="btn small" type="submit">확인</button></form><div id="sfb"></div>') + '</div>';
+      $('#psteps').innerHTML = html;
+      if (st.type === 'none') { $('#sgo').addEventListener('click', function(){ guided(si + 1, 0); }); return; }
+      var f1 = document.querySelector('#f input'); if (f1) f1.focus();
+      onSubmit(function(e){
+        e.preventDefault();
+        var v = readAns(st.type, 'sa');
+        if (v == null) { $('#sfb').innerHTML = '<div class="fb wait">답을 써 주세요.</div>'; return; }
+        if (checkAns(st.type, v, st.a)) { guided(si + 1, 0); return; }
+      $('#pvis .bubble') && ($('#pvis .bubble').innerHTML = '앗, 다시 한 번 생각해 볼까요?');
+        wrongs++;
+        if (wrongs === 1) $('#sfb').innerHTML = '<div class="fb bad">다시 생각해 봐요.' + (st.hint ? ' 힌트: ' + st.hint : '') + '</div>';
+        else { $('#sfb').innerHTML = '<div class="fb bad">이 단계의 답은 <b>' + esc(fmtAns(st.type, st.a, st.opts)) + '</b>예요.</div><div class="row" style="margin-top:8px"><button class="btn small" id="sgo" type="button">다음 단계</button></div>';
+          $('#sgo').addEventListener('click', function(){ guided(si + 1, 0); }); }
+      });
+      return;
+    }
+    // 모든 단계를 마침 → 처음 문제의 답 다시 쓰기
+    html += '<div class="pstep"><span class="sn">마지막</span><span>이제 처음 문제의 답을 다시 써 보세요.</span><form class="ansrow" id="f">' + ansHTML(it.type, it.opts, 'fa') + '<button class="btn" type="submit">확인</button></form><div id="sfb"></div></div>';
+    $('#psteps').innerHTML = html;
+    var tries = 0;
+    onSubmit(function(e){
+      e.preventDefault();
+      var v = readAns(it.type, 'fa');
+      if (v == null) { $('#sfb').innerHTML = '<div class="fb wait">답을 써 주세요.</div>'; return; }
+      tries++;
+      if (checkAns(it.type, v, it.a)) {
+        logSave({d: 1, s: 1});
+        $('#f').hidden = true;
+        $('#sfb').innerHTML = '<div class="fb ok">' + cheer() + '잘했어요!' + reduceNote(it.type, v) + (it.why ? '<br>' + it.why : '') + '</div>';
+        nextBtn(idx + 1 >= N ? '마치기' : '다음 문제');
+      } else if (tries < 2) $('#sfb').innerHTML = '<div class="fb bad">마지막 단계의 답을 다시 확인해 보세요.</div>';
+      else {
+        logSave({d: 1, s: 1});
+        $('#f').hidden = true;
+        $('#sfb').innerHTML = '<div class="fb bad">답은 <b>' + esc(fmtAns(it.type, it.a, it.opts)) + '</b>예요.' + (it.why ? '<br>' + it.why : ' 단계를 다시 읽어 보세요.') + '</div>';
+        nextBtn(idx + 1 >= N ? '마치기' : '다음 문제');
+      }
+    });
+  }
+
+  if (review) {
+    $('#pfb').innerHTML = '<div class="fb ' + (lg.f ? 'ok' : 'wait') + '">' + (lg.f ? '바로 맞힌 문제예요.' : '풀이를 보고 해결한 문제예요.') + '</div>';
+    showAll();
+    nextBtn(idx + 1 < me.pp ? '다음 문제' : '지금 풀 문제로');
+    return;
+  }
+  // 처음 풀기
+  $('#pans').innerHTML = '<form class="ansrow" id="f">' + ansHTML(it.type, it.opts, 'pa') + '<button class="btn" type="submit">확인</button></form>';
+  var first = document.querySelector('#f input[type=text]'); if (first) first.focus();
+  onSubmit(function(e){
+    e.preventDefault();
+    var v = readAns(it.type, 'pa');
+    if (v == null) { $('#pfb').innerHTML = '<div class="fb wait">답을 써 주세요.' + (it.type === 'frac' ? ' (분수는 위 칸에 분자, 아래 칸에 분모)' : '') + '</div>'; return; }
+    $('#f').hidden = true;
+    if (checkAns(it.type, v, it.a)) {
+      logSave({f: 1, d: 1, s: 0});
+      $('#pfb').innerHTML = '<div class="fb ok">' + cheer() + '정답!' + reduceNote(it.type, v) + (it.why ? '<br>' + it.why : '') + '</div><div class="row" style="margin-top:10px"><button class="btn ghost" id="psee">풀이 보기</button><button class="btn" id="pgo2">' + (idx + 1 >= N ? '마치기' : '다음 문제') + '</button></div>';
+      $('#pgo2').addEventListener('click', goNext);
+      $('#psee').addEventListener('click', function(){ $('#psee').remove(); logSave({s: 1}); showAll(); });
+    } else {
+      logSave({f: 0});
+      $('#pfb').innerHTML = '<div class="fb bad">아쉬워요. 풀이를 보며 한 단계씩 풀어 봐요.</div><div class="row" style="margin-top:10px"><button class="btn" id="psol">풀이 보기</button></div>';
+      $('#psol').addEventListener('click', function(){ $('#pfb').innerHTML = ''; guided(0, 0); });
+    }
+  });
+}
+
+function renderPracticeDone(){
+  var set = PRACTICE[CH], items = set.items, f = 0, s = 0;
+  items.forEach(function(it){ var l = me.lg && me.lg[it.k]; if (practiceDone(l)) { if (l.f) f++; else s++; } });
+  header();
+  $('#app').innerHTML = demoBanner() + '<section class="card done-hero"><div class="big-ok">' + esc(set.of) + ' 해결해요 완료</div>' +
+    '<p style="margin:0">모두 ' + items.length + '문제 · 바로 맞힘 <b>' + f + '</b> · 풀이 보고 해결 <b>' + s + '</b></p>' +
+    leaveBadge() +
+    '<div class="row" style="justify-content:center"><button class="btn ghost" id="prev0">처음부터 다시 보기</button><button class="btn" id="phub">단원 목록으로</button></div></section>' +
+    '<section class="card" style="margin-top:16px"><h3>문제별 결과</h3><div class="pchips">' + items.map(function(it, i){
+      var l = me.lg && me.lg[it.k]; return '<button type="button" class="pchip ' + (l && l.f ? 'ok' : 'sol') + '" data-pv="' + i + '">' + esc(it.no) + '</button>'; }).join('') + '</div></section>';
+  $('#prev0').addEventListener('click', function(){ PV = 0; renderPractice(); });
+  $('#phub').addEventListener('click', leaveChapter);
+  Array.prototype.forEach.call(document.querySelectorAll('[data-pv]'), function(b){ b.addEventListener('click', function(){ PV = Number(b.dataset.pv); renderPractice(); window.scrollTo(0, 0); }); });
+}
+
+// ---------- 교사 화면: 해결해요 진행 현황 ----------
+function renderPracticeTeacher(){
+  var d = T.data || {s: {}}, cls = T.cls || '', set = PRACTICE[T.ch], items = set.items, N = items.length;
+  var LK = LEAVE_WATCH ? (d.locks || {}) : {}, LKC = LEAVE_WATCH ? (d.lkc || {}) : {};
+  var studs = Object.keys(d.s || {}).map(function(id){ return d.s[id]; }).filter(function(s){ return !cls || s.cls === cls; }).sort(byId);
+  var clsCount = {}; Object.keys(d.s || {}).forEach(function(id){ var c = d.s[id].cls; clsCount[c] = (clsCount[c] || 0) + 1; });
+  function stat(s){ var f = 0, so = 0; items.forEach(function(it){ var l = s.lg && s.lg[it.k]; if (practiceDone(l)) { if (l.f) f++; else so++; } }); return {f: f, s: so, n: f + so}; }
+  var lockedS = Object.keys(LK).map(function(id){ var x = LK[id]; return {id: id, cls: x.cls, no: x.no, name: x.name, ch: x.ch, t: x.t}; }).filter(function(x){ return !cls || x.cls === cls; }).sort(byId);
+  var alertBox = lockedS.length ? '<section class="card talert" role="alert"><h3>이탈 알림 · ' + lockedS.length + '명</h3>' + lockedS.map(function(x){
+      var t = new Date(x.t); return '<div class="trow"><span><b>' + esc(x.cls + ' ' + x.no + '번 ' + x.name) + '</b> <span class="muted">' + esc(isPractice(x.ch) ? x.ch.slice(1) + ' 해결해요' : x.ch) + ' · ' + ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2) + ' · 이탈 ' + (LKC[x.id] || 1) + '회</span></span><button class="btn small danger" data-act="unlock" data-id="' + esc(x.id) + '">해제</button></div>'; }).join('') + '</section>' : '';
+  function isDone(s){ return (s.pc || 0) >= N; }
+  function hm(t){ if (!t) return ''; var d = new Date(t); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  var done = studs.filter(isDone).length;
+  var rows = studs.map(function(s){
+    return '<tr><td>' + esc(s.cls) + '</td><td>' + esc(s.no) + '</td><td><b>' + esc(s.name) + '</b></td>' +
+      '<td>' + (isDone(s) ? '<span class="pill ok">완료</span> <span class="muted">' + hm(s.done) + '</span>' : '<span class="pill wait">미완료</span>') + '</td>' + '<td>' + (s.lv ? '<span class="pill no">' + s.lv + '회</span>' : '') + '</td>' +
+      '<td>' + (T.confirm === 'pw:' + s.id ? '<button class="btn small danger" data-act="pwreset" data-id="' + esc(s.id) + '">초기화</button><button class="btn small ghost" data-act="cancel">취소</button>' : '<button class="linkbtn" data-act="ask" data-c="pw:' + esc(s.id) + '">비번 초기화</button>') + '</td></tr>';
+  }).join('');
+  var tabs = '<div class="clstabs">' + [''].concat(CLASSES).map(function(c){
+    return '<button class="tool' + (c === cls ? ' on' : '') + '" data-act="cls" data-c="' + c + '">' + (c || '전체') + (c && clsCount[c] ? ' <span class="muted">' + clsCount[c] + '</span>' : '') + '</button>'; }).join('') + '</div>';
+  $('#hdr').innerHTML = '<h1>모둠 수학 <small>교사 화면 · ' + esc(T.ch.slice(1)) + ' 해결해요</small></h1><div class="who">' + (lockedS.length ? '<b>이탈 ' + lockedS.length + '명</b> · ' : '') + '자동 새로고침 중</div>';
+  document.title = (lockedS.length ? '(이탈 ' + lockedS.length + ') ' : '') + '모둠 수학 교사 ' + T.ch.slice(1) + ' 해결해요';
+  $('#app').className = 'wrap wide';
+  $('#app').innerHTML = demoBanner() + chTabs() + tabs + alertBox +
+    '<section class="card" style="margin-bottom:16px"><div class="summary">' + (cls ? '<span><b>' + esc(cls) + '</b></span>' : '') +
+    '<span><b>' + done + '</b> / ' + studs.length + ' 명 완료</span><span>' + N + '문제 · 개인 학습 · 다 푼 학생만 기록돼요</span></div>' +
+    '<div class="row">' + (GAS ? '<button class="btn small ghost" data-act="export">기록 시트로 저장</button>' : '') +
+    (cls ? (T.confirm === 'cls' ? '<button class="btn small danger" data-act="resetcls">정말 ' + esc(cls) + ' 해결해요 기록 지우기</button><button class="btn small ghost" data-act="cancel">취소</button>'
+                                : '<button class="btn small ghost" data-act="ask" data-c="cls">' + esc(cls) + '만 초기화</button>') : '') + '</div>' +
+    (T.msg ? '<div class="fb ok">' + T.msg + '</div>' : '') + '</section>' + openPanel() +
+    (studs.length ? '<section class="card"><h3>학생별 진행</h3><div class="scroll"><table class="ttab"><thead><tr><th>반</th><th>번호</th><th>이름</th><th>완료</th>' + '<th>이탈</th>' + '<th>비밀번호</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>'
+                  : '<section class="card"><p class="muted" style="margin:0">아직 이 해결해요를 다 푼 학생이 없어요.</p></section>');
+}
+function exportPracticeRows(){
+  var d = T.data, items = PRACTICE[T.ch].items;
+  var rows = [['반', '번호', '이름', '완료', '완료 시각', '이탈 횟수']];
+  Object.keys(d.s).map(function(id){ return d.s[id]; }).filter(function(s){ return !T.cls || s.cls === T.cls; }).sort(byId).forEach(function(s){
+    var ok = (s.pc || 0) >= items.length;
+    rows.push([s.cls, s.no, s.name, ok ? 'O' : 'X', ok && s.done ? new Date(s.done).toLocaleString('ko-KR') : '', s.lv || 0]);
+  });
+  T.msg = '저장 중…'; renderTeacher();
+  google.script.run.withSuccessHandler(function(url){ T.msg = '저장했어요: <a href="' + esc(url) + '" target="_blank">기록 시트 열기</a>'; renderTeacher(); })
+    .withFailureHandler(function(err){ T.msg = '저장하지 못했어요: ' + esc(err); renderTeacher(); }).exportSheet(T.pin, rows, T.ch.slice(1) + ' 해결해요' + (T.cls ? ' ' + T.cls : ''));
+}
+
+
+// ---------- 대기실 ----------
+function renderWait(){
+  $('#app').innerHTML = demoBanner() +
+    '<section class="card"><div class="eyebrow">' + esc(gLab(me.g)) + ' 대기실</div>' +
+    '<h2>' + esc(gLab(me.g)) + ' 친구들과 자리를 모으세요</h2>' +
+    '<p class="muted" style="margin:0">모둠원이 모두 들어오면 각자 <b>준비 완료</b>를 누르세요. 들어온 친구가 2~4명이고 모두 준비되면 함께 시작해요.</p>' +
+    '<div class="members" id="live-mem"></div>' +
+    '<div class="row"><button class="btn" id="rdy"></button>' + (DEMO() ? '<button class="btn ghost" id="addbot">가상 친구 추가 (데모)</button>' : '') + '</div>' +
+    '<div id="live-wmsg"></div></section>';
+  $('#rdy').addEventListener('click', function(){
+    me.ready = !me.ready;
+    call('ready', {id: me.id, v: me.ready}).then(poll);
+    refreshLive();
+  });
+  if (DEMO()) $('#addbot').addEventListener('click', addBot);
+  refreshLive();
+}
+
+// ---------- 1단계: 교과서 ----------
+function renderTB(){
+  var it = TB[me.tb];
+  $('#app').innerHTML = demoBanner() +
+    '<section class="card"><div class="eyebrow"><span class="tag">1단계 · 교과서</span>' + esc(it.page) + ' · ' + (me.tb + 1) + ' / ' + TB.length + '</div>' +
+    '<p class="q">' + it.q + '</p>' + picOf(it) +
+    '<form class="row" id="f"><input type="text" id="ans" inputmode="numeric" placeholder="답 (숫자)" autocomplete="off"><button class="btn" type="submit">확인</button></form>' +
+    '<div id="fb"></div></section>';
+  var tries = 0;
+  $('#ans').focus();
+  onSubmit(function(e){
+    e.preventDefault();
+    var v = num($('#ans').value);
+    if (isNaN(v)) return askNumber();
+    tries++;
+    if (v === it.a) {
+      save(prefix('lg.' + it.k, {n: tries, ok: tries === 1 ? 1 : 0}));
+      $('#f').hidden = true;
+      $('#fb').innerHTML = '<div class="fb ok">' + (tries > 1 ? '잘했어요!' : '정답!') + '</div><div class="row" style="margin-top:10px">' +
+        (tries === 1 ? '<button class="btn ghost" id="see">풀이 보기</button>' : '') + '<button class="btn" id="nx">다음 문제</button></div>';
+      $('#nx').addEventListener('click', nextTB);
+      if (tries === 1) $('#see').addEventListener('click', function(){ $('#see').remove(); $('#fb').insertAdjacentHTML('afterbegin', '<div class="fb ok" style="margin-bottom:10px">풀이: ' + it.exp + '</div>' + solvedVis(it) + '<div style="height:10px"></div>'); visBindAll(); });
+    } else {
+      // 틀리면: 바로 풀이 버튼 → 풀이를 보고 다시 입력
+      $('#f').hidden = true;
+      $('#fb').innerHTML = '<div class="fb bad">아쉬워요. 풀이를 보고 다시 답을 적어 봐요.</div><div class="row" style="margin-top:10px"><button class="btn" id="sol">풀이 보기</button></div>';
+      $('#sol').addEventListener('click', function(){
+        $('#fb').innerHTML = '<div class="fb wait">풀이: ' + it.exp + '</div>' + solvedVis(it);
+        visBindAll();
+        $('#fb').insertAdjacentElement('afterend', $('#f'));   // 풀이 아래에 답 칸
+        $('#f').hidden = false; $('#ans').value = ''; $('#ans').placeholder = '풀이를 보고 답을 다시 입력'; $('#ans').focus();
+      });
+    }
+  });
+}
+function prefix(k, v){ var o = {}; o[k] = v; return o; }
+function nextTB(){
+  if (me.tb + 1 >= TB.length) save({st:'ws', ws:0, ph:'q'});
+  else save({tb: me.tb + 1});
+  render();
+}
+
+// ---------- 2단계: 학습지 ----------
+function wsHead(it){
+  return (me.late || me.away ? '<div class="fb wait" style="margin-bottom:4px">' + (me.late ? '늦게 합류해서' : '모둠에서 빠져 있어서') + ' <b>혼자 진행</b>해요. 모둠 활동도 내 답만으로 넘어가요.</div>' : '') + '<div class="eyebrow"><span class="tag">2단계 · 학습지</span>' + esc(it.sec) + ' · ' + (me.ws + 1) + ' / ' + WS.length + '</div>';
+}
+function renderWS(){
+  var it = WS[me.ws];
+  if (it.kind === 'mc') return renderMC(it);
+  if (it.kind === 'free') return renderFree(it);
+  if (me.ph === 'code') return CODE_GAME ? renderCode(it) : nextWS();
+  if (me.ph === 'sol') return renderSol(it);
+  return renderNum(it);
+}
+function nextWS(){
+  if (me.ws + 1 >= WS.length) save({st:'done', ph:'q', done: Date.now()});
+  else save({ws: me.ws + 1, ph:'q'});
+  render();
+}
+
+function renderMC(it){
+  var o = it.opts.map(function(t, i){ return '<button class="opt" data-i="' + i + '">' + (i + 1) + '. ' + t + '</button>'; }).join('');
+  $('#app').innerHTML = demoBanner() + '<section class="card">' + wsHead(it) + '<p class="q">' + it.q + '</p><div class="opts" id="opts">' + o + '</div><div id="fb"></div></section>';
+  var first = true;
+  Array.prototype.forEach.call(document.querySelectorAll('.opt'), function(b){
+    b.addEventListener('click', function(){
+      var i = Number(b.dataset.i);
+      if (i === it.a) {
+        save(prefix('lg.' + it.k, {f: first ? 1 : 0}));
+        $('#opts').hidden = true;
+        if (first) {
+          $('#fb').innerHTML = '<div class="fb ok">정답!</div><div class="row" style="margin-top:10px"><button class="btn ghost" id="see">설명 보기</button><button class="btn" id="pass">패스</button></div>';
+          $('#pass').addEventListener('click', nextWS);
+          $('#see').addEventListener('click', function(){
+            $('#fb').innerHTML = '<div class="fb ok">' + it.exp + '</div><div class="row" style="margin-top:10px"><button class="btn" id="nx">다음</button></div>';
+            $('#nx').addEventListener('click', nextWS);
+          });
+        } else {
+          $('#fb').innerHTML = '<div class="fb ok">맞았어요! ' + it.exp + '</div><div class="row" style="margin-top:10px"><button class="btn" id="nx">다음</button></div>';
+          $('#nx').addEventListener('click', nextWS);
+        }
+      } else {
+        first = false;
+        b.disabled = true;
+        $('#fb').innerHTML = '<div class="fb bad">아쉬워요. 설명을 읽고 다시 골라 보세요.<br>' + it.exp + '</div>';
+      }
+    });
+  });
+}
+
+// 모둠 공통 답 쓰기: 모둠원 모두의 답이 일치해야 다음으로
+function renderFree(it){
+  var saved = (me.cl && me.cl[it.k]) || {};
+  $('#app').innerHTML = demoBanner() + '<section class="card">' + wsHead(it) + '<p class="q">' + it.q + '</p>' +
+    '<form id="f" class="stack">' +
+    [1,2].map(function(n){ return '<div class="row"><input type="text" id="e' + n + '" placeholder="사건 ' + n + ' (예: 홀수의 눈이 나온다)" value="' + esc(saved['e' + n] || '') + '" style="flex:3 1 220px"><input type="text" id="n' + n + '" inputmode="numeric" placeholder="경우의 수" value="' + esc(saved['n' + n] || '') + '" style="flex:1 1 90px"></div>'; }).join('') +
+    '<div><button class="btn" type="submit">' + (saved.e1 ? '고쳐서 다시 보내기' : '모둠에 보내기') + '</button></div></form><div id="fb"></div>' +
+    '<div id="live-agree"></div></section>';
+  onSubmit(function(e){
+    e.preventDefault();
+    var v = {e1: $('#e1').value.trim(), n1: $('#n1').value.trim(), e2: $('#e2').value.trim(), n2: $('#n2').value.trim()};
+    if (!v.e1 || !v.e2 || isNaN(num(v.n1)) || isNaN(num(v.n2))) { $('#fb').innerHTML = '<div class="fb bad">사건 2가지와 경우의 수를 모두 적어 주세요.</div>'; return; }
+    var p = {}; p['cl.' + it.k] = v; p['lg.' + it.k] = v;
+    save(p);
+    $('#fb').innerHTML = '<div class="fb ok">모둠에 보냈어요. 고칠 게 있으면 고친 뒤 다시 보내세요.</div>';
+    $('#f').querySelector('button').textContent = '고쳐서 다시 보내기';
+    UI.agreeSig = ''; liveAgree(it);
+  });
+  $('#live-agree').addEventListener('click', function(e){ if (e.target.closest('[data-next]')) nextWS(); });
+  UI.agreeSig = ''; liveAgree(it);
+}
+function agreeKey(v){
+  if (!v) return null;
+  var norm = function(s){ return String(s || '').replace(/\s+/g, '').replace(/[.。]$/, ''); };
+  return [[norm(v.e1), num(v.n1)], [norm(v.e2), num(v.n2)]].map(function(x){ return x[0] + '=' + x[1]; }).sort().join('|');
+}
+function liveAgree(it){
+  var box = $('#live-agree'); if (!box) return;
+  var ms = gateMembers(), keys = ms.map(function(m){ return agreeKey(m.cl && m.cl[it.k]); });
+  var all = keys.every(function(k){ return !!k; }), same = all && keys.every(function(k){ return k === keys[0]; });
+  var sig = JSON.stringify(keys) + ms.length;
+  if (UI.agreeSig === sig) return;
+  UI.agreeSig = sig;
+  var h = '<h3 style="margin-top:6px">모둠원 답</h3><ul class="order">' + ms.map(function(m, i){
+    var v = m.cl && m.cl[it.k];
+    var txt = v ? esc(v.e1) + ' → ' + esc(v.n1) + ' / ' + esc(v.e2) + ' → ' + esc(v.n2) : '아직 안 보냄';
+    return '<li><span><b>' + esc(sLab(m)) + (m.id === me.id ? ' (나)' : '') + '</b> <span class="muted">' + (all ? txt : (v ? '보냄' : '')) + '</span></span><span class="pill ' + (!v ? 'wait' : same ? 'ok' : all ? 'no' : 'ok') + '">' + (!v ? '기다리는 중' : same ? '일치' : all ? '다름' : '보냄') + '</span></li>';
+  }).join('') + '</ul>';
+  var mineSent = !!(me.cl && me.cl[it.k]);
+  if (same) h += '<div class="fb ok">모둠원 모두 일치! ' + it.exp + '</div>';
+  else if (!all) h += '<div class="fb wait">모둠원이 모두 보내면 서로 맞는지 볼 수 있어요. 기다리지 않고 넘어가도 돼요.</div>';
+  else h += '<div class="fb bad">답이 서로 달라요. 모둠에서 이야기해 보세요. (넘어가도 돼요)</div>';
+  if (mineSent) h += '<div class="row" style="margin-top:10px"><button class="btn" data-next>다음</button></div>';
+  box.innerHTML = h;
+}
+
+// 모둠 협력 영역 (정보 나눠 갖기 / 가지 나누기 / 의견)
+function myShare(list){
+  var n = Math.max(1, members().length), i = myIndex(), r = [];
+  list.forEach(function(x, idx){ if (idx % n === i) r.push(x); });
+  return r;
+}
+function collabHTML(it){
+  var c = it.collab; if (!c) return '';
+  if (c.type === 'pieces') {
+    var mine = myShare(c.pieces);
+    return '<div class="collab"><h3>' + (SOLO ? '정보 카드' : '내 정보 카드') + '</h3>' +
+      mine.map(function(p){ return '<div class="piece"><div class="lab">나만 가진 정보</div>' + p + '</div>'; }).join('') +
+      (SOLO ? '' : '<p class="muted" style="margin:0;font-size:.9rem">친구들은 다른 카드를 갖고 있어요. 화면을 보여 주지 말고 <b>말로</b> 알려 주세요.</p>') + '</div>';
+  }
+  if (c.type === 'branch') {
+    var lets = myShare(c.letters), done = me.cl && me.cl[it.k];
+    var h = '<div class="collab"><h3>가지그림 나눠 그리기</h3><p class="muted" style="margin:0;font-size:.92rem">회장 후보를 모둠원이 나눠 맡았어요. 내가 맡은 회장마다 <b>부회장이 될 수 있는 사람</b>을 모두 고르세요.</p>';
+    if (!done) {
+      h += '<form id="bf" class="stack">' + lets.map(function(L){
+        return '<div><b>회장 ' + L + '</b> → 부회장: <span class="chk">' + c.letters.filter(function(x){ return x !== L; }).map(function(x){
+          return '<label><input type="checkbox" name="' + L + '" value="' + x + '"> ' + x + '</label>'; }).join('') + '</span></div>';
+      }).join('') + '<div><button class="btn chalk" type="submit">내 가지 보내기</button></div></form>';
+    } else {
+      h += '<div class="fb ok">내 가지를 보냈어요.</div>';
+    }
+    return h + '<div id="live-collab"></div></div>';
+  }
+  if (c.type === 'opinion') {
+    var d2 = me.cl && me.cl[it.k];
+    var h2 = '<div class="collab"><h3>모둠 의견 나누기</h3><p class="q" style="font-size:1rem">' + c.prompt + '</p>';
+    if (!d2) {
+      h2 += '<form id="of" class="stack"><div class="chk">' + c.choices.map(function(t, i){ return '<label><input type="radio" name="op" value="' + i + '"> ' + t + '</label>'; }).join('') + '</div>' +
+        '<input type="text" id="oreason" placeholder="왜 그렇게 생각해요? (한 줄)"><div><button class="btn chalk" type="submit">내 의견 보내기</button></div></form>';
+    } else {
+      h2 += '<div class="fb ok">내 의견: ' + esc(c.choices[d2.c]) + '</div>';
+    }
+    return h2 + '<div id="live-collab"></div></div>';
+  }
+  return '';
+}
+function collabGateOpen(it){
+  var c = it.collab;
+  if (!c || c.type === 'pieces') return true;
+  return gateMembers().every(function(m){ return m.cl && m.cl[it.k]; });
+}
+function bindCollab(it){
+  var bf = $('#bf');
+  if (bf) bf.addEventListener('submit', function(e){
+    e.preventDefault();
+    var v = {};
+    myShare(it.collab.letters).forEach(function(L){
+      v[L] = Array.prototype.map.call(bf.querySelectorAll('input[name="' + L + '"]:checked'), function(x){ return x.value; });
+    });
+    save(prefix('cl.' + it.k, v)); render();
+  });
+  var of = $('#of');
+  if (of) of.addEventListener('submit', function(e){
+    e.preventDefault();
+    var r = of.querySelector('input[name="op"]:checked');
+    if (!r) return;
+    save(prefix('cl.' + it.k, {c: Number(r.value), r: $('#oreason').value.trim()})); render();
+  });
+}
+function liveCollab(it){
+  var box = $('#live-collab'); if (!box || !it.collab) return;
+  var ms = gateMembers(), c = it.collab, all = collabGateOpen(it);
+  var sentMs = ms.filter(function(m){ return m.cl && m.cl[it.k]; });
+  var h = '<ul class="order">' + ms.map(function(m){ var ok = m.cl && m.cl[it.k]; return '<li><span>' + esc(sLab(m)) + (m.id === me.id ? ' (나)' : '') + '</span><span class="pill ' + (ok ? 'ok' : 'wait') + '">' + (ok ? '보냄' : '기다리는 중') + '</span></li>'; }).join('') + '</ul>';
+  if (all && c.type === 'branch') {
+    var lines = [], total = 0;
+    c.letters.forEach(function(L){
+      ms.forEach(function(m){ var b = m.cl[it.k][L]; if (b) { total += b.length; lines.push('회장 ' + L + '  (' + esc(m.name) + ')\n' + (b.length ? b.map(function(x, xi){ return '   ' + (xi === b.length - 1 ? '└' : '├') + '─ 부회장 ' + x; }).join('\n') : '   └─ (없음)')); } });
+    });
+    h += '<div class="tree">' + lines.join('\n') + '</div><div class="fb ok">모둠 가지 합계: <b>' + total + '가지</b>. 이 가지그림을 보고 답을 생각해 보세요.</div>';
+  } else if (all && c.type === 'opinion') {
+    h += '<ul class="order">' + ms.map(function(m){ var o = m.cl[it.k]; return '<li><span><b>' + esc(sLab(m)) + '</b>: ' + esc(c.choices[o.c]) + '</span><span class="muted">' + esc(o.r || '') + '</span></li>'; }).join('') + '</ul>' +
+      '<div class="fb ok">모두의 의견이 모였어요. 의견이 다르면 이야기해서 정한 뒤 답을 입력하세요.</div>';
+  } else {
+    if (c.type === 'opinion' && sentMs.length) h += '<ul class="order">' + sentMs.map(function(m){ var o = m.cl[it.k]; return '<li><span><b>' + esc(sLab(m)) + '</b>: ' + esc(c.choices[o.c]) + '</span><span class="muted">' + esc(o.r || '') + '</span></li>'; }).join('') + '</ul>';
+    h += '<div class="fb wait">친구들 의견을 다 기다리지 않아도 바로 답을 입력할 수 있어요.</div>';
+  }
+  box.innerHTML = h;
+  var ans = $('#ans'), go = $('#go');
+  if (ans) { ans.disabled = false; go.disabled = false; }
+}
+
+function renderNum(it){
+  $('#app').innerHTML = demoBanner() + '<section class="card">' + wsHead(it) + collabHTML(it) +
+    '<p class="q">' + it.q + '</p>' + picOf(it) +
+    '<form class="row" id="f"><input type="text" id="ans" inputmode="numeric" placeholder="답 (숫자)" autocomplete="off"><button class="btn" id="go" type="submit">확인</button></form>' +
+    '<div id="fb"></div></section>';
+  bindCollab(it);
+  liveCollab(it);
+  onSubmit(function(e){
+    e.preventDefault();
+    var v = num($('#ans').value);
+    if ($('#ans').disabled) return;
+    if (isNaN(v)) return askNumber();
+    if (v === it.a) {
+      save(prefix('lg.' + it.k, {a: v, f: 1, s: 0}));
+      $('#f').hidden = true;
+      $('#fb').innerHTML = '<div class="fb ok">정답! 바로 맞혔어요.</div><div class="row" style="margin-top:10px"><button class="btn ghost" id="see">풀이 보기</button><button class="btn" id="pass">패스</button></div>';
+      $('#pass').addEventListener('click', function(){ toCode(it); });
+      $('#see').addEventListener('click', function(){
+        save(prefix('lg.' + it.k + '.s', 1));
+        $('#fb').innerHTML = solvedVis(it) + '<ol class="steps" style="margin-top:12px">' + it.steps.map(function(s){ return '<li><span>' + s + '</span></li>'; }).join('') + '</ol><div class="row" style="margin-top:10px"><button class="btn" id="nx">다음으로</button></div>';
+        visBindAll();
+        $('#nx').addEventListener('click', function(){ toCode(it); });
+      });
+    } else {
+      save(prefix('lg.' + it.k, {a: v, f: 0, s: 1}));
+      save({ph: 'sol'});
+      render();
+    }
+  });
+}
+
+// 틀렸을 때: 풀이를 한 단계씩 보고 다시 답하기
+function renderSol(it){
+  // 틀렸을 때: 바로 [풀이 보기] 버튼 → 풀이를 보고 다시 답 입력
+  $('#app').innerHTML = demoBanner() + '<section class="card">' + wsHead(it) +
+    '<p class="q">' + it.q + '</p>' + picOf(it) +
+    '<div class="fb bad">아쉬워요. 풀이를 보고 다시 답을 적어 봐요.</div>' +
+    '<div id="solbox"><div class="row"><button class="btn" id="sol">풀이 보기</button></div></div></section>';
+  $('#sol').addEventListener('click', function(){
+    $('#solbox').innerHTML = solvedVis(it) + '<ol class="steps" style="margin-top:12px">' + it.steps.map(function(s){ return '<li><span>' + s + '</span></li>'; }).join('') + '</ol>' +
+      '<form class="row" id="f" style="margin-top:12px"><input type="text" id="ans" inputmode="numeric" placeholder="풀이를 보고 답을 다시 입력" autocomplete="off"><button class="btn" type="submit">확인</button></form><div id="fb"></div>';
+    visBindAll();
+    onSubmit(function(e){
+      e.preventDefault();
+      if (num($('#ans').value) === it.a) {
+        $('#f').hidden = true;
+        $('#fb').innerHTML = '<div class="fb ok">잘했어요!</div><div class="row" style="margin-top:10px"><button class="btn" id="nx">다음 문제</button></div>';
+        $('#nx').addEventListener('click', function(){ toCode(it); });
+        $('#nx').focus();
+      }
+      else $('#fb').innerHTML = '<div class="fb bad">풀이의 마지막 줄을 다시 확인해 보세요.</div>';
+    });
+  });
+}
+
+// 모둠 숫자 모으기
+var CODE_GAME = false;   // 모둠 숫자 모으기 켜기/끄기 (false = 끔: 문제를 맞히면 바로 다음 문제)
+function toCode(it){
+  if (!CODE_GAME || !it.code) return nextWS();   // 숫자 모으기가 없는 문제는 바로 다음 문제로
+  var p = {ph: 'code'}; p['dg.' + it.k] = Math.floor(Math.random() * 10);
+  save(p); render();
+}
+function renderCode(it){
+  var d = me.dg[it.k];
+  $('#app').innerHTML = demoBanner() + '<section class="card">' + wsHead(it) +
+    '<h2 style="text-align:center">모둠 숫자 모으기</h2>' +
+    (gateMembers().length > 1
+      ? '<p class="muted" style="text-align:center;margin:0">이건 <b>나만 받은 숫자</b>예요. 친구들에게 말로 알려 주세요.</p>'
+      : '<p class="muted" style="text-align:center;margin:0">지금은 <b>혼자 진행</b>하는 중이에요. 내 숫자만 입력하면 돼요.</p>') +
+    '<div class="digit">' + esc(d) + '</div>' +
+    '<p style="margin:0">숫자를 <b>아래 순서(번호 순)</b>대로 이어서 입력하면 다음 문제가 열려요.</p>' +
+    '<div id="live-code"></div>' +
+    '<form class="row" id="f"><input type="text" id="code" class="codein" inputmode="numeric" maxlength="4" autocomplete="off"><button class="btn" id="cgo" type="submit">열기</button></form>' +
+    '<div id="fb"></div></section>';
+  refreshLive();
+  onSubmit(function(e){
+    e.preventDefault();
+    var ms = gateMembers();
+    if (!ms.every(function(m){ return m.dg && m.dg[it.k] !== undefined; })) { $('#fb').innerHTML = '<div class="fb wait">아직 숫자를 받지 못한 친구가 있어요. 도와주세요!</div>'; return; }
+    var code = ms.map(function(m){ return String(m.dg[it.k]); }).join('');
+    if (toAscii($('#code').value).replace(/\D/g, '') === code) { $('#fb').innerHTML = '<div class="fb ok">열렸어요!</div>'; setTimeout(nextWS, 500); }
+    else { $('#fb').innerHTML = '<div class="fb bad">숫자가 맞지 않아요. 친구들에게 다시 물어보세요. (순서: 번호 순)</div>'; $('#code').select(); }
+  });
+}
+function liveCode(){
+  var box = $('#live-code'); if (!box) return;
+  var it = WS[me.ws], ms = gateMembers();
+  box.innerHTML = '<ol class="order">' + ms.map(function(m, i){
+    var has = m.dg && m.dg[it.k] !== undefined;
+    var demoShow = (DEMO() && m.bot && has) ? ' · 숫자 ' + m.dg[it.k] + ' (데모에서만 보여요)' : '';
+    return '<li><span>' + (i + 1) + '번째 · ' + esc(sLab(m)) + (m.id === me.id ? ' (나)' : '') + demoShow + '</span><span class="pill ' + (has ? 'ok' : 'wait') + '">' + (has ? '숫자 받음' : '푸는 중') + '</span></li>';
+  }).join('') + '</ol>';
+  var inp = $('#code'); if (inp) inp.maxLength = ms.length;
+}
+
+// ---------- 필기를 합시다: 종이 학습지에 옮겨 쓸 정리 화면 ----------
+// 종이 학습지 순서 그대로, 문제마다 '필기할 식'과 그림 풀이를 보여 줌
+var MEMO = {
+  c1: '사건 : 동일한 조건에서 반복할 수 있는 실험이나 관찰의 결과',
+  c2: '경우의 수 : 사건이 일어나는 가짓수',
+  w1: '예술 4가지, 체육 3가지 → 한 가지만 신청 → 4 + 3 = 7 (가지)',
+  w2: '미술관 3곳, 전통시장 2곳 → 한 곳만 → 3 + 2 = 5 (가지)',
+  w3: '반죽 4종류 × 소 2종류 → 4 × 2 = 8 (가지)',
+  w4: '상의 3벌 × 하의 4벌 → 3 × 4 = 12 (가지)',
+  w5: '홈 A 3단계 × 홈 B 3단계 → 3 × 3 = 9 (가지)',
+  s1: '❶ 사건 A 또는 사건 B가 일어나는 경우의 수 = a + b',
+  s2: '❷ 사건 A와 사건 B가 동시에 일어나는 경우의 수 = a × b',
+  w6: '십의 자리 4가지(0 제외) × 일의 자리 4가지 → 4 × 4 = 16 (가지)',
+  w7: '회장 4가지 × 부회장 3가지 → 4 × 3 = 12 (가지)',
+  w8: '(회장, 부회장) 12가지 중 순서만 다른 것끼리 같음 → 12 ÷ 2 = 6 (가지)',
+  w9: '첫째 3 × 둘째 2 × 셋째 1 → 3 × 2 × 1 = 6 (가지)',
+  w10: 'B, C를 한 묶음 → 4 × 3 × 2 × 1 = 24, 묶음 안 BC·CB 2가지 → 24 × 2 = 48 (가지)',
+  w11: '합이 5: (1,4)(2,3)(3,2)(4,1) 4가지, 합이 10: (4,6)(5,5)(6,4) 3가지 → 4 + 3 = 7 (가지)'
+};
+var SHEET = [
+  {title:'★ 첫 번째 : 용어 정리', page:1, ks:['c1','c2','chk']},
+  {title:'★ 두 번째 : 모둠과 해결하기', page:1, ks:['w1','w2','w3','w4','w5']},
+  {title:'※ 정리', page:1, ks:['s1','s2']},
+  {title:'★ 세 번째 : 한 번 더 생각해보기', page:2, ks:['w6','w7','w8','w9','w10','w11']}
+];
+// 필기 화면에서 그림 없이 식만 보여 줄 문제 (두 번째 3·4·5번, 세 번째 2·3·6번)
+var SHEET_NOPIC = {w3:1, w4:1, w5:1, w7:1, w8:1, w11:1};
+// 필기 화면에서 가지그림을 나란히 나눠 그릴 문제 (세 번째 1번: 1·2 옆에 3·4)
+var SHEET_SPLIT = {w6: [['1','2'], ['3','4']]};
+function splitTreeHTML(it){
+  HT_COMPACT = true;
+  var parts = SHEET_SPLIT[it.k].map(function(r){ HT_ROOTS = r; return hTree(it.vis); });
+  HT_ROOTS = null; HT_COMPACT = false;
+  var total = parts.reduce(function(a, p){ return a + p.total; }, 0);
+  return '<div class="vis live solved"><div class="vis-badge">그림 풀이</div><div class="tree2">' + parts.map(function(p){ return '<div>' + p.svg + '</div>'; }).join('') + '</div>' +
+    '<div class="fb ok">만든 경우는 모두 ' + total + '가지 <span class="eq">' + esc(it.vis.eq || total + '가지') + '</span>' + (it.vis.done ? '<br>' + it.vis.done : '') + '</div></div>';
+}
+// 필기 화면에서 '필기할 내용' 대신 그림 풀이만 보여 줄 문제 (세 번째 5번)
+var SHEET_NOMEMO = {w10:1};
+function memoOf(it){
+  if (it.k === 'chk') {
+    var v = me.cl && me.cl.chk;
+    if (!v) return '사건 2가지와 각각의 경우의 수 (모둠에서 정한 답)';
+    return '① ' + esc(v.e1) + ' → ' + esc(v.n1) + '가지 &nbsp; ② ' + esc(v.e2) + ' → ' + esc(v.n2) + '가지';
+  }
+  return esc(MEMO[it.k] || '');
+}
+function renderNote(){
+  try { sessionStorage.setItem('mm81-noteopen', '1'); } catch(e){}
+  header();
+  function itemOf(k){ for (var i = 0; i < WS.length; i++) if (WS[i].k === k) return WS[i]; }
+  var h = demoBanner() +
+    '<section class="card"><div class="row" style="justify-content:space-between"><h2>필기를 합시다!</h2><button class="btn ghost small" data-back>완료 화면으로</button></div>' +
+    '<p class="muted" style="margin:0">종이 학습지를 펴고, 아래 <b>필기할 내용</b>과 <b>그림(가지그림)</b>을 보고 학습지에 옮겨 적으세요. 다 적으면 선생님께 확인받아요.</p></section>';
+  SHEET.forEach(function(sec){
+    h += '<h3 class="sheet-h">' + sec.title + ' <span class="muted">· 학습지 ' + sec.page + '쪽</span></h3>';
+    sec.ks.forEach(function(k){
+      var it = itemOf(k), n = WS.indexOf(it) + 1;
+      var num = /^w/.test(k) ? (k === 'w6' || Number(k.slice(1)) > 5 ? (Number(k.slice(1)) - 5) : Number(k.slice(1))) + '번' : it.lab;
+      h += '<section class="card sheet-card"><div class="eyebrow"><span class="tag">' + esc(num) + '</span>' + esc(it.sec) + '</div>' +
+        '<p class="q">' + plainQ(it.q) + '</p>' +
+        (SHEET_NOMEMO[k] ? '' : '<div class="memo"><span class="memo-lab">필기할 내용</span>' + memoOf(it) + '</div>') +
+        (it.vis && !SHEET_NOPIC[k] ? '<div class="also">이것도 적습니다!</div>' + (SHEET_SPLIT[k] ? splitTreeHTML(it) : solvedVis(it)) : '') + '</section>';
+    });
+  });
+  h += '<div class="row" style="margin-top:16px"><button class="btn" data-back>완료 화면으로</button></div>';
+  $('#app').innerHTML = h;
+  HT_COMPACT = true; visBindAll(); HT_COMPACT = false;
+  Array.prototype.forEach.call(document.querySelectorAll('[data-back]'), function(b){
+    b.addEventListener('click', function(){ try { sessionStorage.removeItem('mm81-noteopen'); } catch(e){} renderDone(); window.scrollTo(0, 0); });
+  });
+  window.scrollTo(0, 0);
+}
+function plainQ(q){ return q.replace(/<small>[\s\S]*?<\/small>/g, ''); }
+
+// ---------- 완료 ----------
+function renderDone(){
+  var rows = WS.filter(function(it){ return it.kind === 'num'; }).map(function(it){
+    var l = (me.lg && me.lg[it.k]) || {};
+    return '<tr><td>' + esc(it.lab) + '</td><td><b>' + it.a + '</b></td><td>' + (l.f ? '바로 맞힘' : '풀이 보고 해결') + '</td></tr>';
+  }).join('');
+  $('#app').innerHTML = demoBanner() + '<section class="card done-hero"><div class="big-ok">컴퓨터 활동 완료</div>' +
+    '<p style="margin:0">이제 <b>학습지 1~2쪽</b>에 답과 <b>풀이 과정</b>을 직접 적으세요.<br>학습지까지 선생님께 확인받으면 도장을 받아요.</p>' +
+    '<div class="row" style="justify-content:center"><button class="btn chalk bigbtn" id="gonote">필기를 합시다!</button></div>' +
+    leaveBadge() + '<div id="live-paper"></div></section>' +
+    '<section class="card" style="margin-top:16px"><h3>내가 해결한 문제</h3><div class="scroll"><table><thead><tr><th>문제</th><th>답</th><th>기록</th></tr></thead><tbody>' + rows + '</tbody></table></div></section>';
+  $('#gonote').addEventListener('click', renderNote);
+  refreshLive();
+}
+
+// ---------- 실시간 갱신 ----------
+function refreshLive(){
+  var w = $('#live-mem');
+  if (w) {
+    var ms = members();
+    w.innerHTML = ms.map(function(m){ return '<div class="mem' + (m.ready ? ' on' : '') + '"><span class="nm">' + esc(m.name) + (m.id === me.id ? ' (나)' : '') + '</span><span class="st">' + esc((m.cls || '') + ' ' + (m.no ? m.no + '번' : '')) + ' · ' + (m.ready ? '준비 완료' : '기다리는 중') + '</span></div>'; }).join('');
+    $('#rdy').textContent = me.ready ? '준비 취소' : '준비 완료';
+    var n = ms.length, msg = '';
+    if (n < 2) msg = '<div class="fb wait">친구를 기다리는 중이에요. 같은 모둠 친구도 ' + esc(gLab(me.g)) + '으로 들어와야 해요.</div>';
+    else if (n > 4) msg = '<div class="fb bad">한 모둠은 4명까지예요. 모둠 번호를 잘못 고른 친구가 있는지 확인하세요.</div>';
+    else msg = '<div class="fb wait">' + n + '명이 들어왔어요. 모두 준비 완료를 누르면 시작해요.</div>';
+    $('#live-wmsg').innerHTML = msg;
+  }
+  if ($('#live-code')) liveCode();
+  if ($('#live-collab')) liveCollab(WS[me.ws]);
+  if ($('#live-agree')) liveAgree(WS[me.ws]);
+  var p = $('#live-paper');
+  if (p && VC) p.innerHTML = '<div class="fb wait">학습지를 다 쓰면 선생님께 보여 드리고 도장을 받으세요.</div>';
+  else if (p) p.innerHTML = me.paper ? '<div class="fb ok" style="font-size:1.1rem">학습지 확인 완료! 도장을 받으세요.</div>' : '<div class="fb wait">학습지 확인 대기 중</div>';
+}
+
+function poll(){
+  if (!me || isPractice(CH)) return;
+  var pr = isPractice(CH);
+  call(pr ? 'me' : 'group', {g: me.g, id: me.id}).then(function(r){
+    if (!me) return;
+    if (r.pwbad) { stopPolling(); me = null; G = null; PROFILE = null; saveCur(null); $('#app').innerHTML = ''; renderAlerts(); return renderJoin(r.msg || '다시 들어와 주세요.'); }
+    if (!r.me) { stopPolling(); me = null; G = null; saveCur({p: PROFILE}); $('#app').innerHTML = ''; applyLk(r); return renderHub('선생님이 ' + (pr ? '해결해요 ' + CH.slice(1) : CH + ' 단원') + ' 기록을 초기화했어요. 다시 들어가세요.'); }
+    applyLk(r);
+    if (pr) return;
+    G = r;
+    me.paper = r.me.paper; me.away = r.me.away; me.late = r.me.late;
+    if (me.st === 'wait' && r.me.st !== 'wait') me.st = r.me.st;
+    if (DEMO()) driveBots();
+    if (screenKey() !== lastKey) render(); else refreshLive();
+  }).catch(function(){});
+}
+// 서버 부담 줄이기: 해결해요(혼자 풀기)는 주기적으로 묻지 않고, 모둠 수업은 6초마다
+function startPolling(){ stopPolling(); if ((GAS || (VC && !PREVIEW)) && (isPractice(CH) || SOLO)) return; pollTimer = setInterval(poll, GAS ? 6000 : 1000); }
+function stopPolling(){ if (pollTimer) clearInterval(pollTimer); pollTimer = null; }
+
+// ---------- 이탈 감지: 다른 탭·창으로 가면 잠그고, 같은 반 모두에게 경고 ----------
+var ALERTS = [];
+var LKS = {lk: false, lkn: 0};   // 내 이탈 상태 (서버의 공통 이탈 기록에서 받아 옴)
+// 이탈 횟수: 서버에 저장하지 않고 이 기기에만 세어 두었다가, 완료 화면에 크게 보여 줌 (도장 받을 때 선생님이 확인)
+function leaveKey(){ return 'mm8-leave:' + (me ? me.id : '') + ':' + CH; }
+function leaveCount(){ return Number(lsGet(leaveKey()) || 0) || 0; }
+function lessonFinished(){ if (!me) return true; if (isPractice(CH)) return (me.pc || 0) >= PRACTICE[CH].items.length; return me.st === 'done'; }
+document.addEventListener('visibilitychange', function(){
+  if (!document.hidden || !me || PREVIEW || lessonFinished()) return;
+  lsSet(leaveKey(), String(leaveCount() + 1));
+});
+function leaveBadge(){
+  var n = leaveCount();
+  return '<div class="leavebadge ' + (n ? 'bad' : 'ok') + '">화면 이탈 <b>' + n + '회</b></div>' +
+    '<p class="muted" style="margin:0;font-size:.9rem">이탈 횟수는 선생님께 알려드립니다.</p>';
+}
+var LEAVE_WATCH = false;   // 이탈 감지 전체 켜기/끄기 (false = 끔: 잠금·경고·교사 알림 모두 없음)
+var WATCH = true;   // 데모에서는 안내 칸의 체크로 끌 수 있음
+function watchOn(){ return LEAVE_WATCH && !!PROFILE && !PREVIEW && WATCH; }
+function applyLk(r){ if (!r || !LEAVE_WATCH) return; ALERTS = r.alerts || []; LKS = {lk: !!r.lk, lkn: r.lkn || 0}; renderAlerts(); }
+document.addEventListener('visibilitychange', function(){
+  if (!watchOn()) return;
+  if (document.hidden) {
+    if (!LKS.lk) { LKS = {lk: true, lkn: (LKS.lkn || 0) + 1}; call('lock', {cls: PROFILE.cls, no: PROFILE.no, name: PROFILE.name, ch: me ? CH : '단원 목록'}).catch(function(){}); }
+  } else {
+    renderAlerts();
+  }
+});
+function ackKey(a){ return 'mm81-ack:' + a.t; }
+function acked(a){ try { return !!sessionStorage.getItem(ackKey(a)); } catch(e){ return false; } }
+function renderAlerts(){
+  var layer = document.getElementById('alertlayer');
+  if (!layer) { layer = document.createElement('div'); layer.id = 'alertlayer'; document.body.appendChild(layer); }
+  if (!LEAVE_WATCH || !PROFILE || PREVIEW) { layer.innerHTML = ''; return; }
+  if (LKS.lk) {
+    layer.innerHTML = '<div class="lockscreen" role="alertdialog" aria-live="assertive"><div class="lockbox">' +
+      '<div class="warn-mark" aria-hidden="true">!</div><h2>수업 화면을 벗어났어요</h2>' +
+      '<p>다른 탭이나 창으로 이동해서 화면이 잠겼어요.<br><b>선생님이 해제해 주실 때까지</b> 기다리세요.</p>' +
+      '<p class="muted" style="margin:0">이탈 ' + (LKS.lkn || 1) + '회 · 선생님 화면에 알림이 갔어요</p></div></div>';
+    return;
+  }
+  var others = ALERTS.filter(function(a){ return !a.me; });
+  var fresh = others.filter(function(a){ return !acked(a); });
+  if (fresh.length) {
+    layer.innerHTML = '<div class="lockscreen" role="alertdialog" aria-live="assertive"><div class="lockbox warnbox">' +
+      '<div class="warn-mark" aria-hidden="true">!</div><h2>경고</h2>' +
+      '<p class="warn-who">이탈한 학생이 생겼습니다.</p>' +
+      '<p class="muted" style="margin:0">수업 화면을 벗어나면 화면이 잠기고 선생님께 알림이 가요.</p>' +
+      '<button class="btn" id="ackbtn">확인했어요</button></div></div>';
+    document.getElementById('ackbtn').addEventListener('click', function(){
+      fresh.forEach(function(a){ try { sessionStorage.setItem(ackKey(a), '1'); } catch(e){} });
+      renderAlerts();
+    });
+    return;
+  }
+  layer.innerHTML = others.length ? '<div class="warnstrip" role="status">이탈한 학생이 있어요 · 선생님 확인 중</div>' : '';
+}
+
+// ---------- 데모용 가상 친구 ----------
+var botCount = 0;
+function addBot(){
+  botCount++;
+  call('join', {cls: me.cls, no: 90 + botCount + Math.floor(Math.random() * 5) * 10, name: '가상친구' + botCount, gn: me.gn, bot: true}).then(poll);
+}
+function driveBots(){
+  if (!started()) return;
+  var ms = members(), n = ms.length;
+  var it = me.st === 'ws' ? WS[me.ws] : null;
+  ms.forEach(function(b, bi){
+    if (!b.bot) return;
+    var p = {};
+    if (me.st === 'tb' && (b.st !== 'tb' || b.tb !== me.tb)) { p.st = 'tb'; p.tb = me.tb; }
+    if (me.st === 'ws' && (b.st !== 'ws' || b.ws !== me.ws)) { p.st = 'ws'; p.ws = me.ws; p.ph = 'q'; }
+    if (me.st === 'done' && b.st !== 'done') { p.st = 'done'; p.done = Date.now(); }
+    // 데모: 가상 친구는 내가 보낸 공통 답을 따라 적음
+    if (it && it.kind === 'free' && me.cl && me.cl[it.k] && JSON.stringify(b.cl && b.cl[it.k]) !== JSON.stringify(me.cl[it.k]) && Math.random() < 0.5) p['cl.' + it.k] = me.cl[it.k];
+    if (it && it.kind === 'num') {
+      var k = it.k;
+      if (it.collab && it.collab.type === 'branch' && !(b.cl && b.cl[k]) && Math.random() < 0.4) {
+        var v = {}; it.collab.letters.forEach(function(L, li){ if (li % n === bi) v[L] = it.collab.letters.filter(function(x){ return x !== L; }); });
+        p['cl.' + k] = v;
+      }
+      if (it.collab && it.collab.type === 'opinion' && !(b.cl && b.cl[k]) && Math.random() < 0.4) p['cl.' + k] = {c: 1, r: '대표는 역할이 없어서 A·B와 B·A가 같은 경우라 달라요'};
+      var gateOk = !it.collab || it.collab.type === 'pieces' || (b.cl && b.cl[k]);
+      if (CODE_GAME && it.code && gateOk && !(b.dg && b.dg[k] !== undefined) && (me.ph === 'code' || Math.random() < 0.25)) {
+        p['dg.' + k] = Math.floor(Math.random() * 10); p.ph = 'code';
+        p['lg.' + k] = {a: it.a, f: Math.random() < 0.7 ? 1 : 0, s: 0};
+      }
+    }
+    if (Object.keys(p).length) call('upd', {id: b.id, patch: p});
+  });
+}
+
+// ===================== 교사 화면 =====================
+var T = {pin: null, data: null, confirm: null, timer: null, msg: '', open: null, ch: (function(){ try { return sessionStorage.getItem('mm8-tch') || '8.1'; } catch(e){ return '8.1'; } })(), cls: (function(){ try { return sessionStorage.getItem('mm81-cls') || ''; } catch(e){ return ''; } })()};
+function stuProgress(s){
+  if (s.st === 'wait') return '대기실';
+  if (s.st === 'tb') return '1단계 교과서 ' + (s.tb + 1) + '/' + TB.length;
+  if (s.st === 'ws') { var it = WS[s.ws] || {}; return '2단계 ' + (it.lab || '') + (s.ph === 'code' ? ' · 숫자 모으기' : s.ph === 'sol' ? ' · 풀이 보는 중' : ''); }
+  return '컴퓨터 완료';
+}
+function renderTeacherLogin(msg){
+  $('#hdr').innerHTML = '<h1>모둠 수학 <small>교사 화면</small></h1>';
+  $('#app').innerHTML = demoBanner() + '<form class="card" id="pf"><h2>교사 화면</h2><div class="field"><label for="pin">비밀번호</label><input type="text" id="pin" inputmode="numeric" autocomplete="off"></div>' +
+    (msg ? '<div class="fb bad">' + esc(msg) + '</div>' : '') + '<button class="btn" type="submit">열기</button></form>';
+  $('#pf').addEventListener('submit', function(e){
+    e.preventDefault();
+    T.pin = $('#pin').value.trim();
+    call('t_all', {pin: T.pin, ch: T.ch}).then(function(r){ try{ sessionStorage.setItem('mm81-pin', T.pin); }catch(e){} T.data = r; loadOpen(); renderTeacher(); T.timer = setInterval(tPoll, GAS ? 3000 : 1000); })
+      .catch(function(){ renderTeacherLogin('비밀번호가 맞지 않아요.'); });
+  });
+}
+function tPoll(){ var ch = T.ch; call('t_all', {pin: T.pin, ch: ch}).then(function(r){ if (ch !== T.ch) return; T.data = r; renderTeacher(); }).catch(function(){}); }
+function tAct(op, a){ a.pin = T.pin; if (!a.ch) a.ch = T.ch; T.confirm = null; return call(op, a).then(tPoll); }
+function loadOpen(){ call('t_hub', {pin: T.pin}).then(function(r){ T.open = r.open; if (T.data) renderTeacher(); }).catch(function(){}); }
+function chTabs(){
+  return '<div class="clstabs chtabs"><span class="muted tablab">모둠 수업</span>' + CHAPTERS.map(function(c){ return '<button class="tool' + (c.id === T.ch ? ' on' : '') + '" data-act="ch" data-ch="' + c.id + '">' + c.id + ' ' + esc(c.title) + '</button>'; }).join('') + '</div>' +
+    '<div class="clstabs chtabs"><span class="muted tablab">해결해요</span>' + PRACTICES.map(function(pid){ return '<button class="tool' + (pid === T.ch ? ' on' : '') + '" data-act="ch" data-ch="' + pid + '">' + pid.slice(1) + ' 해결해요</button>'; }).join('') + '</div>';
+}
+function openPanel(){
+  if (!T.open) return '';
+  var list = T.cls ? [T.cls] : CLASSES;
+  return '<section class="card openpanel"><h3>단원 열기 <span class="muted" style="font-weight:400;font-size:.88rem">· 누르면 열림/잠김이 바뀌어요</span></h3><div class="scroll"><table class="opentab"><thead><tr><th>반</th>' +
+    CHAPTERS.map(function(c){ return '<th>' + c.id + ' 수업</th>'; }).join('') + PRACTICES.map(function(pid){ return '<th>' + pid.slice(1) + ' 해결해요</th>'; }).join('') + '</tr></thead><tbody>' +
+    list.map(function(cl){ return '<tr><th>' + cl + '</th>' + CHAPTERS.map(function(c){ return c; }).concat(PRACTICES.map(function(pid){ return {id: pid, ready: true}; })).map(function(c){
+      var on = T.open[cl] && T.open[cl][c.id];
+      if (!c.ready) return '<td><span class="muted">준비 중</span></td>';
+      return '<td><button class="btn small ' + (on ? '' : 'ghost') + '" data-act="open" data-c="' + cl + '" data-ch="' + c.id + '" data-v="' + (on ? 0 : 1) + '">' + (on ? '열림' : '잠김') + '</button></td>'; }).join('') + '</tr>'; }).join('') +
+    '</tbody></table></div></section>';
+}
+function renderTeacher(){
+  if (isPractice(T.ch)) return renderPracticeTeacher();
+  var d = T.data, groups = {}, cls = T.cls || '';
+  function inCls(x){ return !cls || String(x).indexOf(cls + '-') === 0; }
+  Object.keys(d.s).forEach(function(id){ var s = d.s[id]; if (inCls(s.g)) (groups[s.g] = groups[s.g] || []).push(s); });
+  Object.keys(d.g).forEach(function(g){ if (inCls(g)) groups[g] = groups[g] || []; });
+  function gOrder(g){ var p = String(g).split('-'); return [CLASSES.indexOf(p[0]), Number(p[1])]; }
+  var keys = Object.keys(groups).sort(function(a, b){ var x = gOrder(a), y = gOrder(b); return (x[0] - y[0]) || (x[1] - y[1]); });
+  var clsCount = {}; Object.keys(d.s).forEach(function(id){ var c = d.s[id].cls; clsCount[c] = (clsCount[c] || 0) + 1; });
+  var LK = LEAVE_WATCH ? (d.locks || {}) : {}, LKC = LEAVE_WATCH ? (d.lkc || {}) : {};
+  var lockedS = Object.keys(LK).map(function(id){ var x = LK[id]; return {id: id, cls: x.cls, no: x.no, name: x.name, ch: x.ch, lkt: x.t, lkn: LKC[id] || 1}; }).filter(function(x){ return !cls || x.cls === cls; }).sort(byId);
+  var alertBox = lockedS.length ? '<section class="card talert" role="alert"><h3>이탈 알림 · ' + lockedS.length + '명</h3>' +
+    lockedS.map(function(x){ var t = x.lkt ? new Date(x.lkt) : null;
+      return '<div class="trow"><span><b>' + esc(x.cls || '') + ' ' + esc(x.no ? x.no + '번 ' : '') + esc(x.name) + '</b> <span class="muted">' + esc(isPractice(x.ch) ? x.ch.slice(1) + ' 해결해요' : x.ch || '') + (t ? ' · ' + ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2) : '') + ' · 이탈 ' + (x.lkn || 1) + '회</span></span>' +
+        '<button class="btn small danger" data-act="unlock" data-id="' + esc(x.id) + '">해제</button></div>'; }).join('') +
+    '<p class="muted" style="margin:0;font-size:.85rem">다른 탭·창으로 이동한 학생이에요. 학생 화면은 잠겨 있고, 같은 반 학생들 화면에 경고가 떴어요. 이야기한 뒤 <b>해제</b>를 누르세요.</p></section>' : '';
+  var totalG = 0, doneG = 0, totalS = 0, compS = 0, paperS = 0;
+  var cards = keys.map(function(g){
+    var ms = groups[g].sort(byId), grp = d.g[g] || {};
+    if (!ms.length) return '';
+    totalG++;
+    var act = ms.filter(function(s){ return !s.away; });
+    var allDone = act.length > 0 && act.every(function(s){ return s.st === 'done' && s.paper; });
+    if (allDone) doneG++;
+    var comp = ms.filter(function(s){ return s.st === 'done'; }).length, pap = ms.filter(function(s){ return s.paper; }).length;
+    totalS += ms.length; compS += comp; paperS += pap;
+    var rows = ms.map(function(s){
+      var ok = s.st === 'done' && s.paper;
+      var ck = 'kick:' + s.id;
+      return '<div class="mrow' + (s.away ? ' away' : '') + '"><span class="nm">' + esc(s.no ? s.no + '번 ' : '') + esc(s.name) + (s.late ? ' <span class="pill wait">중간 합류</span>' : '') + (s.lv ? ' <span class="pill no">이탈 ' + s.lv + '회</span>' : '') + (LK[s.id] ? ' <span class="pill no">이탈 중</span>' : LKC[s.id] ? ' <span class="pill wait">이탈 ' + LKC[s.id] + '회</span>' : '') + '</span>' +
+        '<span class="pill ' + (ok ? 'ok' : 'no') + '">' + (ok ? '완료' : '미완료') + '</span>' +
+        '<span class="pg">' + (s.away ? '<b>모둠에서 빠짐</b> · ' : '') + esc(stuProgress(s)) + '</span>' +
+        '<div class="chips"><span class="pill ' + (s.st === 'done' ? 'ok' : 'wait') + '">컴퓨터 ' + (s.st === 'done' ? '✓' : '…') + '</span>' +
+        '<button class="btn small ' + (s.paper ? '' : 'ghost') + '" data-act="paper" data-id="' + esc(s.id) + '" data-v="' + (s.paper ? 0 : 1) + '">학습지 ' + (s.paper ? '✓ 확인함' : '확인하기') + '</button>' +
+        (T.confirm === 'pw:' + s.id ? '<button class="btn small danger" data-act="pwreset" data-id="' + esc(s.id) + '">비밀번호 초기화</button><button class="btn small ghost" data-act="cancel">취소</button>'
+                                    : '<button class="linkbtn" data-act="ask" data-c="pw:' + esc(s.id) + '" title="학생이 비밀번호를 잊었을 때. 다음에 들어올 때 새로 정해요.">비번 초기화</button>') +
+        (s.away ? '<button class="linkbtn" data-act="back" data-id="' + esc(s.id) + '">모둠으로 되돌리기</button>'
+         : T.confirm === ck ? '<button class="btn small danger" data-act="kick" data-id="' + esc(s.id) + '">빼기 (기록은 남음)</button><button class="btn small ghost" data-act="cancel">취소</button>'
+                            : '<button class="linkbtn" data-act="ask" data-c="' + ck + '" title="결석한 학생을 빼면 모둠 활동이 남은 인원으로 진행돼요. 기록은 그대로 남아요.">모둠에서 빼기</button>') + '</div></div>';
+    }).join('');
+    var rg = 'rg:' + g;
+    return '<article class="gcard"><div class="ghead"><h3>' + esc(gLab(g)) + '</h3><span class="gstat ' + (allDone ? 'ok' : 'no') + '">' + (allDone ? '완료' : '미완료') + '</span></div>' +
+      '<div class="gsub">' + ms.length + '명' + (ms.length !== act.length ? '(빠짐 ' + (ms.length - act.length) + ')' : '') + ' · ' + (grp.started ? '활동 중' : '대기실') + ' · 컴퓨터 ' + comp + '/' + ms.length + ' · 학습지 ' + pap + '/' + ms.length + '</div>' + rows +
+      '<div class="gfoot">' + (!grp.started ? '<button class="btn small" data-act="start" data-g="' + esc(g) + '">지금 시작시키기</button>' : '') +
+      (T.confirm === rg ? '<button class="btn small danger" data-act="resetg" data-g="' + esc(g) + '">정말 초기화</button><button class="btn small ghost" data-act="cancel">취소</button>'
+                        : '<button class="btn small ghost" data-act="ask" data-c="' + rg + '">모둠 초기화</button>') + '</div></article>';
+  }).join('');
+  // 문제별 통계
+  var stat = WS.filter(function(it){ return it.kind === 'num'; }).map(function(it){
+    var n = 0, f = 0;
+    Object.keys(d.s).forEach(function(id){ if (cls && d.s[id].cls !== cls) return; var l = d.s[id].lg && d.s[id].lg[it.k]; if (l && l.a !== undefined) { n++; if (l.f) f++; } });
+    return '<tr><td>' + esc(it.lab) + '</td><td>' + n + '</td><td>' + f + '</td><td>' + (n - f) + '</td><td>' + (n ? Math.round(f / n * 100) + '%' : '–') + '</td></tr>';
+  }).join('');
+  $('#hdr').innerHTML = '<h1>모둠 수학 <small>교사 화면 · ' + esc(T.ch + ' ' + chInfo(T.ch).title) + '</small></h1><div class="who">' + (lockedS.length ? '<b>이탈 ' + lockedS.length + '명</b> · ' : '') + '자동 새로고침 중</div>';
+  document.title = (lockedS.length ? '(이탈 ' + lockedS.length + ') ' : '') + '모둠 수학 교사 ' + T.ch;
+  $('#app').className = 'wrap wide';
+  var tabs = '<div class="clstabs">' + [''].concat(CLASSES).map(function(c){
+    return '<button class="tool' + (c === cls ? ' on' : '') + '" data-act="cls" data-c="' + c + '">' + (c || '전체') + (c && clsCount[c] ? ' <span class="muted">' + clsCount[c] + '</span>' : '') + '</button>'; }).join('') + '</div>';
+  var chtabs = chTabs();
+  $('#app').innerHTML = demoBanner() + chtabs + tabs + alertBox +
+    '<section class="card" style="margin-bottom:16px"><div class="summary">' + (cls ? '<span><b>' + esc(cls) + '</b></span>' : '') + '<span><b>' + doneG + '</b> / ' + totalG + ' 모둠 완료</span><span><b>' + compS + '</b> / ' + totalS + ' 컴퓨터 완료</span><span><b>' + paperS + '</b> / ' + totalS + ' 학습지 확인</span></div>' +
+    '<p class="muted" style="margin:0;font-size:.9rem">완료 = 컴퓨터 활동을 끝내고 학습지 확인까지 받은 상태. 학생 학습지를 보고 <b>학습지 확인하기</b>를 누르세요.</p>' +
+    '<div class="row">' + (GAS ? '<button class="btn small ghost" data-act="export">기록 시트로 저장</button>' : '') +
+    (T.url !== null ? '<a class="btn small ghost" href="' + esc((T.url || '') + '?view=preview') + '" target="_blank" rel="noopener" style="text-decoration:none">학생 화면 미리보기 (문제 자유 이동)</a>' : '') +
+    (cls ? (T.confirm === 'cls' ? '<button class="btn small danger" data-act="resetcls">정말 ' + esc(cls) + ' 기록 모두 지우기</button><button class="btn small ghost" data-act="cancel">취소</button>'
+                                : '<button class="btn small ghost" data-act="ask" data-c="cls">' + esc(cls) + '만 초기화</button>')
+         : (T.confirm === 'all' ? '<button class="btn small danger" data-act="resetall">정말 모든 반 기록 지우기 (되돌릴 수 없음)</button><button class="btn small ghost" data-act="cancel">취소</button>'
+                                : '<button class="btn small ghost" data-act="ask" data-c="all">모든 반 초기화</button>')) + '</div>' +
+    '<p class="muted" style="margin:0;font-size:.85rem">기록은 반별로 따로 남아서, 다음 시간에도 초기화하지 않고 이어서 하면 돼요. 단원을 마칠 때만 초기화하세요.</p>' +
+    (T.msg ? '<div class="fb ok">' + T.msg + '</div>' : '') + '</section>' +
+    openPanel() + (cards ? '<div class="tgrid">' + cards + '</div>' : '<section class="card"><p class="muted" style="margin:0">아직 들어온 학생이 없어요. 학생들이 반·번호·모둠을 고르고 들어오면 여기에 모둠별로 나타나요.</p></section>') +
+    '<section class="card" style="margin-top:16px"><h3>문제별 첫 시도 결과 (짧은 설명이 필요한 문제 찾기)</h3><div class="scroll"><table><thead><tr><th>문제</th><th>푼 학생</th><th>바로 맞힘</th><th>틀려서 풀이 봄</th><th>바로 맞힌 비율</th></tr></thead><tbody>' + stat + '</tbody></table></div></section>';
+}
+document.addEventListener('click', function(e){
+  var b = e.target.closest && e.target.closest('[data-act]');
+  if (!b || !T.pin) return;
+  var act = b.dataset.act;
+  if (act === 'ask') { T.confirm = b.dataset.c; renderTeacher(); }
+  else if (act === 'cancel') { T.confirm = null; renderTeacher(); }
+  else if (act === 'paper') tAct('t_paper', {id: b.dataset.id, v: b.dataset.v === '1'});
+  else if (act === 'kick') tAct('t_away', {id: b.dataset.id, v: true});
+  else if (act === 'back') tAct('t_away', {id: b.dataset.id, v: false});
+  else if (act === 'unlock') tAct('t_unlock', {id: b.dataset.id});
+  else if (act === 'pwreset') { var pid = b.dataset.id; tAct('t_pwreset', {id: pid}).then(function(){ T.msg = esc(pid.replace('-', ' ') + '번') + ' 비밀번호를 초기화했어요. 다음에 들어올 때 새로 정해요.'; renderTeacher(); }); }
+  else if (act === 'ch') { T.ch = b.dataset.ch; T.confirm = null; T.data = {s: {}, g: {}}; try { sessionStorage.setItem('mm8-tch', T.ch); } catch(e2){} renderTeacher(); tPoll(); }
+  else if (act === 'open') { call('t_open', {pin: T.pin, cls: b.dataset.c, ch: b.dataset.ch, v: b.dataset.v === '1'}).then(function(r){ T.open = r.open; renderTeacher(); }); }
+  else if (act === 'cls') { T.cls = b.dataset.c; T.confirm = null; try { sessionStorage.setItem('mm81-cls', T.cls); } catch(e2){} renderTeacher(); }
+  else if (act === 'resetcls') tAct('t_resetClass', {cls: T.cls});
+  else if (act === 'start') tAct('t_start', {g: b.dataset.g});
+  else if (act === 'resetg') tAct('t_resetGroup', {g: b.dataset.g});
+  else if (act === 'resetall') tAct('t_resetAll', {});
+  else if (act === 'export') exportRows();
+});
+function exportRows(){
+  if (isPractice(T.ch)) return exportPracticeRows();
+  var d = T.data, nums = WS.filter(function(it){ return it.kind === 'num'; });
+  var rows = [['반', '번호', '이름', '모둠', '진행', '컴퓨터 완료', '학습지 확인', '이탈 횟수'].concat(nums.map(function(it){ return it.lab + ' 첫시도'; }))];
+  Object.keys(d.s).map(function(id){ return d.s[id]; }).filter(function(s){ return !T.cls || s.cls === T.cls; }).sort(byId).forEach(function(s){
+    rows.push([s.cls || '', s.no || '', s.name, (s.gn || s.g) + '모둠' + (s.away ? '(빠짐)' : ''), stuProgress(s), s.st === 'done' ? 'O' : 'X', s.paper ? 'O' : 'X', s.lv || 0].concat(nums.map(function(it){ var l = s.lg && s.lg[it.k]; return l && l.a !== undefined ? (l.f ? 'O' : 'X') : ''; })));
+  });
+  T.msg = '저장 중…'; renderTeacher();
+  google.script.run.withSuccessHandler(function(url){ T.msg = '저장했어요: <a href="' + esc(url) + '" target="_blank">기록 시트 열기</a>'; renderTeacher(); })
+    .withFailureHandler(function(err){ T.msg = '저장하지 못했어요: ' + esc(err); renderTeacher(); }).exportSheet(T.pin, rows, T.ch + (T.cls ? ' ' + T.cls : ''));
+}
+
+// ===================== 시작 =====================
+function boot(view){
+  if (VC && view === 'teacher') { location.href = 'teacher.html'; return; }
+  if (VC && view !== 'preview') DKEY = 'mm8-dev';
+  if (view === 'preview') { PREVIEW = true; DKEY = 'mm8-preview'; }
+  if (view === 'teacher') {
+    // 미리보기 링크 주소: 데모는 지금 파일, 실제는 웹앱 주소
+    T.url = GAS ? null : '';
+    if (GAS) google.script.run.withSuccessHandler(function(u){ T.url = u || ''; if (T.data) renderTeacher(); }).appUrl();
+    var p = null; try { p = sessionStorage.getItem('mm81-pin'); } catch(e){}
+    if (p) { T.pin = p; call('t_all', {pin: p, ch: T.ch}).then(function(r){ T.data = r; loadOpen(); renderTeacher(); T.timer = setInterval(tPoll, GAS ? 3000 : 1000); }).catch(function(){ renderTeacherLogin(); }); }
+    else renderTeacherLogin();
+    return;
+  }
+  // 이전에 들어온 적 있으면 자동으로 이어서
+  // (탭마다 따로 기억 → 데모에서 탭 여러 개로 여러 학생 흉내 가능. 창을 닫았다면 같은 반·번호·이름으로 다시 들어오면 이어서 해요.)
+  var saved = loadCur();
+  if (saved && saved.p) {
+    PROFILE = saved.p;
+    if (saved.ch) return enterChapter(saved.ch);
+  }
+  render();
+}
+if (GAS) google.script.url.getLocation(function(loc){ boot(loc.parameter.view); });
+else boot(new URLSearchParams(location.search).get('view'));
+</script>
+</body>
+</html>

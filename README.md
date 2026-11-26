@@ -23,3 +23,4 @@
   - 새 유닛 추가: `api/_unit-<id>.js`(정답) + `public/units/<id>/problems.js`(문제·그림) + `api/_units.js`·`public/engine/units.js` 목록에 한 줄씩. 검산은 `scripts/verify.mjs`(삼각형과 평행선), `scripts/verify-centroid.mjs`(무게중심).
   - 수업 자료(`public/m/lesson/`, `public/m/right-triangle/`)는 `engine/gate.js`로 잠겨 있어 선생님이 관리자 허브(/admin)에서 반별로 열어야 보인다. 예전 폴더 `닮음/`, `right-triangle/`은 새 주소로 보내기만 한다.
   - 🧺 내 보관함(`engine/garden.js`, `api/garden.js`): 유닛별 사과나무와 수확한 사과. 교사는 /admin의 "학생 보관함 현황"에서 본다.
+  - 확률 수업(중2 Ⅷ. 경우의 수와 확률): 학생 `/m/probability/`, 교사 `/m/probability/teacher.html` (관리자 비밀번호). 문제 풀이·진행은 학생 기기에만 저장하고 `api/prob.js`에는 시작·1단계 완료·완료와 이탈 횟수만 남긴다(저장소 prefix `prob:`). 원본은 Drive `모둠수학_8-1/_개발용`(build.py → `vercel/`).

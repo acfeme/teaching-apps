@@ -866,15 +866,21 @@ var PREVIEW = false;   // 교사 미리보기(?view=preview): 실제 기록에 �
 // Vercel판(닮음 탐구 교실 사이트): 문제 풀이·진행 위치는 학생 기기에만, 서버에는 '시작 / 1단계 완료 / 완료'와 이탈 횟수만
 var VC = (typeof window !== 'undefined' && !!window.VC_MODE);
 function DEMO(){ return LOCAL() && (!VC || PREVIEW); }   // 데모·미리보기 전용 기능(가상 친구, 아무 문제로 이동)
-var VC_OPENMAP = {};
+var VC_OPENMAP = {}, VC_PWNEW = false;
+function vcRelogin(){
+  stopPolling(); stopHub(); me = null; G = null; PROFILE = null; saveCur(null);
+  $('#app').innerHTML = ''; renderJoin('오래 지나서 다시 들어와야 해요. 비밀번호를 넣어 주세요. (푼 기록은 그대로예요)');
+}
 function vcFetchOpen(cls){
   return fetch('/api/prob?op=open&cls=' + encodeURIComponent(cls), {cache: 'no-store'}).then(function(r){ return r.json(); })
     .then(function(j){ if (j && j.open) VC_OPENMAP[cls] = j.open; }).catch(function(){});
 }
 function vcSend(body, tries){
   tries = tries || 0;
-  return fetch('/api/prob', {method: 'POST', cache: 'no-store', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)})
-    .then(function(r){ if (r.status >= 500 || r.status === 429) throw new Error('busy'); SAVE_FAIL = false; return r.json().catch(function(){ return {}; }); })
+  return fetch('/api/prob', {method: 'POST', cache: 'no-store', headers: {'Content-Type': 'application/json', 'x-prob-token': (PROFILE && PROFILE.tok) || ''}, body: JSON.stringify(body)})
+    .then(function(r){
+      if (r.status === 401) { vcRelogin(); return {}; }   // 표가 만료됨 → 다시 들어오게
+      if (r.status >= 500 || r.status === 429) throw new Error('busy'); SAVE_FAIL = false; return r.json().catch(function(){ return {}; }); })
     .catch(function(){
       SAVE_FAIL = tries >= 2; saveWarn();
       return new Promise(function(res){ setTimeout(res, Math.min(2000 * (tries + 1), 15000)); }).then(function(){ return vcSend(body, tries + 1); });
@@ -1562,17 +1568,32 @@ function renderJoin(msg){
     '<div class="row joinrow"><div class="field"><label for="jcls">반</label>' + sel('jcls', '반 고르기', CLASSES.map(function(c){ return [c, c]; }), saved.cls) + '</div>' +
     '<div class="field"><label for="jno">번호</label>' + sel('jno', '번호 고르기', nos, saved.no) + '</div></div>' +
     '<div class="field"><label for="jname">이름</label><input type="text" id="jname" placeholder="이름" value="' + esc(saved.name || '') + '"></div>' +
-    (VC ? '' : '<div class="field"><label for="jg">모둠</label>' + sel('jg', '모둠 고르기', gs, saved.gn) + '</div>' +
-    '<div class="field"><label for="jpw">비밀번호 (숫자 4자리)</label><input type="password" id="jpw" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="처음이면 지금 정해요"></div>') +
+    (VC ? '' : '<div class="field"><label for="jg">모둠</label>' + sel('jg', '모둠 고르기', gs, saved.gn) + '</div>') +
+    '<div class="field"><label for="jpw">비밀번호 (숫자 4자리)</label><input type="password" id="jpw" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="처음이면 지금 정해요"></div>' +
     (msg ? '<div class="fb bad">' + esc(msg) + '</div>' : '') +
     '<button class="btn" type="submit">들어가기</button>' +
-    (VC ? '<p class="muted" style="margin:0;font-size:.88rem">푼 기록은 이 컴퓨터에 저장돼요. 다음 시간에도 <b>같은 컴퓨터</b>에서 같은 반·번호·이름으로 들어오면 이어서 풀 수 있어요.</p></form>' : '<p class="muted" style="margin:0;font-size:.88rem">처음 들어올 때 정한 비밀번호를 다음 시간에도 똑같이 넣어요. 잊어버리면 선생님께 말해 주세요.</p></form>');
+    (VC ? '<p class="muted" style="margin:0;font-size:.88rem">처음 들어올 때 정한 비밀번호를 다음 시간에도 똑같이 넣어요. 잊어버리면 선생님께 말해 주세요.<br>푼 기록은 이 컴퓨터에 저장돼요. 다음 시간에도 <b>같은 컴퓨터</b>로 들어오면 이어서 풀 수 있어요.</p></form>' : '<p class="muted" style="margin:0;font-size:.88rem">처음 들어올 때 정한 비밀번호를 다음 시간에도 똑같이 넣어요. 잊어버리면 선생님께 말해 주세요.</p></form>');
   $('#joinf').addEventListener('submit', function(e){
     e.preventDefault();
-    var a = VC ? { cls: $('#jcls').value, no: $('#jno').value, name: $('#jname').value.trim(), gn: '1' }
+    var a = VC ? { cls: $('#jcls').value, no: $('#jno').value, name: $('#jname').value.trim(), gn: '1', pw: toAscii($('#jpw').value).trim() }
                : { cls: $('#jcls').value, no: $('#jno').value, name: $('#jname').value.trim(), gn: $('#jg').value, pw: toAscii($('#jpw').value).trim() };
     if (!a.cls || !a.no || !a.name || !a.gn) return renderJoin(VC ? '반, 번호, 이름을 모두 골라 주세요.' : '반, 번호, 이름, 모둠을 모두 골라 주세요.');
-    if (!VC && !/^\d{4}$/.test(a.pw)) return renderJoin('비밀번호는 숫자 4자리로 써 주세요.');
+    if (!/^\d{4}$/.test(a.pw)) return renderJoin('비밀번호는 숫자 4자리로 써 주세요.');
+    if (VC && !PREVIEW) {
+      // Vercel판: 서버에서 비밀번호 확인 → 표(token)만 기억하고 비밀번호는 버림
+      var btn = $('#joinf button[type=submit]'); btn.disabled = true; btn.textContent = '확인 중…';
+      fetch('/api/prob', {method: 'POST', cache: 'no-store', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({op: 'login', cls: a.cls, no: Number(a.no), pw: a.pw})})
+        .then(function(r){ return r.json().catch(function(){ return {}; }).then(function(j){ return {ok: r.ok, j: j}; }); })
+        .then(function(x){
+          if (!x.ok || !x.j.token) return renderJoin(x.j.error || '들어가지 못했어요. 다시 해 보세요.');
+          var p = {cls: a.cls, no: a.no, name: a.name, gn: '1', tok: x.j.token};
+          lsSet('mm81-me', JSON.stringify({cls: a.cls, no: a.no, name: a.name, gn: '1'}));
+          PROFILE = p; saveCur({p: p}); VC_PWNEW = !!x.j.pwNew;
+          render();
+        })
+        .catch(function(){ renderJoin('연결이 안 돼요. 다시 눌러 보세요.'); });
+      return;
+    }
     lsSet('mm81-me', JSON.stringify({cls: a.cls, no: a.no, name: a.name, gn: a.gn}));   // 비밀번호는 기기에 남기지 않음
     PROFILE = a; saveCur({p: a});
     render();
@@ -1595,7 +1616,7 @@ function renderHub(msg){
       if (!PROFILE || me || !$('#hubgrid')) return;
       if (r.conflict) { stopHub(); PROFILE = null; saveCur(null); return renderJoin('그 반·번호는 다른 이름으로 이미 들어와 있어요. 반과 번호를 다시 확인하세요.'); }
       if (r.pwbad) { stopHub(); PROFILE = null; saveCur(null); return renderJoin(r.msg || '비밀번호가 맞지 않아요.'); }
-      if (r.pwNew && $('#pwnew')) $('#pwnew').hidden = false;
+      if ((r.pwNew || VC_PWNEW) && $('#pwnew')) $('#pwnew').hidden = false;
       HUBPROG = r.prog || {};
       PRACTICES.forEach(function(pid){ var m = pLoad(pid); if (m && m.name === PROFILE.name && (!r.prog[pid] || (r.prog[pid].pc || 0) < (m.pc || 0))) r.prog[pid] = {pc: m.pc || 0, pp: m.pp || 0}; });
       applyLk(r);
@@ -2647,6 +2668,7 @@ function boot(view){
   // 이전에 들어온 적 있으면 자동으로 이어서
   // (탭마다 따로 기억 → 데모에서 탭 여러 개로 여러 학생 흉내 가능. 창을 닫았다면 같은 반·번호·이름으로 다시 들어오면 이어서 해요.)
   var saved = loadCur();
+  if (saved && saved.p && VC && !PREVIEW && !saved.p.tok) saved = null;   // 표가 없는 예전 기억 → 다시 들어오기
   if (saved && saved.p) {
     PROFILE = saved.p;
     if (saved.ch) return enterChapter(saved.ch);

@@ -274,7 +274,7 @@ a.ox { text-decoration: none; }
 .unit-card.is-mat.admin .u-tag { text-decoration: none; }
 .hub-note { color: var(--muted); font-size: 16px; margin: -4px 0 12px; }
 .mat-sws { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.mat-sw { min-height: 48px; padding: 0 14px; border-radius: 12px; border: 2px solid var(--line); background: #f4f5f7; font-size: 17px; font-weight: 700; }
+.mat-sw { white-space: nowrap; min-height: 48px; padding: 0 14px; border-radius: 12px; border: 2px solid var(--line); background: #f4f5f7; font-size: 17px; font-weight: 700; }
 .mat-sw b { color: var(--muted); margin-left: 4px; }
 .mat-sw.on { background: var(--brand); border-color: var(--brand); color: #fff; }
 .mat-sw.on b { color: #fff; }

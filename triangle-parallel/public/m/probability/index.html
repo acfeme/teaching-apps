@@ -132,6 +132,7 @@ th,td{border-bottom:1px solid var(--line);padding:6px 8px;text-align:left}
 .leavebadge.ok{color:var(--ok,#1b7f4b);border-color:currentColor;background:#eefaf2}
 .leavebadge.bad{color:#c0392b;border-color:currentColor;background:#fdeeee}
 .leavenote{font-size:.8rem;opacity:.85}
+.demo .trialreset{background:var(--board);color:#fff;border:0;border-radius:8px;padding:3px 10px;font-weight:700;cursor:pointer;margin-left:4px}
 .warnstrip{position:fixed;left:0;right:0;bottom:0;z-index:90;background:var(--mark);color:#fff;font-weight:700;text-align:center;padding:8px max(16px,env(safe-area-inset-left,0px)) calc(8px + env(safe-area-inset-bottom,0px))}
 .talert{border:3px solid var(--mark);background:var(--mark-bg);margin-bottom:14px}
 .talert h3{color:var(--mark-ink)}
@@ -867,6 +868,7 @@ var PREVIEW = false;   // 교사 미리보기(?view=preview): 실제 기록에 �
 var VC = (typeof window !== 'undefined' && !!window.VC_MODE);
 function DEMO(){ return LOCAL() && (!VC || PREVIEW); }   // 데모·미리보기 전용 기능(가상 친구, 아무 문제로 이동)
 var VC_OPENMAP = {}, VC_PWNEW = false;
+var TRIAL = false;   // 체험(?view=trial): 모든 단원 열림 · 아무 문제로나 이동 · 기록은 이 기기에만 (선생님께 안 감)
 function vcRelogin(){
   stopPolling(); stopHub(); me = null; G = null; PROFILE = null; saveCur(null);
   $('#app').innerHTML = ''; renderJoin('오래 지나서 다시 들어와야 해요. 비밀번호를 넣어 주세요. (푼 기록은 그대로예요)');
@@ -1005,7 +1007,9 @@ function sLab(s){ return (s.no ? s.no + '번 ' : '') + s.name; }
 function setPath(o, path, v){ var ks = path.split('.'); for (var i=0;i<ks.length-1;i++){ if (typeof o[ks[i]] !== 'object' || o[ks[i]] === null) o[ks[i]] = {}; o = o[ks[i]]; } o[ks[ks.length-1]] = v; }
 function demoBanner(extra){
   if (!DEMO()) return '';
-  var head = PREVIEW
+  var head = TRIAL
+    ? '<b>체험 모드</b> · 모든 단원이 열려 있어요. 위 번호판이나 「문제 바로 가기」로 아무 문제로나 이동할 수 있어요. 푼 기록은 이 기기에만 남고 선생님께 가지 않아요. <button type="button" class="hdrbtn trialreset" id="trialreset">처음부터 다시 체험</button>'
+    : PREVIEW
     ? '<b>교사 미리보기</b> · 학생 기록에는 저장되지 않아요. 대기실에서 <b>가상 친구</b>를 추가하면 모둠 활동도 볼 수 있어요.'
     : '<b>데모 모드</b> · 이 브라우저 안에서만 저장돼요. 탭을 여러 개 열어 여러 학생처럼 써 보거나, 대기실에서 <b>가상 친구</b>를 추가해 보세요. ' +
       '교사 화면: <a href="?view=teacher" target="_blank">새 탭으로 열기</a> (데모에서는 비밀번호 칸에 아무거나 넣어도 열려요)';
@@ -1031,6 +1035,11 @@ function jumpTo(v){
   if (started()) return go();
   call('t_start', {g: me.g}).then(function(){ return call('group', {g: me.g, id: me.id}); }).then(function(r){ G = r; go(); });
 }
+document.addEventListener('click', function(e){
+  if (!e.target || e.target.id !== 'trialreset') return;
+  try { Object.keys(localStorage).forEach(function(k){ if (k.indexOf('mm8-trial') === 0 || k.indexOf('mm8-pv-pme:') === 0) localStorage.removeItem(k); }); sessionStorage.clear(); } catch(err){}
+  location.reload();
+});
 document.addEventListener('change', function(e){ if (e.target && e.target.id === 'watchchk') { WATCH = e.target.checked; return; } if (e.target && e.target.id === 'jump' && e.target.value && DEMO()) jumpTo(e.target.value); });
 // 답 입력 폼(#f)은 화면이 바뀌어도 끊기지 않도록 페이지 전체에서 한 번만 받는다
 function onSubmit(fn){ UI.submit = fn; }
@@ -1414,7 +1423,7 @@ var pollTimer = null;
 
 // ---------- 해결해요: 기록은 학생 기기에만. 다 풀었을 때 '완료' 한 번만 서버로 ----------
 var HUBPROG = {};   // 단원 목록에서 받은 서버 기록 (예전 진행 위치 이어받기용)
-function pKey(ch){ return 'mm8-pme:' + PROFILE.cls + '-' + Number(PROFILE.no) + ':' + ch; }
+function pKey(ch){ return (PREVIEW ? 'mm8-pv-pme:' : 'mm8-pme:') + PROFILE.cls + '-' + Number(PROFILE.no) + ':' + ch; }
 function pLoad(ch){ try { return JSON.parse(lsGet(pKey(ch)) || 'null'); } catch(e){ return null; } }
 function pStore(){ if (me && isPractice(CH) && !PREVIEW) lsSet(pKey(CH), JSON.stringify(me)); }
 function pEnter(ch){
@@ -1470,7 +1479,7 @@ function header(){
   var h = '<h1>모둠 수학 <small>' + (me ? esc(isPractice(CH) ? CH.slice(1) + ' 해결해요' : CH + ' ' + chInfo(CH).title) : '8단원 경우의 수와 확률') + '</small></h1>';
   if (!me && PROFILE) h += '<div class="who">' + esc(PROFILE.cls + ' ' + PROFILE.no + '번 ' + PROFILE.name) + ' <button class="hdrbtn" id="hdr-out" type="button">다른 학생으로</button></div>';
   if (me) {
-    h += '<div class="who"><button class="hdrbtn" id="hdr-hub" type="button">단원 목록</button> ' + (isPractice(CH) ? '<b>개인 학습</b>' : '<b>' + esc(gLab(me.g)) + '</b>') + ' · ' + esc(sLab(me)) + (PREVIEW ? '' : ' <span class="leavenote">· 다른 탭·창으로 가면 이탈 횟수가 기록돼요</span>') + '</div>';
+    h += '<div class="who"><button class="hdrbtn" id="hdr-hub" type="button">단원 목록</button> ' + (isPractice(CH) ? '<b>개인 학습</b>' : '<b>' + esc(VC ? me.cls : gLab(me.g)) + '</b>') + ' · ' + esc(sLab(me)) + (PREVIEW && !TRIAL ? '' : ' <span class="leavenote">· 다른 탭·창으로 가면 이탈 횟수가 기록돼요</span>') + '</div>';
     if (isPractice(CH)) { var PN = PRACTICE[CH].items.length; h += '<div class="bar" aria-label="진행도"><i style="width:' + Math.round((me.pc || 0) / PN * 100) + '%"></i></div>'; }
     else if (me.st !== 'wait') h += '<div class="bar" aria-label="진행도"><i style="width:' + Math.round(posStep() / totalSteps() * 100) + '%"></i></div>';
   }
@@ -1513,6 +1522,7 @@ function addStepNav(){
 document.addEventListener('click', function(e){
   var b = e.target.closest && e.target.closest('[data-step]'); if (!b || !me) return;
   var i = Number(b.dataset.step), cur = posStep();
+  if (i > cur && DEMO()) { jumpTo(i < TB.length ? 'tb:' + i : 'ws:' + (i - TB.length)); RVW = null; return; }   // 체험·미리보기: 아무 문제로나
   if (i > cur) {
     var m = $('#navmsg'); if (m) m.innerHTML = '<div class="fb bad">아직 답을 적지 않았어요. 지금 문제를 먼저 풀어야 다음 문제로 갈 수 있어요.</div>';
     return;
@@ -1569,13 +1579,13 @@ function renderJoin(msg){
     '<div class="field"><label for="jno">번호</label>' + sel('jno', '번호 고르기', nos, saved.no) + '</div></div>' +
     '<div class="field"><label for="jname">이름</label><input type="text" id="jname" placeholder="이름" value="' + esc(saved.name || '') + '"></div>' +
     (VC ? '' : '<div class="field"><label for="jg">모둠</label>' + sel('jg', '모둠 고르기', gs, saved.gn) + '</div>') +
-    '<div class="field"><label for="jpw">비밀번호 (숫자 4자리)</label><input type="password" id="jpw" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="처음이면 지금 정해요"></div>' +
+    (PREVIEW ? '' : '<div class="field"><label for="jpw">비밀번호 (숫자 4자리)</label><input type="password" id="jpw" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="처음이면 지금 정해요"></div>') +
     (msg ? '<div class="fb bad">' + esc(msg) + '</div>' : '') +
     '<button class="btn" type="submit">들어가기</button>' +
-    (VC ? '<p class="muted" style="margin:0;font-size:.88rem">처음 들어올 때 정한 비밀번호를 다음 시간에도 똑같이 넣어요. 잊어버리면 선생님께 말해 주세요.<br>푼 기록은 이 컴퓨터에 저장돼요. 다음 시간에도 <b>같은 컴퓨터</b>로 들어오면 이어서 풀 수 있어요.</p></form>' : '<p class="muted" style="margin:0;font-size:.88rem">처음 들어올 때 정한 비밀번호를 다음 시간에도 똑같이 넣어요. 잊어버리면 선생님께 말해 주세요.</p></form>');
+    (PREVIEW && VC ? '<p class="muted" style="margin:0;font-size:.88rem">체험이라 비밀번호 없이 들어가요. 반·번호·이름은 아무거나 골라도 돼요.</p></form>' : VC ? '<p class="muted" style="margin:0;font-size:.88rem">처음 들어올 때 정한 비밀번호를 다음 시간에도 똑같이 넣어요. 잊어버리면 선생님께 말해 주세요.<br>푼 기록은 이 컴퓨터에 저장돼요. 다음 시간에도 <b>같은 컴퓨터</b>로 들어오면 이어서 풀 수 있어요.</p></form>' : '<p class="muted" style="margin:0;font-size:.88rem">처음 들어올 때 정한 비밀번호를 다음 시간에도 똑같이 넣어요. 잊어버리면 선생님께 말해 주세요.</p></form>');
   $('#joinf').addEventListener('submit', function(e){
     e.preventDefault();
-    var a = VC ? { cls: $('#jcls').value, no: $('#jno').value, name: $('#jname').value.trim(), gn: '1', pw: toAscii($('#jpw').value).trim() }
+    var a = VC ? { cls: $('#jcls').value, no: $('#jno').value, name: $('#jname').value.trim(), gn: '1', pw: PREVIEW ? '0000' : toAscii($('#jpw').value).trim() }
                : { cls: $('#jcls').value, no: $('#jno').value, name: $('#jname').value.trim(), gn: $('#jg').value, pw: toAscii($('#jpw').value).trim() };
     if (!a.cls || !a.no || !a.name || !a.gn) return renderJoin(VC ? '반, 번호, 이름을 모두 골라 주세요.' : '반, 번호, 이름, 모둠을 모두 골라 주세요.');
     if (!/^\d{4}$/.test(a.pw)) return renderJoin('비밀번호는 숫자 4자리로 써 주세요.');
@@ -1608,7 +1618,7 @@ function loadCur(){ try { return JSON.parse(sessionStorage.getItem('mm8-cur') ||
 function stopHub(){ if (hubTimer) clearInterval(hubTimer); hubTimer = null; }
 function renderHub(msg){
   header();
-  if (!$('#hubgrid')) $('#app').innerHTML = demoBanner() + '<section class="card"><h2>단원을 고르세요</h2><p class="muted" style="margin:0">선생님이 열어 준 단원만 들어갈 수 있어요. 하던 단원은 하던 곳부터 이어서 해요.</p>' +
+  if (!$('#hubgrid')) $('#app').innerHTML = demoBanner() + '<section class="card"><h2>단원을 고르세요</h2><p class="muted" style="margin:0">' + (TRIAL ? '체험 모드라 모든 단원이 열려 있어요. 마음껏 골라 보세요.' : '선생님이 열어 준 단원만 들어갈 수 있어요. 하던 단원은 하던 곳부터 이어서 해요.') + '</p>' +
     (msg ? '<div class="fb bad">' + esc(msg) + '</div>' : '') + '<div class="fb ok" id="pwnew" hidden>비밀번호를 정했어요! 다음 시간에도 같은 비밀번호로 들어와요.</div></section><div class="hubgrid" id="hubgrid"><p class="muted">불러오는 중…</p></div>';
   function load(){
     if (!PROFILE || me) return stopHub();
@@ -2420,11 +2430,11 @@ function stopPolling(){ if (pollTimer) clearInterval(pollTimer); pollTimer = nul
 var ALERTS = [];
 var LKS = {lk: false, lkn: 0};   // 내 이탈 상태 (서버의 공통 이탈 기록에서 받아 옴)
 // 이탈 횟수: 서버에 저장하지 않고 이 기기에만 세어 두었다가, 완료 화면에 크게 보여 줌 (도장 받을 때 선생님이 확인)
-function leaveKey(){ return 'mm8-leave:' + (me ? me.id : '') + ':' + CH; }
+function leaveKey(){ return (TRIAL ? 'mm8-trial-leave:' : 'mm8-leave:') + (me ? me.id : '') + ':' + CH; }
 function leaveCount(){ return Number(lsGet(leaveKey()) || 0) || 0; }
 function lessonFinished(){ if (!me) return true; if (isPractice(CH)) return (me.pc || 0) >= PRACTICE[CH].items.length; return me.st === 'done'; }
 document.addEventListener('visibilitychange', function(){
-  if (!document.hidden || !me || PREVIEW || lessonFinished()) return;
+  if (!document.hidden || !me || (PREVIEW && !TRIAL) || lessonFinished()) return;
   lsSet(leaveKey(), String(leaveCount() + 1));
 });
 function leaveBadge(){
@@ -2654,8 +2664,9 @@ function exportRows(){
 // ===================== 시작 =====================
 function boot(view){
   if (VC && view === 'teacher') { location.href = 'teacher.html'; return; }
-  if (VC && view !== 'preview') DKEY = 'mm8-dev';
+  if (VC && view !== 'preview' && view !== 'trial') DKEY = 'mm8-dev';
   if (view === 'preview') { PREVIEW = true; DKEY = 'mm8-preview'; }
+  if (view === 'trial') { PREVIEW = true; TRIAL = true; DKEY = 'mm8-trial'; document.title = '확률 수업 체험'; }
   if (view === 'teacher') {
     // 미리보기 링크 주소: 데모는 지금 파일, 실제는 웹앱 주소
     T.url = GAS ? null : '';
